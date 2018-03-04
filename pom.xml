@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>playground</groupId>
+	<artifactId>demo</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>demo</name>
+	<description>Demo project for Spring Boot</description>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.0.0.RELEASE</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>9</java.version>
+        <!-- Need at least 1.1.x for compatibility with Surefire -->
+        <junit-platform.version>1.1.0</junit-platform.version>
+
+        <!-- Need at least 5.1.x for compatibility with Surefire -->
+        <junit-jupiter.version>5.1.0</junit-jupiter.version>
+
+        <!-- TODO remove once a newer version of surefire (2.21.1+) is compatible with JUnit 5 and used by Spring Boot -->
+        <!-- Reference: https://github.com/junit-team/junit5/issues/809 -->
+        <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
+	</properties>
+
+	<dependencies>
+		<!--<dependency>-->
+			<!--<groupId>org.springframework.boot</groupId>-->
+			<!--<artifactId>spring-boot-starter-data-jpa</artifactId>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>org.springframework.boot</groupId>-->
+			<!--<artifactId>spring-boot-starter-data-mongodb</artifactId>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>org.springframework.boot</groupId>-->
+			<!--<artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>-->
+		<!--</dependency>-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+
+		<!--<dependency>-->
+			<!--<groupId>org.postgresql</groupId>-->
+			<!--<artifactId>postgresql</artifactId>-->
+			<!--<scope>runtime</scope>-->
+		<!--</dependency>-->
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-launcher</artifactId>
+			<scope>test</scope>
+			<version>${junit-platform.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-engine</artifactId>
+			<scope>test</scope>
+			<version>${junit-platform.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<!-- TODO put back scope test once we can remove the MockitoExtension.kt class -->
+			<scope>compile</scope>
+			<version>${junit-jupiter.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<scope>test</scope>
+			<version>${junit-jupiter.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!--<plugin>-->
+				<!--<artifactId>maven-surefire-plugin</artifactId>-->
+				<!--<version>2.19.1</version>-->
+				<!--<dependencies>-->
+					<!--<dependency>-->
+						<!--<groupId>org.junit.platform</groupId>-->
+						<!--<artifactId>junit-platform-surefire-provider</artifactId>-->
+						<!--<version>1.1.0</version>-->
+					<!--</dependency>-->
+				<!--</dependencies>-->
+			<!--</plugin>-->
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+
+</project>
