@@ -71,10 +71,41 @@ public class QuestionTestsOne {
 
     /**
      * Returns a Fibonacci sequence from 1 to n.
+     * The Fibonacci sequence is a list of numbers, where the next value in the sequence is the sum of the
+     * previous two.
      *
      */
     @Test
     void fibonacciSequence() {
+        System.out.println(fibonacciList(8));
+        // Expected (0, 1, 1, 2, 3, 5, 8, 13)
+    }
 
+    public static List<Integer> fibonacciList(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("n must not be less than zero");
+        }
+        if (n == 0) {
+            return new ArrayList<>();
+        }
+        if (n == 1) {
+            return List.of(0);
+        }
+        if (n == 2) {
+            return List.of(0, 1);
+        }
+
+        final List<Integer> seq = new ArrayList<>(n);
+        seq.add(0);
+        n = n - 1;
+        seq.add(1);
+        n = n - 1;
+        while (n > 0) {
+            int a = seq.get(seq.size() - 1);
+            int b = seq.get(seq.size() - 2);
+            seq.add(a + b);
+            n = n - 1;
+        }
+        return seq;
     }
 }
