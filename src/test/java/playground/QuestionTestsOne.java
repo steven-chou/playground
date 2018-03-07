@@ -3,6 +3,7 @@ package playground;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.StringUtils;
 
+
 import java.util.*;
 
 public class QuestionTestsOne {
@@ -73,7 +74,6 @@ public class QuestionTestsOne {
      * Returns a Fibonacci sequence from 1 to n.
      * The Fibonacci sequence is a list of numbers, where the next value in the sequence is the sum of the
      * previous two.
-     *
      */
     @Test
     void fibonacciSequence() {
@@ -107,5 +107,78 @@ public class QuestionTestsOne {
             n = n - 1;
         }
         return seq;
+    }
+
+    /**
+     * === Dynamic Programming ===
+     * Return the nth value of a Fibonacci sequence
+     * Time Complexity: O(n)
+     * Memory Complexity: O(1)
+     */
+    @Test
+    void fibonacciNumber() {
+        System.out.println(calculateFibonacciNumber(7));
+    }
+
+    private int calculateFibonacciNumber(int n) {
+        if (n == 0)
+            return 0;
+        int a = 0;
+        int b = 1;
+        for (int i = 2; i < n; i++) {
+            int c = a + b;
+            a = b;
+            b = c;
+        }
+        return a + b;
+    }
+
+
+    /**
+     * Get factorial
+     */
+    @Test
+    void factorial() {
+        System.out.println(calculateFactorial(5));
+    }
+
+    private long calculateFactorial(int n) {
+        long result = 1L;
+        for (int i = 1; i <= n; i++) {
+            result *= i;
+        }
+        return result;
+    }
+
+    /**
+     * Given two strings s and t, write a function to determine if t is an anagram of s.
+     */
+    @Test
+    void checkAnagram() {
+        System.out.println(isAnagram("dog", "god"));
+    }
+
+    private boolean isAnagram(String s, String t) {
+
+        s = s.toLowerCase();
+        t = t.toLowerCase();
+
+        if (s.length() != t.length()) {
+            return false;
+        }
+        int[] table = new int[26];
+        for (int i = 0; i < s.length(); i++) {
+            // " -'a' " is to calculate the correct index for the hash table.
+            // Since the table is of size 26, the range of values for the index is 0-25, inclusive, but a lowercase 'a' has an ascii value of 97,
+            // thus we have to subtract 'a' from whatever the current character is in the string to get within 0-25.
+            table[s.charAt(i) - 'a']++;
+        }
+        for (int i = 0; i < t.length(); i++) {
+            table[t.charAt(i) - 'a']--;
+            if (table[t.charAt(i) - 'a'] < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }
