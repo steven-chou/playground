@@ -3,6 +3,9 @@ package playground;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -119,5 +122,26 @@ public class MathQuestion {
         }
 
         return primeNumbers;
+    }
+
+    @Test
+    void testDUration() throws InterruptedException {
+
+        Duration maxDuration = Duration.ofSeconds(30L);
+
+        Instant start = Instant.now();
+
+        Instant end = Instant.now();
+        do {
+
+            System.out.println("...");
+            Thread.sleep(1000L);
+            end = Instant.now();
+
+        } while (maxDuration.compareTo(Duration.between(start, end)) > 0);
+
+        System.out.println("done");
+
+
     }
 }

@@ -1,5 +1,7 @@
 package playground;
 
+import org.assertj.core.api.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.StringUtils;
 
@@ -23,15 +25,15 @@ public class QuestionTestsOne {
         List<List<T>> results = new ArrayList<>();
         for (T element : input) {
 
-            ListIterator<List<T>> listIterator = results.listIterator();
-            while (listIterator.hasNext()) {
+            ListIterator<List<T>> resultsIterator = results.listIterator();
+            while (resultsIterator.hasNext()) {
                 // Create a new List with copied List and add a new item
-                List<T> newSet = new ArrayList<>(listIterator.next());
+                List<T> newSet = new ArrayList<>(resultsIterator.next());
                 newSet.add(element);
-                listIterator.add(newSet);
+                resultsIterator.add(newSet);
             }
 
-//            for (ListIterator<List<T>> setsIterator = results.listIterator(); setsIterator.hasNext(); ) {
+//            for (ListIterator<List<T>> setsIterator = results.resultsIterator(); setsIterator.hasNext(); ) {
 //                List<T> newSet = new ArrayList<>(setsIterator.next());
 //                newSet.add(element);
 //                setsIterator.add(newSet);
@@ -166,7 +168,7 @@ public class QuestionTestsOne {
         if (s.length() != t.length()) {
             return false;
         }
-        int[] table = new int[26];
+        int[] table = new int[26]; // Or maybe use a Map instead??
         for (int i = 0; i < s.length(); i++) {
             // " -'a' " is to calculate the correct index for the hash table.
             // Since the table is of size 26, the range of values for the index is 0-25, inclusive, but a lowercase 'a' has an ascii value of 97,
@@ -181,4 +183,15 @@ public class QuestionTestsOne {
         }
         return true;
     }
+
+    void reverse(int[] nums, int start, int end) {
+        while (start < end) {
+            var tmp = nums[start];
+            nums[start] = nums[end];
+            nums[end]=tmp;
+            start++;
+            end--;
+        }
+    }
+
 }
