@@ -12,6 +12,12 @@ import java.util.stream.Collectors;
 
 public class ArrayQuestion {
 
+    /*
+     TODO: MEMORIZE
+      1. Reverse array(https://www.baeldung.com/java-invert-array)
+
+     */
+
     /**
      * Remove Duplicates from Sorted Array
      */
@@ -136,6 +142,7 @@ public class ArrayQuestion {
         reverse(nums, k, nums.length - 1);
     }
 
+    // TODO: MEMORIZE! Use while loop to reverse array
     void reverse(int[] nums, int start, int end) {
         while (start < end) {
             int temp = nums[start];
@@ -369,5 +376,135 @@ public class ArrayQuestion {
         }
         throw new IllegalArgumentException("No two sum solution");
     }
+
+    /**
+     * Valid Sudoku
+     * https://leetcode.com/problems/valid-sudoku/solution/
+     * EPI 5.17
+     */
+    @Test
+    void testSudoku() {
+        String[][] board = {
+                {"5", "3", ".", ".", "7", ".", ".", ".", "."},
+                {"6", ".", ".", "1", "9", "5", ".", ".", "."},
+                {".", "9", "8", ".", ".", ".", ".", "6", "."},
+                {"8", ".", ".", ".", "6", ".", ".", ".", "3"},
+                {"4", ".", ".", "8", ".", "3", ".", ".", "1"},
+                {"7", ".", ".", ".", "2", ".", ".", ".", "6"},
+                {".", "6", ".", ".", ".", ".", "2", "8", "."},
+                {".", ".", ".", "4", "1", "9", ".", ".", "5"},
+                {".", ".", ".", ".", "8", ".", ".", "7", "9"}
+        };
+        Assertions.assertTrue(isValidSudoku(board));
+        String[][] boardTwo = {
+                {"8", "3", ".", ".", "7", ".", ".", ".", "."},
+                {"6", ".", ".", "1", "9", "5", ".", ".", "."},
+                {".", "9", "8", ".", ".", ".", ".", "6", "."},
+                {"8", ".", ".", ".", "6", ".", ".", ".", "3"},
+                {"4", ".", ".", "8", ".", "3", ".", ".", "1"},
+                {"7", ".", ".", ".", "2", ".", ".", ".", "6"},
+                {".", "6", ".", ".", ".", ".", "2", "8", "."},
+                {".", ".", ".", "4", "1", "9", ".", ".", "5"},
+                {".", ".", ".", ".", "8", ".", ".", "7", "9"}
+        };
+        Assertions.assertFalse(isValidSudoku(boardTwo));
+    }
+
+    //Time Complexity: O(1). Space Complexity: O(1) Cuz the board is always 9x9, 81 cells.
+    boolean isValidSudoku(String[][] board) {
+        // init data
+        Map<Integer, Integer>[] rows = new HashMap[9];
+        Map<Integer, Integer>[] columns = new HashMap[9];
+        Map<Integer, Integer>[] boxes = new HashMap[9];
+        for (int i = 0; i < 9; i++) {
+            rows[i] = new HashMap<>();
+            columns[i] = new HashMap<>();
+            boxes[i] = new HashMap<>();
+        }
+
+        // validate a board
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                String num = board[i][j];
+                if (!num.equals(".")) {
+                    int n = Integer.parseInt(num);
+                    /*
+                    This the KEY.
+                    Same logic as flattening a 2d matrix to linear array, (row_num * total_num_of_columns)+(col_num)
+
+                    Think about if you are at position x = 4, y = 4 (the very center cell). You are also in block 4.
+                    If you evaluate row/3 you get 1 which essentially means you skipped 1 row of blocks. A block row has 3 blocks in it (thus *3). So in this scenario:
+                    (row/3)*3 = (4/3)*3 = 1*3 = 3 // you are skipping 3 blocks in the first row
+                    But how many blocks are you skipping in the second row?
+                    y/3 = 4/3 = 1 block
+                    So you have skipped over 4 blocks total and you are on the 5th block but it's indexed as 4 due to 0.
+                     */
+                    int boxIndex = (i / 3) * 3 + j / 3;
+
+                    // keep the current cell value
+                    rows[i].put(n, rows[i].getOrDefault(n, 0) + 1);
+                    columns[j].put(n, columns[j].getOrDefault(n, 0) + 1);
+                    boxes[boxIndex].put(n, boxes[boxIndex].getOrDefault(n, 0) + 1);
+
+                    // check if this value has been already seen before
+                    if (rows[i].get(n) > 1 || columns[j].get(n) > 1 || boxes[boxIndex].get(n) > 1)
+                        return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Rotate Image/Matrix
+     * https://leetcode.com/problems/rotate-image/solution/
+     * EPI 5.19
+     */
+    @Test
+    void testRotateMatrix() {
+        int[][] matrix = {
+                {1, 2, 3},
+                {4, 5, 6},
+                {7, 8, 9}
+        };
+        int[][] answer = {
+                {7, 4, 1},
+                {8, 5, 2},
+                {9, 6, 3}
+        };
+        rotate(matrix);
+
+        Assertions.assertTrue(Arrays.deepEquals(answer, matrix));
+    }
+
+    //Time Complexity: O(N). Space Complexity: O(1)
+    void rotate(int[][] matrix) {
+        transpose(matrix);
+        reflect(matrix);
+    }
+
+    // Reverse the matrix around the main diagonal
+    void transpose(int[][] matrix) {
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = i; j < matrix.length; j++) { //TODO: Caution! j=i cuz we want to begin w/ diagonal
+                var tmp = matrix[i][j];
+                matrix[i][j] = matrix[j][i];
+                matrix[j][i] = tmp;
+            }
+        }
+    }
+
+    // Reverse each row in the matrix from left to right
+    // TODO: MEMORIZE! Reverse array
+    void reflect(int[][] matrix) {
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix.length / 2; j++) {
+                var tmp = matrix[i][j];
+                matrix[i][j] = matrix[i][matrix.length - 1 - j];
+                matrix[i][matrix.length - 1 - j] = tmp;
+            }
+        }
+    }
+
 
 }

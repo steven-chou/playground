@@ -7,6 +7,8 @@ import org.springframework.util.StringUtils;
 
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class QuestionTestsOne {
 
@@ -184,14 +186,25 @@ public class QuestionTestsOne {
         return true;
     }
 
-    void reverse(int[] nums, int start, int end) {
-        while (start < end) {
-            var tmp = nums[start];
-            nums[start] = nums[end];
-            nums[end]=tmp;
-            start++;
-            end--;
+    int atoi(String str) {
+        int idx = 0;
+        int result = 0;
+        int sign = 1;
+        if (str.length() == 0)
+            return 0;
+        // Remove leading space
+        while (idx < str.length() && str.charAt(idx) == ' ') {
+            idx++;
         }
+        if (str.charAt(idx) == '+' || str.charAt(idx) == '-') {
+            sign = str.charAt(idx) == '+' ? 1 : -1;
+        }
+        while (idx < str.length()) {
+            result = result * 10 + str.charAt(idx) - '0';
+            ++idx;
+        }
+        return result * sign;
+
     }
 
 }
