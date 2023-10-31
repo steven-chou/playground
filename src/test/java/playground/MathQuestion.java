@@ -473,15 +473,17 @@ public class MathQuestion {
         Assertions.assertThat(mySqrt(4)).isEqualTo(2);
         Assertions.assertThat(mySqrt(8)).isEqualTo(2);
         Assertions.assertThat(mySqrt(2)).isEqualTo(1);
+        Assertions.assertThat(mySqrtWithTemplate(4)).isEqualTo(2);
+        Assertions.assertThat(mySqrtWithTemplate(8)).isEqualTo(2);
+        Assertions.assertThat(mySqrtWithTemplate(2)).isEqualTo(1);
+        Assertions.assertThat(mySqrtWithTemplate(1)).isEqualTo(1);
+        Assertions.assertThat(mySqrtWithTemplate(0)).isEqualTo(0);
+        Assertions.assertThat(mySqrtWithTemplate(2147483647)).isEqualTo(46340);
     }
 
     /**
-     * Use Binary Search to check if the square of selected mid ptr is greater/less than x,
-     * continue until either mid is the exact square root or the mid which has the closet square value to x
-     * <p>
-     * Time complexity: O(log n)
-     * <p>
-     * Space complexity: O(1)
+     * Use standard "Find first true" binary search template
+     * The condition is for any number i squared >= x, i.e. mid^2 >= x
      */
     int mySqrt(int x) {
         int left = 0, right = x;
@@ -489,18 +491,32 @@ public class MathQuestion {
         while (left <= right) {
             int mid = left + (right - left) / 2;
             long midSquare = (long) mid * mid; // Cast to long in case of integer overflow
-            if (midSquare > x)
+            if (midSquare >= x) {
+                result = mid; // Keep searching the left side cuz there may be a better ans
                 right = mid - 1;
-            else if (midSquare < x) { // This condition is for rounding down to the nearest integer
-                // The loop may terminate after we advance the left ptr at this iteration, and mid at this condition
-                // can be the answer that meets the requirement, which is the square root of x rounded down to the
-                // nearest integer, so we should set mid to the result first.
-                result = mid;
-                left = mid + 1;
             } else
-                return mid; // Exact square root
+                left = mid + 1;
         }
-        return result;
+        // The result is either the exact square root of x or the ceiling of the square root of x
+        return result * result == x ? result : result - 1;
+    }
+
+    /**
+     * Use the special "Find first true" binary search template
+     */
+    int mySqrtWithTemplate(int x) {
+        // Find first true
+        int left = -1, right = x;
+        while (left + 1 < right) {
+            //int mid = left + (right - left) / 2; Do NOT use this. This will cause overflow.
+            int mid = (left + right) >>> 1;
+            long midSquare = (long) mid * mid; // Cast to long in case of integer overflow
+            if (midSquare >= x)
+                right = mid;
+            else
+                left = mid;
+        }
+        return (right * right == x) ? right : right - 1;
     }
 
     /**

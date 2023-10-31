@@ -67,6 +67,19 @@ public class SortingSearching {
 
     /**
      * Merge Sorted Array
+     * You are given two integer arrays nums1 and nums2, sorted in non-decreasing order, and two integers m
+     * and n, representing the number of elements in nums1 and nums2 respectively.
+     * <p>
+     * Merge nums1 and nums2 into a single array sorted in non-decreasing order.
+     * <p>
+     * The final sorted array should not be returned by the function, but instead be stored inside the array nums1.
+     * To accommodate this, nums1 has a length of m + n, where the first m elements denote the elements that should
+     * be merged, and the last n elements are set to 0 and should be ignored. nums2 has a length of n.
+     * <p>
+     * Input: nums1 = [1,2,3,0,0,0], m = 3, nums2 = [2,5,6], n = 3
+     * Output: [1,2,2,3,5,6]
+     * Explanation: The arrays we are merging are [1,2,3] and [2,5,6].
+     * The result of the merge is [1,2,2,3,5,6] with the underlined elements coming from nums1.
      * https://leetcode.com/problems/merge-sorted-array/description/
      */
     @Test
@@ -107,31 +120,65 @@ public class SortingSearching {
 
     /**
      * First Bad Version
+     * You are a product manager and currently leading a team to develop a new product. Unfortunately, the latest
+     * version of your product fails the quality check. Since each version is developed based on the previous version,
+     * all the versions after a bad version are also bad.
+     * <p>
+     * Suppose you have n versions [1, 2, ..., n] and you want to find out the first bad one, which causes all the
+     * following ones to be bad.
+     * <p>
+     * You are given an API bool isBadVersion(version) which returns whether version is bad. Implement a function
+     * to find the first bad version. You should minimize the number of calls to the API.
+     * <p>
+     * Input: n = 5, bad = 4
+     * Output: 4
+     * Explanation:
+     * call isBadVersion(3) -> false
+     * call isBadVersion(5) -> true
+     * call isBadVersion(4) -> true
+     * Then 4 is the first bad version.
      * https://leetcode.com/problems/first-bad-version/editorial/
      */
     @Test
     void testFirstBadVersion() {
+        firstBadVersionUseTemplate(5);
         firstBadVersion(5);
     }
 
     /**
-     * Use binary search to search space and cut in half each time
-     * Time Complexity: O(log n). Space Complexity: O(1)
+     * Use the "Find First True" binary search template.
+     * The condition is "isBadVersion(i) == true"
+     * Time Complexity: O(log n)
+     * Space Complexity: O(1)
+     */
+    int firstBadVersionUseTemplate(int n) {
+        // left -> invalid (0), right -> valid (1 to n)
+        int left = 0, right = n;
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            if (isBadVersion(mid))
+                right = mid;
+            else
+                left = mid;
+        }
+        return right;
+    }
+
+    /**
+     * Use std Find first true binary search style
      */
     int firstBadVersion(int n) {
         int left = 1, right = n;
-        while (left < right) {
-            // IMPORTANT: Must calculate mid this way to avoid overflow
-            // instead of (left+right) / 2
+        int ans = -1;
+        while (left <= right) {
             int mid = left + (right - left) / 2;
-            if (isBadVersion(mid))
-                // mid may or may not be the first bad ver, so make the search range [left, mid](inclusive)
-                right = mid;
-            else
-                // all ver including mid are good, so make the search range [mid+1, right](inclusive)
+            if (isBadVersion(mid)) {
+                ans = mid;
+                right = mid - 1;
+            } else
                 left = mid + 1;
         }
-        return left; // <-- key
+        return ans;
     }
 
     boolean isBadVersion(int verNum) {
@@ -140,6 +187,13 @@ public class SortingSearching {
 
     /**
      * Missing Number
+     * Given an array nums containing n distinct numbers in the range [0, n],
+     * return the only number in the range that is missing from the array.
+     * <p>
+     * Input: nums = [3,0,1]
+     * Output: 2
+     * Explanation: n = 3 since there are 3 numbers, so all numbers are in the range [0,3].
+     * 2 is the missing number in the range since it does not appear in nums.
      * https://leetcode.com/problems/missing-number/description/
      */
     @Test
@@ -442,9 +496,10 @@ public class SortingSearching {
     void testFindPeakElement() {
         int[] input = new int[]{1, 2, 3, 1};
         Assertions.assertThat(findPeakElement(input)).isEqualTo(2);
+        Assertions.assertThat(findPeakElementUseTemplate(input)).isEqualTo(2);
         input = new int[]{1};
         Assertions.assertThat(findPeakElement(input)).isEqualTo(0);
-        findPeakElement(new int[]{4, 3, 2, 1});
+        Assertions.assertThat(findPeakElementUseTemplate(input)).isEqualTo(0);
     }
 
     /**
@@ -508,6 +563,48 @@ public class SortingSearching {
     }
 
     /**
+     * Use the "Find First True" template. There are three cases
+     * Say we want to map the element to T after the peak, false if it increases than previous one
+     * 1. [5,4,3,2,1] --> [T,T,T,T,T]
+     * 2. [1,2,3,4,5] --> [F,F,F,F,T]
+     * 3. [1,2,5,4,3] --> [F,F,T,T,T]
+     * 4. [5,4,3,4,5] --> [T,T,T,F,F]
+     * Therefore, the condition here is nums[i] > nums[i+1], and we want to find the first
+     * element satisfied it.
+     */
+    int findPeakElementUseTemplate(int[] nums) {
+        int left = -1;
+        int right = nums.length - 1;
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] > nums[mid + 1] || mid == nums.length - 1)
+                // For the edge case, [F,F,F,F,T], when mid falls on the last item, it is considered peak as well, so
+                // the condition holds true
+                right = mid;
+            else
+                left = mid;
+        }
+        return right;
+    }
+
+// This one uses the OLD template, which can be problematic
+//    int findPeakElementUseTemplate(int[] nums) {
+//        int left = 0;
+//        int right = nums.length - 1;
+//        while (left < right) {
+//            int mid = left + (right - left) / 2;
+//            if (nums[mid] > nums[mid + 1])
+//                // We want to find the "first" one satisfied this condition, even tho this one is good, we still need to
+//                // continue search the left part.
+//                right = mid; // mid still can be the valid candidate, so include it.
+//            else
+//                left = mid + 1; // Search the right part
+//        }
+//        return left;
+//    }
+
+
+    /**
      * Find First and Last Position of Element in Sorted Array
      * Given an array of integers nums sorted in non-decreasing order, find the starting and ending
      * position of a given target value.
@@ -526,8 +623,64 @@ public class SortingSearching {
     void testSearchRange() {
         int[] input = new int[]{5, 7, 7, 8, 8, 10};
         Assertions.assertThat(searchRange(input, 8)).containsOnly(3, 4);
+        Assertions.assertThat(searchRangeWithTemplate(input, 8)).containsOnly(3, 4);
         input = new int[]{5, 7, 7, 8, 8, 10};
         Assertions.assertThat(searchRange(input, 6)).containsOnly(-1, -1);
+        Assertions.assertThat(searchRangeWithTemplate(input, 6)).containsOnly(-1, -1);
+    }
+
+    /**
+     * Use the "Find First True" binary search to find the first index and the "Find Last True" binary search to find the last index
+     * <p>
+     * The condition for the "Find First True" is num[i] >= target, so we can map to the pattern [F,F,T,T,T,T] for
+     * the input [1,2,3,3,4,5], target: 3
+     * <p>
+     * The condition for the "Find Last True" is num[i] <= target, so we can map to the pattern [T,T,T,T,F,F] for
+     * the input [1,2,3,3,4,5], target: 3
+     * <p>
+     * We need to add additional check after the loop terminates for right/left is not moved or not equal to target when the
+     * target doesn't exist in the array.
+     * Time complexity: O(log n)
+     * Space complexity : O(1)
+     */
+    int[] searchRangeWithTemplate(int[] nums, int target) {
+        int firstIdx = findFirstTargetIdx(nums, target);
+        if (firstIdx == -1)
+            return new int[]{-1, -1};
+        int lastIdx = findLastTargetIdx(nums, target);
+        return new int[]{firstIdx, lastIdx};
+    }
+
+    int findFirstTargetIdx(int[] nums, int target) {
+        // init left to -1, right to nums.length. If the right remains unchanged till the end(That's why it begins outside
+        // the bound), we know that the element doesn't exist, and we can return -1, otherwise we return right.
+        int left = -1, right = nums.length; // init right to the o
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] >= target)
+                right = mid;
+            else
+                left = mid;
+        }
+        if (right == nums.length || nums[right] != target)
+            return -1;
+        return right;
+    }
+
+    int findLastTargetIdx(int[] nums, int target) {
+        // if the left remains unchanged till the end, we know that the element doesn't exist
+        // we can return left (because when it is unchanged, it is already -1)
+        int left = -1, right = nums.length;
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] <= target)
+                left = mid;
+            else
+                right = mid;
+        }
+        if (left == -1 || nums[left] != target)
+            return -1;
+        return left;
     }
 
     /*
@@ -595,61 +748,98 @@ public class SortingSearching {
     }
 
     /**
-     * Merge Intervals
-     * Given an array of intervals where intervals[i] = [starti, endi], merge all overlapping intervals,
-     * and return an array of the non-overlapping intervals that cover all the intervals in the input.
+     * Find Minimum in Rotated Sorted Array
+     * Suppose an array of length n sorted in ascending order is rotated between 1 and n times.
+     * For example, the array nums = [0,1,2,4,5,6,7] might become:
      * <p>
-     * Input: intervals = [[1,3],[2,6],[8,10],[15,18]]
-     * Output: [[1,6],[8,10],[15,18]]
-     * Explanation: Since intervals [1,3] and [2,6] overlap, merge them into [1,6].
+     * [4,5,6,7,0,1,2] if it was rotated 4 times.
+     * [0,1,2,4,5,6,7] if it was rotated 7 times.
+     * Notice that rotating an array [a[0], a[1], a[2], ..., a[n-1]] 1 time results in the array [a[n-1], a[0], a[1], a[2], ..., a[n-2]].
      * <p>
-     * Input: intervals = [[1,4],[4,5]]
-     * Output: [[1,5]]
-     * Explanation: Intervals [1,4] and [4,5] are considered overlapping.
+     * Given the sorted rotated array nums of unique elements, return the minimum element of this array.
      * <p>
-     * https://leetcode.com/problems/merge-intervals/description/
+     * You must write an algorithm that runs in O(log n) time.
+     * <p>
+     * Input: nums = [3,4,5,1,2]
+     * Output: 1
+     * Explanation: The original array was [1,2,3,4,5] rotated 3 times.
+     * <p>
+     * Input: nums = [4,5,6,7,0,1,2]
+     * Output: 0
+     * Explanation: The original array was [0,1,2,4,5,6,7] and it was rotated 4 times.
+     * https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/description/
      */
     @Test
-    void testMergeIntervals() {
-        // [[1,3],[2,6],[8,10],[15,18]]
-        int[][] input = new int[][]{{1, 3}, {2, 6}, {8, 10}, {15, 18}};
-        int[][] result = merge(input); // [[1,6],[8,10],[15,18]]
-        Assertions.assertThat(result).contains(new int[]{1, 6}, atIndex(0));
-        Assertions.assertThat(result).contains(new int[]{8, 10}, atIndex(1));
-        Assertions.assertThat(result).contains(new int[]{15, 18}, atIndex(2));
+    void testFindMinhRotatedSortedArray() {
+        int[] input = new int[]{3, 4, 5, 1, 2};
+        Assertions.assertThat(findMinWithTemplate(input)).isEqualTo(1);
+        input = new int[]{4, 5, 6, 7, 0, 1, 2};
+        Assertions.assertThat(findMin(input)).isEqualTo(0);
     }
 
     /**
-     * Sorting
-     * If we sort the intervals by their start value, then each set of intervals that can be
-     * merged will appear as a contiguous "run" in the sorted list.
-     * <p>
-     * First, we sort the list. Then, we insert the first interval into our merged list and
-     * continue considering each interval in turn as follows:
-     * If the current interval begins after the previous interval ends, then they do not overlap,
-     * and we can append the current interval to merged.
-     * Otherwise, they do overlap, and we merge them by updating the end of the previous interval
-     * if it is less than the end of the current interval.
-     * <p>
-     * Time complexity: O(n⋅log n), dominated by the sorting
-     * Space complexity: O(n)
+     * Modified Binary Search
+     * This question is just the sub-problem of the "Search in Rotated Sorted Array".
+     * We first implement a modified binary search to find the "pivot element" (the smallest element),
+     * then do two binary search on two separate parts of array.
+     * Here, we just need the code for finding the pivot index and return its value.
+     * Time complexity: O(log n)
+     * Space complexity: O(1)
      */
-    int[][] merge(int[][] intervals) {
-        Arrays.sort(intervals, Comparator.comparingInt(x -> x[0]));
-        // or Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0]));
-        List<int[]> merged = new ArrayList<>();
-        for (int[] interval : intervals) {
-            if (merged.isEmpty() || interval[0] > merged.get(merged.size() - 1)[1]) {
-                // 1. The first interval being processed. 2. Start of the current interval is after the last merged interval
-                merged.add(interval); // No merge, just add to list
-            } else {
-                int[] lastMergedInterval = merged.get(merged.size() - 1);
-                // Merge and take the larger interval end
-                lastMergedInterval[1] = Math.max(lastMergedInterval[1], interval[1]);
-            }
+    int findMin(int[] nums) {
+        int left = 0, right = nums.length - 1;
+        if (nums[right] >= nums[0])
+            // If the array is not rotated and the array is in ascending order, then last element > first element.
+            return nums[0];
+
+        // First find the index of the pivot element (the smallest element)
+        // Ex, [4, 5, 6, 7, 0, 1] ==> peak: 0
+        while (left <= right) {
+            // Run this modified binary search algo until left passes right
+            // left will be the peak we want
+            // When nums is not rotated, left will fall on the head of array --> This use case is now handled in the beginning
+            int mid = left + (right - left) / 2;
+            if (nums[mid] > nums[nums.length - 1]) // This condition is the KEY!!
+                // Search the right section
+                left = mid + 1;
+            else
+                right = mid - 1;
         }
-        return merged.toArray(new int[0][]);
+        return nums[left];
     }
+
+    /**
+     * Use the "Find First True" template. We want to set up the TRUE condition when the found element is in the sub-array
+     * having the min number.
+     * Case 1(array is rotated): For [4,5,6,7,0,1,2], the mapped boolean is [F, F, F, F, T, T, T]
+     * Case 2(array is NOT rotated): For [1,2,3,4], the mapped boolean is [T, T, T, T]
+     * Therefore, to satisfy both cases, the condition will be nums[i] < nums[nums.length - 1], and we want to find the first
+     * element satisfying it.
+     */
+    int findMinWithTemplate(int[] nums) {
+        // range: left -> invalid (-1), right -> valid (0 - nums.length - 1)
+        int left = -1, right = nums.length - 1;
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] < nums[nums.length - 1])
+                right = mid;
+            else
+                left = mid;
+        }
+        return nums[right];
+    }
+// OLD template code
+//    int findMinWithTemplate(int[] nums) {
+//        int left = 0, right = nums.length - 1;
+//        while (left < right) {
+//            int mid = left + (right - left) / 2;
+//            if (nums[mid] < nums[nums.length - 1])
+//                right = mid;
+//            else
+//                left = mid + 1;
+//        }
+//        return nums[left];
+//    }
 
     /**
      * Search in Rotated Sorted Array
@@ -675,10 +865,72 @@ public class SortingSearching {
     @Test
     void testSearchRotatedSortedArray() {
         int[] input = new int[]{4, 5, 6, 7, 0, 1, 2};
+        Assertions.assertThat(searchUseTemplate(input, 0)).isEqualTo(4);
         Assertions.assertThat(search(input, 0)).isEqualTo(4);
         input = new int[]{4, 5, 6, 7, 0, 1, 2};
+        Assertions.assertThat(searchUseTemplate(input, 3)).isEqualTo(-1);
         Assertions.assertThat(search(input, 3)).isEqualTo(-1);
     }
+
+    /**
+     * Leverage the solution of "Find Minimum in Rotated Sorted Array" and use the found index of the minimum element
+     * to either search for the target on the left side of the pivot or the right side of the pivot. This would be
+     * decided based on whether the target is smaller than the right most element or not.
+     */
+    int searchUseTemplate(int[] nums, int target) {
+        int left = -1, right = nums.length - 1;
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] < nums[nums.length - 1])
+                right = mid;
+            else
+                left = mid;
+        }
+        // right is the index of pivot/min element index
+        if (target <= nums[nums.length - 1])
+            // target is inside the range [pivot, tail]
+            // Binary search over elements on the pivot element's right
+            return binarySearchWithBoundary(nums, right, nums.length - 1, target);
+        else
+            // target is inside the range [head, pivot]
+            // Binary search over elements on the pivot element's left
+            return binarySearchWithBoundary(nums, 0, right - 1, target);
+    }
+
+    int binarySearchWithBoundary(int[] nums, int leftBound, int rightBound, int target) {
+        int left = leftBound, right = rightBound;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] > target)
+                right = mid - 1;
+            else if (nums[mid] < target)
+                left = mid + 1;
+            else
+                return mid;
+        }
+        return -1;
+    }
+
+// This uses the OLD template
+//    int searchUseTemplate(int[] nums, int target) {
+//        int left = 0, right = nums.length - 1;
+//        while (left < right) {
+//            int mid = left + (right - left) / 2;
+//            if (nums[mid] < nums[nums.length - 1])
+//                right = mid;
+//            else
+//                left = mid + 1;
+//        }
+//        // left is the index of pivot/min element index
+//        if (target <= nums[nums.length - 1])
+//            // target is inside the range [pivot, tail]
+//            // Binary search over elements on the pivot element's right
+//            return binarySearchWithBoundary(nums, left, nums.length - 1, target);
+//        else
+//            // target is inside the range [head, pivot]
+//            // Binary search over elements on the pivot element's left
+//            return binarySearchWithBoundary(nums, 0, left - 1, target);
+//    }
 
     /**
      * Find Pivot Index w/ modified binary search + Binary Search on two separate parts
@@ -731,244 +983,10 @@ public class SortingSearching {
         return binarySearchWithBoundary(nums, left, nums.length - 1, target);
     }
 
-    int binarySearchWithBoundary(int[] nums, int leftBound, int rightBound, int target) {
-        int left = leftBound, right = rightBound;
-        while (left <= right) {
-            int mid = left + (right - left) / 2;
-            if (nums[mid] > target)
-                right = mid - 1;
-            else if (nums[mid] < target)
-                left = mid + 1;
-            else
-                return mid;
-        }
-        return -1;
-    }
-
-    /**
-     * Find Minimum in Rotated Sorted Array
-     * Suppose an array of length n sorted in ascending order is rotated between 1 and n times.
-     * For example, the array nums = [0,1,2,4,5,6,7] might become:
-     * <p>
-     * [4,5,6,7,0,1,2] if it was rotated 4 times.
-     * [0,1,2,4,5,6,7] if it was rotated 7 times.
-     * Notice that rotating an array [a[0], a[1], a[2], ..., a[n-1]] 1 time results in the array [a[n-1], a[0], a[1], a[2], ..., a[n-2]].
-     * <p>
-     * Given the sorted rotated array nums of unique elements, return the minimum element of this array.
-     * <p>
-     * You must write an algorithm that runs in O(log n) time.
-     * <p>
-     * Input: nums = [3,4,5,1,2]
-     * Output: 1
-     * Explanation: The original array was [1,2,3,4,5] rotated 3 times.
-     * <p>
-     * Input: nums = [4,5,6,7,0,1,2]
-     * Output: 0
-     * Explanation: The original array was [0,1,2,4,5,6,7] and it was rotated 4 times.
-     * https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/description/
-     */
-    @Test
-    void testFindMinhRotatedSortedArray() {
-        int[] input = new int[]{3, 4, 5, 1, 2};
-        Assertions.assertThat(findMin(input)).isEqualTo(1);
-        input = new int[]{4, 5, 6, 7, 0, 1, 2};
-        Assertions.assertThat(findMin(input)).isEqualTo(0);
-    }
-
-    /**
-     * Modified Binary Search
-     * This question is just the sub-problem of the "Search in Rotated Sorted Array".
-     * We first implement a modified binary search to find the "pivot element" (the smallest element),
-     * then do two binary search on two separate parts of array.
-     * Here, we just need the code for finding the pivot index and return its value.
-     * Time complexity: O(log n)
-     * Space complexity: O(1)
-     */
-    int findMin(int[] nums) {
-        int left = 0, right = nums.length - 1;
-        if (nums[right] >= nums[0])
-            // If the array is not rotated and the array is in ascending order, then last element > first element.
-            return nums[0];
-
-        // First find the index of the pivot element (the smallest element)
-        // Ex, [4, 5, 6, 7, 0, 1] ==> peak: 0
-        while (left <= right) {
-            // Run this modified binary search algo until left passes right
-            // left will be the peak we want
-            // When nums is not rotated, left will fall on the head of array --> This use case is now handled in the beginning
-            int mid = left + (right - left) / 2;
-            if (nums[mid] > nums[nums.length - 1]) // This condition is the KEY!!
-                // Search the right section
-                left = mid + 1;
-            else
-                right = mid - 1;
-        }
-        return nums[left];
-    }
-
-    /**
-     * Meeting Rooms
-     * Given an array of meeting time intervals where intervals[i] = [starti, endi],
-     * determine if a person could attend all meetings.
-     * <p>
-     * Input: intervals = [[0,30],[5,10],[15,20]]
-     * Output: false
-     * <p>
-     * Input: intervals = [[7,10],[2,4]]
-     * Output: true
-     * https://leetcode.com/problems/meeting-rooms/description/
-     */
-    @Test
-    void testCanAttendMeetings() {
-        int[][] input = new int[][]{{0, 30}, {5, 10}, {15, 20}};
-        Assertions.assertThat(canAttendMeetings(input)).isFalse();
-        input = new int[][]{{7, 10}, {2, 4}};
-        Assertions.assertThat(canAttendMeetings(input)).isTrue();
-    }
-
-    /**
-     * Sorting
-     * The idea here is to sort the meetings by starting time. Then, go through the meetings one by one and make
-     * sure that each meeting ends before the next one starts.
-     * <p>
-     * Time complexity : O(nlogn)
-     * The time complexity is dominated by sorting. Once the array has been sorted, only O(n) time is
-     * taken to go through the array and determine if there is any overlap.
-     * <p>
-     * Space complexity : O(1).
-     */
-    boolean canAttendMeetings(int[][] intervals) {
-        Arrays.sort(intervals, Comparator.comparingInt(x -> x[0]));
-        for (int i = 0; i < intervals.length - 1; i++) {
-            int currentEndTime = intervals[i][1];
-            int nextStartTime = intervals[i + 1][0];
-            if (currentEndTime > nextStartTime)
-                return false;
-        }
-        return true;
-    }
-
-    /**
-     * Meeting Rooms II
-     * Given an array of meeting time intervals where intervals[i] = [starti, endi],
-     * return the minimum number of conference rooms required.
-     * <p>
-     * Input: intervals = [[0,30],[5,10],[15,20]]
-     * Output: 2
-     * <p>
-     * Input: intervals = [[7,10],[2,4]]
-     * Output: 1
-     * <p>
-     * https://leetcode.com/problems/meeting-rooms-ii/description/
-     */
-    @Test
-    void testMinMeetingRooms() {
-        int[][] input = new int[][]{{0, 30}, {5, 10}, {15, 20}};
-        Assertions.assertThat(minMeetingRooms(input)).isEqualTo(2);
-        input = new int[][]{{7, 10}, {2, 4}};
-        Assertions.assertThat(minMeetingRoomsMinHeap(input)).isEqualTo(1);
-    }
-
-    /**
-     * Chronological Ordering Event
-     * Imagine we plot every start and end time in a single timeline in chronological order. Instead of considering a meeting
-     * (start/end time pair), we only consider each individual event and its meaning.
-     * When we encounter an ending event, that means some meeting that started earlier has ended now. We are not
-     * really concerned with which meeting has ended. All we need is that some meeting ended thus making a room available.
-     * <p>
-     * When we encounter a start event, we need to know the earliest end time of any meeting, so we can decide
-     * if we need a meeting room.
-     * <p>
-     * Given two points above, we want to keep start and end time in separate array and sort them. So we can easily
-     * compare each of them and keep track of the meeting end time.
-     * <p>
-     * We use two index to iterate the start and end time array at the same time, and compare one by one.
-     * 1. For a given end time, the thing we know is there is a meeting ending and the room will be available if there is
-     * a meeting started at or later than the end time. Thus, if the start time is greater than it, we can use the room.
-     * 2. If the start time is earlier than the current end time, we need a meeting room for it.
-     * <p>
-     * Time Complexity: O(NlogN) because all we are doing is sorting the two arrays for start timings and end timings
-     * individually and each of them would contain N elements considering there are N intervals.
-     * <p>
-     * Space Complexity: O(N) because we create two separate arrays of size N, one for recording the start times and one
-     * for the end times.
-     */
-    int minMeetingRooms(int[][] intervals) {
-        int[] start = new int[intervals.length];
-        int[] end = new int[intervals.length];
-
-        for (int i = 0; i < intervals.length; i++) {
-            start[i] = intervals[i][0];
-            end[i] = intervals[i][1];
-        }
-        Arrays.sort(start);
-        Arrays.sort(end);
-
-        int usedRoomsCount = 0;
-        for (int startIdx = 0, endIdx = 0; startIdx < intervals.length; startIdx++) {
-            if (start[startIdx] < end[endIdx])
-                // Current start time is earlier than end time, we need a meeting room.
-                // The room counter starts at 0, so the first start time will always increment room count
-                usedRoomsCount++;
-            else
-                // Current start time is equal or later than end time. so we can use the room just ended
-                // But increment the next end time to track when the next meeting is available
-                endIdx++;
-        }
-        return usedRoomsCount;
-    }
-
-    /**
-     * MinHeap to track of the room availability based on the earliest end time
-     * At any point in time we have multiple rooms that can be occupied and we don't really care which room
-     * is free as long as we find one when required for a new meeting.
-     * <p>
-     * Instead of manually iterating on every room that's been allocated and checking if the room is
-     * available or not, we can keep all the rooms in a min heap where the key for the min heap would be
-     * the ending time of meeting.
-     * <p>
-     * So, every time we want to check if any room is free or not, simply check the topmost element of the
-     * min heap as that would be the room that would get free the earliest out of all the other rooms
-     * currently occupied.
-     * <p>
-     * If the room we extracted from the top of the min heap isn't free, then no other room is.
-     * So, we can save time here and simply allocate a new room.
-     * <p>
-     * Time Complexity: O(NlogN)
-     * Sorting of the array that takes O(NlogN) considering that the array consists of N elements.
-     * With the min-heap. In the worst case, all N meetings will collide with each other.
-     * In any case we have N add operations on the heap. In the worst case we will have N extract-min
-     * operations as well. Overall complexity being (NlogN) since extract-min operation on a heap takes O(logN).
-     * <p>
-     * Space Complexity: O(N)
-     * Constructing the min-heap and that can contain N elements in the worst case as
-     * described above in the time complexity section. Hence, the space complexity is O(N).
-     * <p>
-     * This Min Heap solution uses more memory than the two index start/end time iteration approach above due to the
-     * PriorityQueue
-     */
-    int minMeetingRoomsMinHeap(int[][] intervals) {
-        // Sort the intervals by start time
-        Arrays.sort(intervals, Comparator.comparingInt(x -> x[0]));
-        // Each item in the MinHeap is the meeting room we currently use and its end time
-        PriorityQueue<Integer> roomEndTimeMinHeap = new PriorityQueue<>();
-        for (int[] interval : intervals) {
-            int startTime = interval[0];
-            if (!roomEndTimeMinHeap.isEmpty() && startTime >= roomEndTimeMinHeap.peek())
-                // When the current meeting starts at or later than the meeting room ending the earliest in the MinHeap,
-                // i.e. the top element, which means the meeting can take this room. So we remove it from heap to claim it.
-                // (The room will be added to the heap w/ the updated end time later)
-                roomEndTimeMinHeap.poll();
-            // Add the meeting room w/ end time of this meeting to the heap, so we can keep track of the room
-            // availability
-            roomEndTimeMinHeap.offer(interval[1]);
-        }
-        return roomEndTimeMinHeap.size();
-    }
 
     /**
      * Search a 2D Matrix
-     * You are given an m x n integer matrix matrix with the following two properties:
+     * You are given an m x n integer matrix with the following two properties:
      * <p>
      * Each row is sorted in non-decreasing order.
      * The first integer of each row is greater than the last integer of the previous row.
@@ -994,9 +1012,12 @@ public class SortingSearching {
      * binary search to find the target.
      * Only thing we need is to map the index on this virtual array to the cell in the matrix.
      * <p>
-     * Given the idx on this virtual array and the matrix w/ m(rows) x n(cols)
+     * The idx on this virtual array and can be mapped to the m(rows) x n(cols) matrix
      * rowIdx = idx / n
      * colIdx = idx % n
+     * <p>
+     * And left = 0, right = m * n -1
+     *
      * <p>
      * Time complexity: O(log(mn)) since it's a standard binary search.
      * <p>
@@ -1140,5 +1161,357 @@ public class SortingSearching {
             k--;
         }
         return result;
+    }
+
+    /**
+     * Median of Two Sorted Arrays
+     * Given two sorted arrays nums1 and nums2 of size m and n respectively,
+     * return the median of the two sorted arrays.
+     * <p>
+     * The overall run time complexity should be O(log (m+n)).
+     * <p>
+     * Input: nums1 = [1,3], nums2 = [2]
+     * Output: 2.00000
+     * Explanation: merged array = [1,2,3] and median is 2.
+     * <p>
+     * Input: nums1 = [1,2], nums2 = [3,4]
+     * Output: 2.50000
+     * Explanation: merged array = [1,2,3,4] and median is (2 + 3) / 2 = 2.5.
+     * <p>
+     * https://leetcode.com/problems/median-of-two-sorted-arrays/description/
+     */
+    @Test
+    void testFindMedianSortedArrays() {
+        int[] a1 = new int[]{1, 2};
+        int[] a2 = new int[]{3, 4, 5};
+        Assertions.assertThat(findMedianSortedArrays(a1, a2)).isEqualTo(3);
+        a1 = new int[]{1, 2, 3};
+        a2 = new int[]{4, 5, 6};
+        Assertions.assertThat(findMedianSortedArrays(a1, a2)).isEqualTo(3.5);
+        a1 = new int[]{4, 5, 6};
+        a2 = new int[]{1, 2, 3};
+        Assertions.assertThat(findMedianSortedArrays(a1, a2)).isEqualTo(3.5);
+        a1 = new int[]{1, 5, 6};
+        a2 = new int[]{2, 3, 4};
+        Assertions.assertThat(findMedianSortedArrays(a1, a2)).isEqualTo(3.5);
+    }
+
+    /**
+     * Use binary search on the smaller array to search for partition points on both arrays. Two left partitions should have total
+     * (m + n + 1) / 2 elements and the condition (maxLeftA <= minRightB && maxLeftB <= minRightA) holds true. Then the median
+     * can be derived from the elements of two boundaries.
+     * <p>
+     * Observation:
+     * 1. Since both arrays are sorted, if we can find out the position on both arrays to partition it into left and right parts.
+     * And the elements from both left parts are just like the left half part of the merged array of A and B. Then the median must
+     * lie either at the boundary of the two halves or within one of the two arrays.
+     * * --------------------------------
+     * A |<- LeftA ->|   <- RightA ->   |
+     * * --------------------------------
+     * *             ^
+     * *             PA
+     * * --------------------------------
+     * B |   <- LeftB -> | <- RightB -> |
+     * * --------------------------------
+     * *                 ^
+     * *                 PB
+     * 2. When partitioning two arrays we need to make sure the number of elements from (LeftA + LeftB) is roughly the same as
+     * (RightA + RightB), we will use (m + n + 1) / 2 for the smaller half, i.e. (LeftA + LeftB). Once we decide the position
+     * to partition the array A, i.e. PA, PB can be set as (m + n + 1) / 2 - PA. Here we want to define PA and PB as the FIRST
+     * element in the RightA and RightB respectively.
+     * <p>
+     * 3. If we first consider the case that the smaller half is conisit of some elements from both LeftA and LeftB.
+     * Say PA is on element 6 on array A, and PB is on element 5 on array B. We need the following values to calculate the
+     * median.
+     * maxLeftA: the maximum element of the LeftA part in array A
+     * minRightA: the minimum element of the RightA part in array A
+     * maxLeftB: the maximum element of the LeftB part in array B
+     * minRightB: the minimum element of the RightB part in array B
+     * <p>
+     * * ----------------------
+     * A |  |  | 3| 6|  |  |  |
+     * * ----------------------
+     * *         ^  ^
+     * *  maxLeftA  minRightA
+     * <p>
+     * * ----------------------
+     * B |  |  |  | 4| 5|  |  |
+     * * ----------------------
+     * *            ^  ^
+     * *     maxLeftB  minRightB
+     * <p>
+     * When we partition two arrays correctly like above diagram, we will have the condition,
+     * (maxLeftA <= minRightB && maxLeftB <= minRightA) holds true.
+     * We just need to find the maximum value from the smaller half as max(A[maxLeftA], B[maxLeftB]) and the
+     * minimum value from the larger half as min(A[minRightA], B[minRightB]). The median value depends on these four boundary
+     * values and the total length of the input arrays(odd/even) and we can compute it by situation.
+     * <p>
+     * Algo:
+     * 1. Our goal is to use the binary search on the smaller array to search for the correct partition index, midArrayA(PA)
+     * to satisfy the condition (maxLeftA <= minRightB && maxLeftB <= minRightA) == true
+     * <p>
+     * 2. Whenever we move the midArrayA(PA), the midArrayB(PB) will be updated using the above formula.
+     * <p>
+     * 3. When maxLeftA > minRightB, it means we need to shrink the left part of the array A to make the maxLeftA smaller.
+     * So we need to move the right ptr to the left, and the midArrayA will be shifted to the left as well.
+     * <p>
+     * 4. When maxLeftB > minRightA, it means we need to expand the left part of the array A to make minRightA bigger.
+     * So We need to move the left ptr to the right, and the midArrayA will be shifted to the right as well.
+     * <p>
+     * Time complexity: O(log(min(m,n)))
+     * Let m be the size of array nums1 and n be the size of array nums2.
+     * We perform a binary search over the smaller array of size min(m,n).
+     * <p>
+     * Space complexity: O(1)
+     * <p>
+     * Check video for more detail
+     * https://www.youtube.com/watch?v=KB9IcSCDQ9k&ab_channel=HuaHua
+     */
+    double findMedianSortedArrays(int[] nums1, int[] nums2) {
+        // Ensure nums1 is the smaller array
+        if (nums1.length > nums2.length)
+            return findMedianSortedArrays(nums2, nums1);
+
+        int m = nums1.length, n = nums2.length;
+        int left = 0, right = m;// BE CAREFUL of the boundary is [0-m] INCLUSIVE
+        // Perform binary search on the smaller array, nums1.
+
+        while (left <= right) {
+            // mid idx of nums1
+            int midArrayA = left + (right - left) / 2; // The first element index of the right/larger half part
+            // Let the smaller half of combined array size: (m + n + 1) / 2
+            // mid idx of nums2: The rest of the half of combined array size
+            int midArrayB = (m + n + 1) / 2 - midArrayA;
+
+            // These are three edge cases can cause index out of bound:
+            // (1) When the last element of array A is less than the first element of array B. Ex: A:[1,2,3] B:[4,5,6]
+            // midArrayA will be moved out of bound of array A eventually and midArrayB will be at the head of array B. In this case, we can
+            // conclude the median is determined between the maxLeftA and the minRightB, so to satisfying the condition of the median position
+            // found (maxLeftA <= minRightB && maxLeftB <= minRightA), we set minRightA to int MAX value and maxLeftB to int MIN value.
+            // Doing so also avoid the index out of bound error.
+            // (2) In the opposite case like A:[4,5,6] B:[1,2,3]. midArrayA will be at the head of array A, and midArrayB is moved out of bound.
+            // So maxLeftA is will be set to int MIN value , and minRightB is set to int MAX value.
+            // (3) Either midArrayA is moved out of bound or midArrayB is at the head, which means the median is most likely on the other array
+
+            // the maximum element of the left part partitioned by the midArrayA idx in array A, i.e. previous element of midArrayA
+            int maxLeftA = (midArrayA == 0) ? Integer.MIN_VALUE : nums1[midArrayA - 1];
+            // the minimum element to the right part partitioned by the midArrayA idx in array A, i.e. the value of current midArrayA point to
+            int minRightA = (midArrayA == m) ? Integer.MAX_VALUE : nums1[midArrayA];
+            // the maximum element of the left part partitioned by the midArrayB idx in array B, i.e. previous element of midArrayB
+            int maxLeftB = (midArrayB == 0) ? Integer.MIN_VALUE : nums2[midArrayB - 1];
+            // the minimum element to the right part partitioned by the midArrayB idx in array B, i.e. the value of current midArrayB point to
+            int minRightB = (midArrayB == n) ? Integer.MAX_VALUE : nums2[midArrayB];
+
+            if (maxLeftA <= minRightB && maxLeftB <= minRightA) {
+                // Found the correct partitions made by midArrayA and midArrayB
+                if ((m + n) % 2 == 0) {
+                    // If the combined array has an even length, take the average
+                    // Two elements are from the left half and other two are from the right half. So we take the bigger one from the
+                    // left, and smaller one from the right, which are the middle two elements in the merged array
+                    return (Math.max(maxLeftA, maxLeftB) + Math.min(minRightA, minRightB)) / 2.0;
+                } else {
+                    // If the combined array has an odd length, return the maximum of the left elements
+                    // In the beginning, we let the combined smaller/left size (m + n + 1)/2, therefore the median is the bigger one
+                    // of the left max on both array.
+                    return Math.max(maxLeftA, maxLeftB);
+                }
+            } else if (maxLeftA > minRightB) {
+                // maxLeftA is too large to be in the smaller half, and it should be in the larger half of array A,
+                // which means we need to shrink the left part of the array A to make the maxLeftA smaller.
+                // so we need to move the right ptr to the left and the midArrayA will be shifted to the left too
+                right = midArrayA - 1;
+            } else {
+                // maxLeftB > minRightA
+                // We need a bigger minRightA, so we need to expand the left part of the array A to make minRightA bigger.
+                // We need to move the left ptr to the right, so the midArrayA will be shifted to the right.
+                left = midArrayA + 1;
+            }
+        }
+        return 0.0;
+    }
+
+    /**
+     * Find the Duplicate Number
+     * Given an array of integers nums containing n + 1 integers where each integer is
+     * in the range [1, n] inclusive.
+     * <p>
+     * There is only one repeated number in nums, return this repeated number.
+     * <p>
+     * You must solve the problem without modifying the array nums and uses only constant extra space.
+     * <p>
+     * Input: nums = [1,3,4,2,2]
+     * Output: 2
+     * <p>
+     * Input: nums = [3,1,3,4,2]
+     * Output: 3
+     * <p>
+     * https://leetcode.com/problems/find-the-duplicate-number/description/
+     */
+    @Test
+    void testFindDuplicate() {
+        Assertions.assertThat(findDuplicate(new int[]{1, 3, 4, 2, 2})).isEqualTo(2);
+    }
+
+    /**
+     * Considering the array as linked list that each element is a node and the value also represents next node index.
+     * Then apply Floyd's tortoise and hare algo to find the cycle entrance point.
+     * <p>
+     * Observation:
+     * The problem can be reduced to the problem "Linked List Cycle II". The thought process is given the constraint
+     * that the nums is [1-n], we can see each element as a linked list node w/ value as nums[i], and its next ptr is
+     * the element whose index == nums[i].
+     * <p>
+     * Ex:
+     * The next ptr of nums[3](Node 3) and nums[5](Node 5) are both Node 1
+     * -----------------------------------
+     * |index| 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+     * -----------------------------------
+     * |nums | 2 | 6 | 4 | 1 | 3 | 1 | 5 |
+     * -----------------------------------
+     * <p>
+     * * 2 --> 4 --> 3 --> 1 --> 6 --> 5
+     * *                   ^           |
+     * *                   |___________|
+     * <p>
+     * Algo:
+     * Now we can apply the Floyd's tortoise and hare algo to find the cycle entrance.
+     * Phase 1: hare = nums[nums[hare]] is twice as fast as tortoise = nums[tortoise], the loop terminates when
+     * two meet.
+     * <p>
+     * Phase 2: Reset the tortoise to the starting position and let hare move at the speed of tortoise:
+     * tortoise = nums[tortoise], hare = nums[hare], the hare starts from the previous intersection point.
+     * Start the same loop until they meet again. Where they meet each other is the cycle entrance, return
+     * either tortoise or hare.
+     * <p>
+     * Time Complexity: O(n)
+     * <p>
+     * Space Complexity: O(1)
+     */
+    int findDuplicate(int[] nums) {
+        // Find the intersection point of the two runners.
+        int tortoise = nums[0];
+        int hare = nums[0];
+        do {
+            // Phase 1: Find the first intersection point(This is NOT the cycle entrance)
+            tortoise = nums[tortoise]; // move to the node/element w/ the index the same as the current element
+            hare = nums[nums[hare]]; // move to two elements as the same way above
+        } while (tortoise != hare);
+
+        // Phase 2: Find the true cycle entrance
+        tortoise = nums[0];
+        while (tortoise != hare) {
+            tortoise = nums[tortoise];
+            hare = nums[hare];
+        }
+        return hare;
+    }
+
+    /**
+     * Koko Eating Bananas
+     * Koko loves to eat bananas. There are n piles of bananas, the ith pile has piles[i] bananas. The guards
+     * have gone and will come back in h hours.
+     * <p>
+     * Koko can decide her bananas-per-hour eating speed of k. Each hour, she chooses some pile of bananas
+     * and eats k bananas from that pile. If the pile has less than k bananas, she eats all of them instead
+     * and will not eat any more bananas during this hour.
+     * <p>
+     * Koko likes to eat slowly but still wants to finish eating all the bananas before the guards return.
+     * <p>
+     * Return the minimum integer k such that she can eat all the bananas within h hours.
+     * <p>
+     * Input: piles = [3,6,7,11], h = 8
+     * Output: 4
+     * <p>
+     * Input: piles = [30,11,23,4,20], h = 5
+     * Output: 30
+     * <p>
+     * Input: piles = [30,11,23,4,20], h = 6
+     * Output: 23
+     * <p>
+     * https://leetcode.com/problems/koko-eating-bananas/description/
+     */
+    @Test
+    void testMinEatingSpeed() {
+        Assertions.assertThat(minEatingSpeed(new int[]{3, 6, 7, 11}, 8)).isEqualTo(4);
+        Assertions.assertThat(minEatingSpeed(new int[]{30, 11, 23, 4, 20}, 5)).isEqualTo(30);
+        Assertions.assertThat(minEatingSpeed(new int[]{30, 11, 23, 4, 20}, 6)).isEqualTo(23);
+        Assertions.assertThat(minEatingSpeedII(new int[]{3, 6, 7, 11}, 8)).isEqualTo(4);
+        Assertions.assertThat(minEatingSpeedII(new int[]{30, 11, 23, 4, 20}, 5)).isEqualTo(30);
+        Assertions.assertThat(minEatingSpeedII(new int[]{30, 11, 23, 4, 20}, 6)).isEqualTo(23);
+    }
+
+    /**
+     * Use binary search to find the least number(speed) in [1 - max(piles)] range and the hours needed to finish
+     * all piles at this speed is less than or equal to the hour limit.
+     * <p>
+     * Observation:
+     * 1. The eating speed, k, must be within the range of [1 - max(piles)] inclusive. Using the brute force,
+     * we will need to try every number in the range and calculate the hours to finish all piles and check if
+     * it is less or equal to the required hour limit.
+     * <p>
+     * 2. Hence, we can think of this range as an ascending number array, and use binary search to find the
+     * first/min number(speed) that the total hours it takes to finish all piles is less than or equal to the hour limit.
+     * <p>
+     * Algo:
+     * 1. Use the "Find first true" binary search template. The condition is "Hours to finish all piles at speed(k) <= hour limit(h)"
+     * 2. The search space is [1 - max(piles)]. mid ptr is the k we check in the condition
+     * <p>
+     * Time complexity: O(n⋅logm)
+     * n be the length of the input array piles and m be the maximum number of bananas
+     * in a single pile from piles.
+     * The initial search space is from 1 to m, it takes log m comparisons to reduce the search space to 1.
+     * For each eating speed middle, we traverse the array and calculate the overall time Koko spends,
+     * which takes O(n) for each traversal.
+     * To sum up, the time complexity is O(n⋅logm)
+     * <p>
+     * Space complexity: O(1)
+     */
+    int minEatingSpeed(int[] piles, int h) {
+        int maxPile = 0;
+        for (int pile : piles)
+            maxPile = Math.max(pile, maxPile);
+        // Use "Find first true" template
+        // left -> invalid (0), right -> valid (1 to max(piles))
+        int left = 0, right = maxPile;
+        while (left + 1 < right) {
+            // mid is the eating speed, k.
+            int mid = left + (right - left) / 2;
+            // compute hours needed using speed, mid.
+            int hours = 0;
+            for (int pile : piles) {
+                hours += Math.ceil((double) pile / mid);
+            }
+            if (hours <= h)
+                right = mid;
+            else
+                left = mid;
+        }
+        return right;
+    }
+
+    /**
+     * Use standard binary search "Find first true"
+     */
+    int minEatingSpeedII(int[] piles, int h) {
+        int maxPile = 0;
+        for (int pile : piles)
+            maxPile = Math.max(pile, maxPile);
+        int left = 1, right = maxPile;
+        int ans = 0;
+        while (left <= right) {
+            // mid is the eating speed, k.
+            int mid = left + (right - left) / 2;
+            // compute hours needed using speed, mid.
+            int hours = 0;
+            for (int pile : piles) {
+                hours += Math.ceil((double) pile / mid);
+            }
+            if (hours <= h) {
+                ans = mid;
+                right = mid - 1;
+            } else
+                left = mid + 1;
+        }
+        return ans;
     }
 }

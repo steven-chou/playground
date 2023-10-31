@@ -149,10 +149,8 @@ public class StringQuestion {
      * Space Complexity: O(1) cuz the array size is fixed
      */
     boolean isAnagram(String s, String t) {// Assumption: s and t consist of lowercase English letters
-
-        if (s.length() != t.length()) {
+        if (s.length() != t.length())
             return false;
-        }
         int[] counter = new int[26]; // TODO: MEMORIZE
         // increment the counter for each letter in ss and decrement the counter for each letter in tt, then check if the counter reaches back to zero.
         for (int i = 0; i < s.length(); i++) {
@@ -163,9 +161,8 @@ public class StringQuestion {
             counter[t.charAt(i) - 'a']--;
         }
         for (int count : counter) {
-            if (count != 0) {
+            if (count != 0)
                 return false;
-            }
         }
         return true;
     }
@@ -186,6 +183,78 @@ public class StringQuestion {
             }
         }
         return true;
+    }
+
+    /**
+     * Find All Anagrams in a String
+     * Given two strings s and p, return an array of all the start indices of p's anagrams in s.
+     * You may return the answer in any order.
+     * <p>
+     * An Anagram is a word or phrase formed by rearranging the letters of a different word or phrase,
+     * typically using all the original letters exactly once.
+     * <p>
+     * Input: s = "cbaebabacd", p = "abc"
+     * Output: [0,6]
+     * Explanation:
+     * The substring with start index = 0 is "cba", which is an anagram of "abc".
+     * The substring with start index = 6 is "bac", which is an anagram of "abc".
+     * <p>
+     * Input: s = "abab", p = "ab"
+     * Output: [0,1,2]
+     * Explanation:
+     * The substring with start index = 0 is "ab", which is an anagram of "ab".
+     * The substring with start index = 1 is "ba", which is an anagram of "ab".
+     * The substring with start index = 2 is "ab", which is an anagram of "ab".
+     * <p>
+     * https://leetcode.com/problems/find-all-anagrams-in-a-string/description/
+     */
+    @Test
+    void testFindAnagrams() {
+        assertThat(findAnagrams("cbaebabacd", "abc")).containsExactly(0, 6);
+    }
+
+    /**
+     * Use Sliding window w/ HashMap to iterate the string s and dynamically build the charToCount map given the chars in the
+     * window and compare it to the charToCount map built from the string p.
+     * <p>
+     * This is the extension of the "Valid Anagram" problem
+     * <p>
+     * Time complexity: O(Ns), Ns and Np be the length of s and p respectively. Let K be the maximum possible
+     * number of distinct characters. In this problem, K equals 26 because s and p consist of lowercase English letters.
+     * We perform one pass along each string when Ns ≥ Np which costs O(Ns+Np) time. Since we only perform this step
+     * when Ns ≥ Np the time complexity simplifies to O(Ns).
+     * <p>
+     * Space complexity: O(K)
+     * pCount and sCount will contain at most K elements each. Since K is fixed at 26 for this problem,
+     * this can be considered as O(1) space.
+     */
+    List<Integer> findAnagrams(String s, String p) {
+        Map<Character, Integer> charToCountP = new HashMap<>();
+        Map<Character, Integer> charToCountS = new HashMap<>();
+        for (int i = 0; i < p.length(); i++) {
+            Integer count = charToCountP.getOrDefault(p.charAt(i), 0);
+            charToCountP.put(p.charAt(i), count + 1);
+        }
+        List<Integer> result = new ArrayList<>();
+        int winSize = p.length(); // Sliding window size
+        int j = 0; // ptr of window left side
+        for (int i = 0; i < s.length(); i++) {
+            Integer count = charToCountS.getOrDefault(s.charAt(i), 0);
+            charToCountS.put(s.charAt(i), count + 1);
+            if (i - j + 1 == winSize) { // Reach the window size
+                // Compare two map
+                if (charToCountS.equals(charToCountP))
+                    result.add(j);
+                Integer leftCharCount = charToCountS.get(s.charAt(j));
+                // Update/Drop the left-most char before we advance the left ptr
+                if (leftCharCount == 1)
+                    charToCountS.remove(s.charAt(j));
+                else
+                    charToCountS.put(s.charAt(j), leftCharCount - 1);
+                ++j;
+            }
+        }
+        return result;
     }
 
     /**
@@ -703,5 +772,237 @@ public class StringQuestion {
                 return false;
         }
         return true;
+    }
+
+    /**
+     * Minimum Window Substring
+     * Given two strings s and t of lengths m and n respectively, return the minimum window
+     * substring of s such that every character in t (including duplicates) is included
+     * in the window. If there is no such substring, return the empty string "".
+     * <p>
+     * Input: s = "ADOBECODEBANC", t = "ABC"
+     * Output: "BANC"
+     * Explanation: The minimum window substring "BANC" includes 'A', 'B', and 'C' from string t.
+     * <p>
+     * Input: s = "a", t = "a"
+     * Output: "a"
+     * Explanation: The entire string s is the minimum window.
+     * <p>
+     * Input: s = "a", t = "aa"
+     * Output: ""
+     * Explanation: Both 'a's from t must be included in the window.
+     * Since the largest window of s only has one 'a', return empty string.
+     * <p>
+     * https://leetcode.com/problems/minimum-window-substring/description/
+     */
+    @Test
+    void testMinWindow() {
+        assertThat(minWindow("ADOBECODEBANC", "ABC")).isEqualTo("BANC");
+        assertThat(minWindow("a", "a")).isEqualTo("a");
+        assertThat(minWindow("aaaaaaaaaaaabbbbbcdd", "abcdd")).isEqualTo("abbbbbcdd");
+    }
+
+    /**
+     * Use Sliding window to iterate the string s. We need to keep two HashMaps(char->count) for the str t and str in the
+     * current window. We keep expanding the window by moving the right ptf. When the window has all the desired characters,
+     * we save the smallest window till now and keep shrinking the window(moving the left ptr) until it doesn't
+     * satisfied the required characters.
+     * <p>
+     * Time Complexity: O(S+T) where S and T represent the lengths of strings S and T.
+     * <p>
+     * Space Complexity: O(S+T) where S and T represent the size of unique char of strings S and T.
+     */
+    String minWindow(String s, String t) {
+        if (s.length() == 0 || t.length() == 0)
+            return "";
+        // Maps to store the character -> count for str t and the str in the range of current sliding window
+        Map<Character, Integer> charToCountT = new HashMap<>();
+        Map<Character, Integer> charToCountWin = new HashMap<>();
+        for (int i = 0; i < t.length(); i++) {
+            Integer count = charToCountT.getOrDefault(t.charAt(i), 0);
+            charToCountT.put(t.charAt(i), count + 1);
+        }
+        String result = "";
+        int left = 0;
+        // To track if the str in the current window satisfies the characters from str t, so we don't need to iterate
+        // the map everytime when moving the window
+        int matchEntryCount = 0;
+        int minMatchWinSize = Integer.MAX_VALUE;
+        for (int right = 0; right < s.length(); right++) {
+            char c = s.charAt(right);
+            Integer count = charToCountWin.getOrDefault(c, 0);
+            charToCountWin.put(c, count + 1);
+            if (charToCountWin.get(c).equals(charToCountT.get(c)))
+                ++matchEntryCount; // increment when the char count in the window is the same as the one in str t
+            // Once the chars at windows satisfied the required chars, i.e. matchEntryCount == charToCountT.size(),
+            // we can save the result and start to shrink the window from the left
+            while (left <= right && matchEntryCount == charToCountT.size()) {
+                // Get the string in the current window & update the min window size
+                if (right - left + 1 < minMatchWinSize) {
+                    minMatchWinSize = right - left + 1;
+                    result = s.substring(left, right + 1);
+                }
+                // shrink the window from the left until it doesn't keep the match count
+                char leftC = s.charAt(left);
+                // Drop the count of the left ptr char
+                charToCountWin.put(leftC, charToCountWin.get(leftC) - 1);
+                if (charToCountT.containsKey(leftC) && charToCountWin.get(leftC) < (charToCountT.get(leftC)))
+                    // Decrement the matchEntryCount ONLY when the count of this char is less than the one in the str t
+                    --matchEntryCount;
+                ++left;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Longest Palindromic Substring
+     * Given a string s, return the longest palindromic substring in s.
+     * <p>
+     * Input: s = "babad"
+     * Output: "bab"
+     * Explanation: "aba" is also a valid answer.
+     * <p>
+     * Input: s = "cbbd"
+     * Output: "bb"
+     * <p>
+     * https://leetcode.com/problems/longest-palindromic-substring/description/
+     */
+    @Test
+    void testLongestPalindromeSubStr() {
+        assertThat(longestPalindromeSubStr("babad")).isEqualTo("bab");
+        assertThat(longestPalindromeSubStr("cbbd")).isEqualTo("bb");
+    }
+
+    /**
+     * For each char in the string, use it as center and expand on both sides to find max length of palindrome
+     * The idea is to check for palindrome, we use two index, right and left, to move toward two ends of the string at the same time.
+     * For example,
+     * Say if we look for an odd-length palindrome, bacab, while we are checking the char 'c' in the string,
+     * we set both right and left at index of 'c', and start to move them one index at a time but different direction.
+     * <p>
+     * However, if we look for an even-length palindrome, e.g. baccab, while we are checking the char 'c' in the string,
+     * we set left at index of 'c' and right at its next index and start to move them one index at a time but different direction.
+     * <p>
+     * We need to do this palindrome exploration on each char in the input string, and also update the max-length palindrome
+     * we have found at each iteration.
+     * <p>
+     * Time complexity: O(n^2)
+     * Space complexity: O(1)
+     */
+    String longestPalindromeSubStr(String s) {
+        String maxPalindrome = "";
+        int length = s.length();
+        if (length < 2)
+            return s; //if 0 or 1 chars, return the input string, no palindrome to be checked for
+        for (int i = 0; i < length; i++) {
+            // Now we start to explore the palindrome by expanding out(left and right) from this position
+            // Assume we will find an odd-length palindrome, so the left & right ptr will be both start at the same index,
+            // e.g. "abcba", left and right will both start at "c" and move back/forward from there
+            String oddPalindrome = findPalindrome(s, i, i);
+            // Assume we will find an even-length palindrome, so the left & right ptr will start at i and i+1,
+            // e.g. "abccba" left will be at the first "c", right at the 2nd "c", then move back/forward from there
+            String evenPalindrome = findPalindrome(s, i, i + 1);
+            // Check if either oddPalindrome or evenPalindrome is longer than the current max, if so, update it.
+            if (oddPalindrome.length() > maxPalindrome.length())
+                maxPalindrome = oddPalindrome;
+            if (evenPalindrome.length() > maxPalindrome.length())
+                maxPalindrome = evenPalindrome;
+        }
+        return maxPalindrome;
+    }
+
+    String findPalindrome(String str, int left, int right) {
+        // check if the char at indexes left and right are the same (condition for palindrome) and not over the boundary
+        // if they are equal, expand the range by decrementing the left ptr and incrementing the right ptr
+        while (left >= 0 && right < str.length() && str.charAt(left) == str.charAt(right)) {
+            left--;
+            right++;
+        }
+        return str.substring(left + 1, right); // Need + 1 cuz when the above while loop breaks, left and right are both one index behind/ahead
+    }
+
+    /**
+     * Longest Palindrome
+     * Given a string s which consists of lowercase or uppercase letters, return the length of the longest
+     * palindrome that can be built with those letters.
+     * <p>
+     * Letters are case sensitive, for example, "Aa" is not considered a palindrome here.
+     * <p>
+     * Input: s = "abccccdd"
+     * Output: 7
+     * Explanation: One longest palindrome that can be built is "dccaccd", whose length is 7.
+     * <p>
+     * Input: s = "a"
+     * Output: 1
+     * Explanation: The longest palindrome that can be built is "a", whose length is 1.
+     * <p>
+     * https://leetcode.com/problems/longest-palindrome/description/
+     */
+    @Test
+    void testLongestPalindrome() {
+        assertThat(longestPalindrome("abccccdd")).isEqualTo(7);
+        assertThat(longestPalindromeII("abccccdd")).isEqualTo(7);
+    }
+
+    /**
+     * Iterate the str and build the char->count array/HashMap then sum up the number of "pair" in the count.
+     * Increment by 1 if the sum is less than str length to account for the center unique char.
+     * <p>
+     * The key is the formual to compute (the number of pair) X 2 for a given char, say a letter occurs x times, we will have
+     * x / 2 * 2
+     * Ex: if we have 'aaaaa', then we could have 'aaaa' partnered, which is 5 / 2 * 2 = 4 letters partnered
+     * <p>
+     * This will include all pair count for both odd or even number count. To maximize the palindrome lenght, if there is char
+     * occurring odd number times, it needs to be included in the center. Comparing the running sum w/ the length of input
+     * str tells us if there is still any single char left, if so, just add one to the sum.
+     * <p>
+     * Time Complexity: O(N), where N is the length of s. We need to count each letter.
+     * <p>
+     * Space Complexity: O(1), the space for our count, as the alphabet size of s is fixed.
+     */
+    int longestPalindrome(String s) {
+        int[] charCount = new int[128]; // ASCII basic table has 128 entries
+        for (char c : s.toCharArray())
+            charCount[c]++;
+        int ans = 0;
+        for (int count : charCount) {
+            // This formula computes the number of "pair" X 2
+            // Even count: take the count. Odd: take count - 1
+            ans += count / 2 * 2;
+        }
+        if (ans < s.length())
+            // Cuz we already count all "paired" number above, if there is any char w/ odd number count, the ans must be less than
+            // total number of chars. We just need to add one more for that center character(We will place the char repeated odd
+            // number times to maximize the palindrome, however, we don't care what char is actually placed there, we just
+            // need to know there is such char in the center, and we need to take it into account)
+            ++ans;
+        return ans;
+    }
+
+    /**
+     * First attempt implementation. Use unnecessary modulo operation to distinguish odd and even count
+     */
+    int longestPalindromeII(String s) {
+        Map<Character, Integer> charToCount = new HashMap<>();
+        for (int i = 0; i < s.length(); i++) {
+            Integer count = charToCount.getOrDefault(s.charAt(i), 0);
+            charToCount.put(s.charAt(i), count + 1);
+        }
+        int result = 0;
+        int maxOddCharCount = 0;
+        for (Integer count : charToCount.values()) {
+            if (count % 2 == 0)
+                result += count;
+            else {
+                if (count > maxOddCharCount) {
+                    if (maxOddCharCount > 1)
+                        result += maxOddCharCount - 1;
+                    maxOddCharCount = count;
+                } else if (count > 1)
+                    result += count - 1;
+            }
+        }
+        return result + maxOddCharCount;
     }
 }

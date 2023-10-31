@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
          String[] array = {"foo", "bar"};
          List<String> list = Arrays.asList(array);
          or list = Arrays.asList("foo", "bar");
-     - PRIMITIVE TYPE type array ---> List, e.g. int[] --> List<Integer>
+     - PRIMITIVE TYPE array ---> List, e.g. int[] --> List<Integer>
         1. Iterate the array and add them to the List
 	        List<Integer> output = new ArrayList<>();
             for (int value : intArray) output.add(value);
@@ -33,7 +33,9 @@ import static org.assertj.core.api.Assertions.assertThat;
        1. For Map<K, List<V>>, use computeIfAbsent(myKey, k -> new ArrayList<>()).add(myValue) to simplify the logic to check if
           the map contains myKey and init the ArrayList conditionally and add the myValue to the list. (Also apply to MultiMap use case)
           https://stackoverflow.com/questions/48183999/what-is-the-difference-between-putifabsent-and-computeifabsent-in-java-8-map
-
+     - Creating subarray
+       T[] copyOfRange(T[] original, int from, int to)
+       Ex: int[] remainingArray = Arrays.copyOfRange(myArray, 2, myArray.length) --> Copy all element from idx 2 to the end
  */
 public class ArrayQuestion {
 
@@ -973,72 +975,6 @@ public class ArrayQuestion {
         return maxLength;
     }
 
-    /**
-     * Longest Palindromic Substring
-     * Given a string s, return the longest palindromic substring in s.
-     * <p>
-     * Input: s = "babad"
-     * Output: "bab"
-     * Explanation: "aba" is also a valid answer.
-     * <p>
-     * Input: s = "cbbd"
-     * Output: "bb"
-     * <p>
-     * https://leetcode.com/problems/longest-palindromic-substring/description/
-     */
-    @Test
-    void testLongestPalindrome() {
-        assertThat(longestPalindrome("babad")).isEqualTo("bab");
-        assertThat(longestPalindrome("cbbd")).isEqualTo("bb");
-    }
-
-    /**
-     * For each char in the string, use it as center and expand on both sides to find max length of palindrome
-     * The idea is to check for palindrome, we use two index, right and left, to move toward two ends of the string at the same time.
-     * For example,
-     * Say if we look for an odd-length palindrome, bacab, while we are checking the char 'c' in the string,
-     * we set both right and left at index of 'c', and start to move them one index at a time but different direction.
-     * <p>
-     * However, if we look for an even-length palindrome, e.g. baccab, while we are checking the char 'c' in the string,
-     * we set left at index of 'c' and right at its next index and start to move them one index at a time but different direction.
-     * <p>
-     * We need to do this palindrome exploration on each char in the input string, and also update the max-length palindrome
-     * we have found at each iteration.
-     * <p>
-     * Time complexity: O(n^2)
-     * Space complexity: O(1)
-     */
-    String longestPalindrome(String s) {
-        String maxPalindrome = "";
-        int length = s.length();
-        if (length < 2)
-            return s; //if 0 or 1 chars, return the input string, no palindrome to be checked for
-        for (int i = 0; i < length; i++) {
-            // Now we start to explore the palindrome by expanding out(left and right) from this position
-            // Assume we will find an odd-length palindrome, so the left & right ptr will be both start at the same index,
-            // e.g. "abcba", left and right will both start at "c" and move back/forward from there
-            String oddPalindrome = findPalindrome(s, i, i);
-            // Assume we will find an even-length palindrome, so the left & right ptr will start at i and i+1,
-            // e.g. "abccba" left will be at the first "c", right at the 2nd "c", then move back/forward from there
-            String evenPalindrome = findPalindrome(s, i, i + 1);
-            // Check if either oddPalindrome or evenPalindrome is longer than the current max, if so, update it.
-            if (oddPalindrome.length() > maxPalindrome.length())
-                maxPalindrome = oddPalindrome;
-            if (evenPalindrome.length() > maxPalindrome.length())
-                maxPalindrome = evenPalindrome;
-        }
-        return maxPalindrome;
-    }
-
-    String findPalindrome(String str, int left, int right) {
-        // check if the char at indexes left and right are the same (condition for palindrome) and not over the boundary
-        // if they are equal, expand the range by decrementing the left ptr and incrementing the right ptr
-        while (left >= 0 && right < str.length() && str.charAt(left) == str.charAt(right)) {
-            left--;
-            right++;
-        }
-        return str.substring(left + 1, right); // Need + 1 cuz when the above while loop breaks, left and right are both one index behind/ahead
-    }
 
     /**
      * Increasing Triplet Subsequence
@@ -1861,5 +1797,356 @@ public class ArrayQuestion {
             maxArea = Math.max(rectHeight * rectWidth, maxArea);
         }
         return maxArea;
+    }
+
+    /**
+     * Sliding Window Maximum
+     * You are given an array of integers nums, there is a sliding window of size k which is moving from
+     * the very left of the array to the very right. You can only see the k numbers in the window. Each
+     * time the sliding window moves right by one position.
+     * <p>
+     * Return the max sliding window.
+     * <p>
+     * Input: nums = [1,3,-1,-3,5,3,6,7], k = 3
+     * Output: [3,3,5,5,6,7]
+     * Explanation:
+     * Window position                Max
+     * ---------------               -----
+     * [1  3  -1] -3  5  3  6  7       3
+     * 1 [3  -1  -3] 5  3  6  7       3
+     * 1  3 [-1  -3  5] 3  6  7       5
+     * 1  3  -1 [-3  5  3] 6  7       5
+     * 1  3  -1  -3 [5  3  6] 7       6
+     * 1  3  -1  -3  5 [3  6  7]      7
+     * <p>
+     * https://leetcode.com/problems/sliding-window-maximum/description/
+     */
+    @Test
+    void testMaxSlidingWindow() {
+        assertThat(maxSlidingWindow(new int[]{1, 3, -1, -3, 5, 3, 6, 7}, 3)).containsExactly(3, 3, 5, 5, 6, 7);
+        assertThat(maxSlidingWindow(new int[]{1, -1}, 1)).containsExactly(1, -1);
+        assertThat(maxSlidingWindow(new int[]{7, 2, 4}, 2)).containsExactly(7, 4);
+        assertThat(maxSlidingWindow(new int[]{1, 3, 1, 2, 0, 5}, 3)).containsExactly(3, 3, 2, 5);
+    }
+
+    /**
+     * Maintaining a Monotonic Decreasing Queue(Deque) to keep the first element the index of the max element of current window
+     * by removing the smaller elements from the end before adding new element to the deque.
+     * <p>
+     * Observation:
+     * 1. In a window, the elements that come before the largest element will never be selected as the largest element of
+     * any future windows. So they are useless.
+     * <p>
+     * 2. However, we cannot ignore the items that follow the largest element. Cuz they can become the new max when the
+     * window moves and the current max item may be dropped when it falls out of the range of new window.
+     * <p>
+     * 3. In general, whenever we encounter a new element x, we want to discard all elements that are less than x
+     * before adding x. Let's say we currently have [63, 15, 8, 3] and we encounter 12. Any future window with 8 or 3
+     * will also contain 12, so we can discard them. After discarding them and adding 12, we have [63, 15, 12].
+     * Therefore, we keep elements in descending order.
+     * <p>
+     * In this case, we want a monotonic decreasing queue, which means that the elements in the queue are always
+     * sorted descending. When we want to add a new element x, we maintain the monotonic property by removing all
+     * elements less than x before adding x.
+     * <p>
+     * By maintaining the monotonic decreasing property, the largest element in the window must always be the first
+     * element in the deque, which is nums[dq[0]].
+     * <p>
+     * We use deque of integers to store the index of the element because
+     * 1. Deque supports constant time to remove and add on both ends
+     * 2. Need to detect when elements leave the window(index falls out of range of window) when window is moved.
+     * <p>
+     * Algo:
+     * Iterate the array by moving the right ptr by one
+     * 1. First check if the head of dq is outside the window. If so, remove it.
+     * 2. If the head is smaller than the current element, continue to remove the LAST element.
+     * (This is where we maintain monotonic decreasing property)
+     * 3. Add the current element index to the END of dq.
+     * 4. Add the head, i.e. the max element, to the result list when we form a K-sized window
+     * <p>
+     * Time complexity: O(n).
+     * In the worst case, every element will be pushed and popped once. This gives a time complexity of O(2⋅n)=O(n).
+     * <p>
+     * Space complexity: O(k).
+     * The max size of the deque is k.
+     */
+    int[] maxSlidingWindow(int[] nums, int k) {
+        List<Integer> ans = new ArrayList<>(nums.length - k + 1); // total n-k+1 windows
+        Deque<Integer> dq = new ArrayDeque<>(); // contains index, so it will be easier to compare w/ window position
+        int left = 0;
+        for (int right = 0; right < nums.length; right++) {
+            // When the window is moved, the head of the dq, i.e. the max in the previous window, may fall out of range of
+            // the new window. We need to remove it first cuz we can't consider it anymore.
+            if (!dq.isEmpty() && left > dq.peekFirst())
+                dq.removeFirst();
+
+            // Need to maintain the monotonic decreasing, the head of the dq must be the max in the current window
+            // So we need to remove the smaller elements from the end before adding the new element to dq
+            while (!dq.isEmpty() && nums[dq.peekLast()] <= nums[right])
+                dq.removeLast();
+
+            dq.addLast(right);
+
+            if (right - left + 1 == k) {
+                // Output the max once the window reaches size k. Moving the left ptr ONLY after a window is formed
+                ans.add(nums[dq.peekFirst()]);
+                ++left;
+            }
+        }
+        int[] r = new int[ans.size()];
+        for (int i = 0; i < ans.size(); i++)
+            r[i] = ans.get(i);
+        return r;
+        //return ans.stream().mapToInt(i->i).toArray();
+    }
+
+    /**
+     * Container With Most Water
+     * You are given an integer array height of length n. There are n vertical lines drawn such that the
+     * two endpoints of the ith line are (i, 0) and (i, height[i]).
+     * <p>
+     * Find two lines that together with the x-axis form a container, such that the container contains
+     * the most water.
+     * <p>
+     * Return the maximum amount of water a container can store.
+     * Notice that you may not slant the container.
+     * <p>
+     * Input: height = [1,8,6,2,5,4,8,3,7]
+     * Output: 49
+     * Explanation: The above vertical lines are represented by array [1,8,6,2,5,4,8,3,7]. In this case,
+     * the max area of water (blue section) the container can contain is 49.
+     * <p>
+     * Input: height = [1,1]
+     * Output: 1
+     * <p>
+     * https://leetcode.com/problems/container-with-most-water/description/
+     */
+    @Test
+    void testMaxArea() {
+        assertThat(maxArea(new int[]{1, 8, 6, 2, 5, 4, 8, 3, 7})).isEqualTo(49);
+    }
+
+    /**
+     * Use two pointers at the beginning and end and keep track of the max area while moving the ptr on the shorter line.
+     * <p>
+     * Observation:
+     * 1. The problem can be rephrased as finding the max area that can be formed between the vertical lines using the
+     * shorter line as length and the distance between the lines as the width of the rectangle forming the area.
+     * 2. The area will always be limited by the height of the shorter line. The further the two lines apart(wider),
+     * the more area.
+     * <p>
+     * We take two pointers, one at the beginning and one at the end of the array. As long as two ptrs are not cross
+     * each other, we compute the area between two lines and keep track of the max value so far. Then move the ptr
+     * pointing to the shorter line towards the other end by one step. The idea when moving the ptr, we reduce the width
+     * so we hope the next line will be higher than the current two lines to compensate or even make a larger area.
+     * Thus, we move the ptr on the shorter line.
+     * <p>
+     * Time complexity: O(n)
+     * <p>
+     * Space complexity: O(1)
+     */
+    int maxArea(int[] height) {
+        int maxArea = Integer.MIN_VALUE;
+        int left = 0, right = height.length - 1;
+        while (left < right) {
+            int area = (right - left) * Math.min(height[left], height[right]);
+            maxArea = Math.max(maxArea, area);
+            if (height[left] <= height[right])
+                left++;
+            else
+                right--;
+        }
+        return maxArea;
+    }
+
+    /**
+     * Product of Array Except Self
+     * <p>
+     * Given an integer array nums, return an array answer such that answer[i] is equal to the
+     * product of all the elements of nums except nums[i].
+     * <p>
+     * The product of any prefix or suffix of nums is guaranteed to fit in a 32-bit integer.
+     * <p>
+     * You must write an algorithm that runs in O(n) time and without using the division operation.
+     * <p>
+     * Input: nums = [1,2,3,4]
+     * Output: [24,12,8,6]
+     * Example 2:
+     * <p>
+     * Input: nums = [-1,1,0,-3,3]
+     * Output: [0,0,9,0,0]
+     * <p>
+     * https://leetcode.com/problems/product-of-array-except-self/description/
+     */
+    @Test
+    void testProductExceptSelf() {
+        assertThat(productExceptSelf(new int[]{1, 2, 3, 4})).containsExactly(24, 12, 8, 6);
+    }
+
+    /**
+     * Iterate the nums array forward to compute the left side product, then iterate backward to compute the right product
+     * and multiply it to the previous left side product
+     * <p>
+     * Observation:
+     * 1. If we can compute the product of all the numbers to the left and all the numbers to the right of the index i.
+     * Then multiplying these two individual products would give us the value of the answer[i].
+     * <p>
+     * 2. If we compute the left and right side part products while iterating the nums array, it will take O(N^2) and obviously
+     * it iterate the same elements repeatedly when computing the product.
+     * <p>
+     * 3. We can precompute the left and right side product and store them at two arrays, then just iterate and multiply them
+     * to get the answer. This takes extra space for two arrays
+     * <p>
+     * Algo:
+     * Instead of using two additional arrays to precompute the left and right side product, we can just use the final ans array
+     * to store the intermediate result and update it while iterating the nums array forward and backward.
+     * At the first loop, we compute the left side product for each element and store at ans array.
+     * Then at the second loop, we go from the end of array and compute the right side product and multiply it to the value
+     * at the ans array
+     * <p>
+     * Time complexity : O(N) where N represents the number of elements in the input array.
+     * <p>
+     * Space complexity : O(1)
+     */
+    int[] productExceptSelf(int[] nums) {
+        int[] ans = new int[nums.length];
+        // 1st loop to compute the product of all elements to the left, store the result in the ans array
+        ans[0] = 1; // There is no left element for the nums[0], so set it to 1
+        for (int i = 1; i < nums.length; i++) {
+            // ans[i - 1] already contains the product of elements to the left of 'i - 1'
+            // Simply multiplying it with nums[i - 1] would give the product of all
+            // elements to the left of index 'i'
+            ans[i] = ans[i - 1] * nums[i - 1];
+        }
+        // Now ans array has the left side product of every element, we need to multiply it w/ right side product
+
+        // rightProd contains the product of all the elements to the right
+        // Note: for the element at index 'length - 1', there are no elements to the right,
+        // so the rightProd would be 1
+        int rightProd = 1;
+        for (int i = nums.length - 2; i >= 0; i--) {
+            // ans[nums.length-1], i.e. the last element, has no right elements, so no need to update the product,
+            // so we start at nums.length - 2
+            // Continue multiply rightProd w/ the last nums, so it carries the product of all elements to the right of index 'i'
+            rightProd *= nums[i + 1];
+            // Multiply the rightProd to the ans[i] so it gets the right side of the product
+            ans[i] = ans[i] * rightProd;
+        }
+        return ans;
+    }
+
+    /**
+     * Next Permutation
+     * A permutation of an array of integers is an arrangement of its members into a sequence or linear order.
+     * <p>
+     * For example, for arr = [1,2,3], the following are all the permutations of arr: [1,2,3], [1,3,2],
+     * [2, 1, 3], [2, 3, 1], [3,1,2], [3,2,1].
+     * The next permutation of an array of integers is the next lexicographically greater permutation of
+     * its integer. More formally, if all the permutations of the array are sorted in one container according
+     * to their lexicographical order, then the next permutation of that array is the permutation that follows
+     * it in the sorted container. If such arrangement is not possible, the array must be rearranged as the
+     * lowest possible order (i.e., sorted in ascending order).
+     * <p>
+     * For example, the next permutation of arr = [1,2,3] is [1,3,2].
+     * Similarly, the next permutation of arr = [2,3,1] is [3,1,2].
+     * While the next permutation of arr = [3,2,1] is [1,2,3] because [3,2,1] does not have a lexicographical
+     * larger rearrangement.
+     * Given an array of integers nums, find the next permutation of nums.
+     * <p>
+     * The replacement must be in place and use only constant extra memory.
+     * <p>
+     * Input: nums = [1,2,3]
+     * Output: [1,3,2]
+     * Example 2:
+     * <p>
+     * Input: nums = [3,2,1]
+     * Output: [1,2,3]
+     * Example 3:
+     * <p>
+     * Input: nums = [1,1,5]
+     * Output: [1,5,1]
+     * <p>
+     * https://leetcode.com/problems/next-permutation/
+     */
+    @Test
+    void testNextPermutation() {
+        int[] input = {1, 2, 3};
+        nextPermutation(input);
+        assertThat(input).containsExactly(1, 3, 2);
+        input = new int[]{1, 1, 5};
+        nextPermutation(input);
+        assertThat(input).containsExactly(1, 5, 1);
+        input = new int[]{6, 2, 1, 5, 4, 3, 0};
+        nextPermutation(input);
+        assertThat(input).containsExactly(6, 2, 3, 0, 1, 4, 5);
+    }
+
+    /**
+     * Observation:
+     * 1. The question asks for the next lexicographically greater permutation. So we need to first find the pattern
+     * of the permutation sequence. Given the array [0,1,2], the first/smallest permutation is [0, 1, 2] and the last/max
+     * permutation is [2, 1, 0].
+     * We can see a pattern that if the list is in descending order, it is the greatest/last possible permutation. Similarly,
+     * a list in ascending order is the first/least possible permutation, because the greatest place(left-most) is represented
+     * by the smallest number, and so on.
+     * <p>
+     * 2. The above pattern also can be found in the specific section in the permutation, so it can help us to determine how
+     * the next permutation may look like. The section in a strict descending order implies that it is the last permutation
+     * after the last number before it. And this number(pivot) is our starting point to figure out the next permutation.
+     * Ex: Input: [6, 2, 1, 5, 4, 3, 0]
+     * [5, 4, 3, 0] is the max/last permutation after 1(pivot).
+     * <p>
+     * 3. Once we find the "pivot", we need to figure out what the next greater permutation is. We already know that the section
+     * following the pivot point is the last permutation, so the next permutation must have a new and greater number at the pivot
+     * position. Cuz the permutation sequence is lexicographical, we look for the candidate in the right of pivot, which means
+     * the descending section, and it must be the smallest one greater than the pivot.
+     * <p>
+     * 4. After we find this candidate, we swap the pivot with it. So now we have a new pivot to start a new permutation from
+     * it. But the section after it should also begin as the smallest/first permutation, therefore, we need to turn this
+     * section into ascending order.
+     * <p>
+     * Algo:
+     * 1. Iterate from the end of array, we check each pair(nums[i], nums[i+1])of elements until nums[i] < nums[i+1], and
+     * the i is the pivot.
+     * <p>
+     * 1-1. If we found the pivot, we start to iterate the section after the pivot and search for the next greater element.
+     * Then we swap them.
+     * <p>
+     * 2. Regardless the pivot is found, we reverse the order of the section after the pivot, so it becomes ascending order.
+     * In the case of no pivot found, it means the original permutation is the last one and reversing the whole array means it
+     * becomes the first/smallest permutation.
+     * <p>
+     * Time complexity : O(n)
+     * <p>
+     * Space complexity : O(1)*
+     */
+    void nextPermutation(int[] nums) {
+        int pivot = nums.length - 2;
+        while (pivot >= 0 && nums[pivot] >= nums[pivot + 1])
+            // Search for the first number before the descending section
+            pivot--;
+        // pivot should be -1 if there is no pivot found
+
+        if (pivot >= 0) {
+            // we found the pivot from the last step
+            // Find next greater number after pivot
+            int i = nums.length - 1;
+            while (nums[i] <= nums[pivot])
+                i--;
+            swap(nums, pivot, i);
+        }
+        // Reverse the descending section to ascending
+        int left = pivot + 1, right = nums.length - 1;
+        while (left < right) {
+            swap(nums, left, right);
+            ++left;
+            --right;
+        }
+    }
+
+    private void swap(int[] nums, int i, int j) {
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
     }
 }
