@@ -12,20 +12,41 @@ import java.util.*;
  *      When designing this function or array, we also need to decide on state variables to pass as arguments.
  */
 public class DynamicProgramming {
-
+    /**
+     * Pascal's Triangle
+     * Given an integer numRows, return the first numRows of Pascal's triangle.
+     * <p>
+     * In Pascal's triangle, each number is the sum of the two numbers directly above it as shown:
+     * <p>
+     * Input: numRows = 5
+     * Output: [[1],[1,1],[1,2,1],[1,3,3,1],[1,4,6,4,1]]
+     * <p>
+     * https://leetcode.com/problems/pascals-triangle/description/
+     */
     @Test
-    void testHammingDistance() {
+    void testGenerate() {
         Assertions.assertThat(generate(5).get(2)).containsExactly(1, 2, 1);
         Assertions.assertThat(generate(5).get(3)).containsExactly(1, 3, 3, 1);
         Assertions.assertThat(generate(1).get(0)).containsExactly(1);
     }
 
     /**
-     * Dynamic Programming
-     * The iterative approach to constructing Pascal's triangle can be classified as dynamic programming
-     * because we construct each row based on the previous row.
+     * Iteratively construct each row from the top. The first and last element are always 0, the rest of them is
+     * constructed from the sum of elements above-and-to-the-left and above-and-to-the-right row.
+     * <p>
+     * Observation:
+     * Each row in the triangle except for the first and the last cells, the value is computed from the previous row.
+     * So this can be solved in Dynamic Programming. The recurrence relation is as follows
+     * <p>
+     * Let dp[i][j] represent the cell of the i-th row and j-th column (0-indexed) in. the triangle
+     * *             1                          if i = 0 , j = 0
+     * * dp[i][j] =  1                          if j = 0 or j = i (first and last column in the row)
+     * *             dp[i-1][j-1] + dp[i-1][j]
+     * <p>
+     * Algo:
+     * Iteratively construct each row from the top of triangle by applying the above logic.
      * For each row, the first and last element are always 0, the rest of them is constructed from the sum of
-     * the elements above-and-to-the-left and above-and-to-the-right row
+     * elements above-and-to-the-left and above-and-to-the-right row
      * Time Complexity: O(numRows^2). Space Complexity: O(1)
      */
     List<List<Integer>> generate(int numRows) {
@@ -53,6 +74,50 @@ public class DynamicProgramming {
             triangle.add(row);
         }
         return triangle;
+    }
+
+    /**
+     * Fibonacci Number
+     * The Fibonacci numbers, commonly denoted F(n) form a sequence, called the Fibonacci sequence,
+     * such that each number is the sum of the two preceding ones, starting from 0 and 1. That is,
+     * <p>
+     * F(0) = 0, F(1) = 1
+     * F(n) = F(n - 1) + F(n - 2), for n > 1.
+     * Given n, calculate F(n).
+     * <p>
+     * Input: n = 2
+     * Output: 1
+     * Explanation: F(2) = F(1) + F(0) = 1 + 0 = 1.
+     * <p>
+     * Input: n = 3
+     * Output: 2
+     * Explanation: F(3) = F(2) + F(1) = 1 + 1 = 2.
+     * <p>
+     * https://leetcode.com/problems/fibonacci-number/description/
+     */
+    @Test
+    void testFib() {
+        Assertions.assertThat(fib(2)).isEqualTo(1);
+        Assertions.assertThat(fib(3)).isEqualTo(2);
+    }
+
+    /**
+     * Use two vars to keep track of the last two previous numbers and iterate from 2 and compute their sum
+     * for the current number
+     * Time Complexity: O(n). Space Complexity: O(1)
+     */
+    int fib(int n) {
+        if (n == 0 || n == 1)
+            return n;
+        int current = 0;
+        int prevPrev = 0;
+        int prev = 1;
+        for (int i = 2; i <= n; i++) {
+            current = prevPrev + prev;
+            prevPrev = prev;
+            prev = current;
+        }
+        return current;
     }
 
     /**

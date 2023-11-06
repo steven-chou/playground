@@ -11,7 +11,7 @@ import static org.assertj.core.data.Index.atIndex;
 /**
  * TODO: Tips
  *   1. Java built-in sorting methods:
- *      - Arrays.sort(int[] a) uses dual-pivot Quicksort on primitives. It offers O(n log(n)) performance and is typically faster than
+ *      - Arrays.sort(int[] a) uses dual-pivot Quicksort on primitives. It offers O(n⋅log(n)) performance and is typically faster than
  *        traditional (one-pivot) Quicksort implementations. However, it uses a stable, adaptive, iterative implementation of mergesort
  *        algorithm for Array of Objects, i.e. Arrays.sort(Object[] a)
  *      - Collections.sort(List<T> list)/List.sort(Comparator). Same performance as Arrays.sort(Object[] a)
@@ -63,6 +63,55 @@ public class SortingSearching {
                 return mid;
         }
         return -1;
+    }
+
+    @Test
+    void testMergeSort() {
+        int[] nums = new int[]{5, 2, 3, 1};
+        //Assertions.assertThat(mergeSort(nums)).containsExactly(1, 2, 3, 5);
+        Assertions.assertThat(mergeSort(new int[]{5, 1, 1, 2, 0, 0})).containsExactly(0, 0, 1, 1, 2, 5);
+    }
+
+    /**
+     * Time complexity: O(n⋅log n)
+     * There are a total of N elements on each level in the recursion tree. Therefore, it takes O(N)
+     * time for the merging process to complete on each level. And there are a total of logN levels.
+     * Space complexity: O(n)
+     * The recursive stack will take O(log n) space and we used additional array of size n when copying the split array.
+     */
+    int[] mergeSort(int[] nums) {
+        // Base case is when a single element (which is already sorted)
+        if (nums.length <= 1)
+            return nums;
+
+        int pivot = nums.length / 2;
+        // Split array into two parts and recursively sort them
+        int[] left = mergeSort(Arrays.copyOfRange(nums, 0, pivot));
+        int[] right = mergeSort(Arrays.copyOfRange(nums, pivot, nums.length));
+        // Combine the two arrays into one larger array
+        return merge(left, right);
+    }
+
+    int[] merge(int[] leftArray, int[] rightArray) {
+        int[] mergedArray = new int[leftArray.length + rightArray.length];
+        int lPtr = 0, rPtr = 0;
+        // Merge two arrays into a sorted array
+        for (int i = 0; i < mergedArray.length; i++) {
+            if (lPtr == leftArray.length) {
+                // leftArray is exhausted, so keep adding the remaining elements from rightArray
+                mergedArray[i] = rightArray[rPtr++];
+            } else if (rPtr == rightArray.length) {
+                // rightArray is exhausted, so keep adding the remaining elements from leftArray
+                mergedArray[i] = leftArray[lPtr++];
+            } else {
+                // Take the smaller one from one of the arrays
+                if (leftArray[lPtr] < rightArray[rPtr]) {
+                    mergedArray[i] = leftArray[lPtr++];
+                } else
+                    mergedArray[i] = rightArray[rPtr++];
+            }
+        }
+        return mergedArray;
     }
 
     /**

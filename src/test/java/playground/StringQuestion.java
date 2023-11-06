@@ -34,19 +34,44 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StringQuestion {
     /**
      * Reverse String
-     * https://leetcode.com/problems/reverse-string/solution/*
+     * Write a function that reverses a string. The input string is given as an array of characters s.
+     * You must do this by modifying the input array in-place with O(1) extra memory.
+     * <p>
+     * Input: s = ["h","e","l","l","o"]
+     * Output: ["o","l","l","e","h"]
+     * <p>
+     * Input: s = ["H","a","n","n","a","h"]
+     * Output: ["h","a","n","n","a","H"]
+     * https://leetcode.com/problems/reverse-string/description/
      */
     @Test
     void testReverseString() {
         char[] charArray = {'h', 'e', 'l', 'l', 'o'};
         reverseString(charArray);
-        Assertions.assertArrayEquals(new char[]{'o', 'l', 'l', 'e', 'h'}, charArray);
+        assertThat(charArray).containsExactly('o', 'l', 'l', 'e', 'h');
     }
 
     /**
+     * Use two pointers, left and right to iterate the array from two ends and swap the element until
+     * they are cross each other
      * Time Complexity: O(N). Space Complexity: O(1)
      */
     void reverseString(char[] chars) {
+        int left = 0, right = chars.length - 1;
+        while (left < right) {
+            char tmp = chars[left];
+            chars[left] = chars[right];
+            chars[right] = tmp;
+            ++left;
+            --right;
+        }
+    }
+
+    /**
+     * Another implementation using one pointer
+     * Time Complexity: O(N). Space Complexity: O(1)
+     */
+    void reverseStringII(char[] chars) {
         for (int i = 0; i < chars.length / 2; i++) {
             var tmp = chars[i];
             chars[i] = chars[chars.length - 1 - i];
@@ -559,7 +584,23 @@ public class StringQuestion {
 
     /**
      * Valid Parentheses
-     * Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.
+     * Given a string s containing just the characters '(', ')', '{', '}', '[' and ']',
+     * determine if the input string is valid.
+     * <p>
+     * An input string is valid if:
+     * <p>
+     * Open brackets must be closed by the same type of brackets.
+     * Open brackets must be closed in the correct order.
+     * Every close bracket has a corresponding open bracket of the same type.
+     * <p>
+     * Input: s = "()"
+     * Output: true
+     * <p>
+     * Input: s = "()[]{}"
+     * Output: true
+     * <p>
+     * Input: s = "(]"
+     * Output: false
      * https://leetcode.com/problems/valid-parentheses/description/
      */
     @Test
@@ -568,30 +609,41 @@ public class StringQuestion {
         Assertions.assertFalse(isValidParentheses("(]"));
     }
 
-    private final Map<Character, Character> mappings = Map.of('(', ')', '{', '}', '[', ']');
+    private final Map<Character, Character> leftToRight = Map.of('(', ')', '{', '}', '[', ']');
 
     /**
-     * Use Stacks
+     * First we build the left parenthesis to right parenthesis char map. Iterating the str if is left parenthesis,
+     * push to the stack. Otherwise, pop the element from stack and check if the mapped right parenthesis is the same
+     * as this one. If the stack is not empty in the then it is also invalid
      * <p>
-     * 1. Initialize a stack S, and maintain a open -> close parentheses lookup map
+     * Observation:
+     * Ideally we want to check the valid parenthesis pair from the innermost and expanding outward. We can use stack
+     * to help us process in the similar way. If we push the parenthesis to the stack as we iterate, the top element
+     * is the innermost parenthesis.
+     * <p>
+     * Algo:
+     * 1. Initialize a stack S, and maintain a open parenthesis -> close parenthesis lookup map
      * 2. Process each bracket of the expression one at a time.
      * 3. If we encounter an opening bracket, we simply push it onto the stack. This means we will process it later
-     * 4. Else we pop the top element from the stack and check if the associated closed parenthese from the map is matched. If yes, continue, otherwise, this implies an invalid expression.
+     * 4. Else we pop the top element from the stack and check if the associated closed parenthesis from the map
+     * is matched. If yes, continue, otherwise, this implies an invalid expression.
      * 5. In the end, if we are left with a stack still having elements, then this implies an invalid expression.
      * Time Complexity: O(n). Space Complexity: O(n)
      */
     boolean isValidParentheses(String s) {
-        Stack<Character> stack = new Stack<>();
+        Deque<Character> stack = new ArrayDeque<>();
         for (char c : s.toCharArray()) {
-            if (mappings.containsKey(c))
+            if (leftToRight.containsKey(c))
+                // Left parenthesis
                 stack.push(c);
             else {
+                // Right parenthesis
                 if (stack.isEmpty())
                     // Edge case: no open parentheses left
                     return false;
 
                 Character open = stack.pop();
-                if (mappings.get(open) != c)
+                if (leftToRight.get(open) != c)
                     return false;
             }
         }

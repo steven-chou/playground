@@ -1036,4 +1036,61 @@ public class LinkedListQuestion {
             secondCurrent = secondNext;
         }
     }
+
+    /**
+     * Swap Nodes in Pairs
+     * Given a linked list, swap every two adjacent nodes and return its head. You must solve the
+     * problem without modifying the values in the list's nodes (i.e., only nodes themselves may be changed.)
+     * <p>
+     * Input: head = [1,2,3,4]
+     * Output: [2,1,4,3]
+     * <p>
+     * Input: head = []
+     * Output: []
+     * <p>
+     * Input: head = [1]
+     * Output: [1]
+     * <p>
+     * https://leetcode.com/problems/swap-nodes-in-pairs/description/
+     */
+    @Test
+    void testSwapPairs() {
+        ListNode headNode1 = createListNode(4);
+        headNode1.val = 1;
+        headNode1.next.val = 2;
+        headNode1.next.next.val = 3;
+        headNode1.next.next.next.val = 4;
+        headNode1 = swapPairs(headNode1);
+        Assertions.assertThat(headNode1.val).isEqualTo(2);
+        Assertions.assertThat(headNode1.next.val).isEqualTo(1);
+        Assertions.assertThat(headNode1.next.next.val).isEqualTo(4);
+        Assertions.assertThat(headNode1.next.next.next.val).isEqualTo(3);
+    }
+
+    /**
+     * Iterate the linked list in steps of two nodes. Need another ptr, prevNode, to save the second node ptr after the swap,
+     * so we can link the current swapped pair to the previous pair.
+     * <p>
+     * Time Complexity : O(N) where N is the size of the linked list.
+     * <p>
+     * Space Complexity : O(1)
+     */
+    ListNode swapPairs(ListNode head) {
+        ListNode dummy = new ListNode(-1);
+        dummy.next = head;
+        ListNode prevNode = dummy;
+        while (head != null && head.next != null) {
+            ListNode firstNode = head;
+            ListNode secondNode = head.next;
+            // Swap
+            firstNode.next = secondNode.next;
+            secondNode.next = firstNode;
+            // Update prevNode
+            prevNode.next = secondNode;
+            prevNode = firstNode;
+            // Move to process next pair
+            head = firstNode.next;
+        }
+        return dummy.next;
+    }
 }
