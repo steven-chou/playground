@@ -1,3 +1,5 @@
+package playground;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -294,9 +296,8 @@ public class IntervalQuestion {
     }
 
     /**
-     * Sorting
-     * The idea here is to sort the meetings by starting time. Then, go through the meetings one by one and make
-     * sure that each meeting ends before the next one starts.
+     * First sort the array by starting time. Then iterate the array and check if the current meeting end
+     * time is later than the next meeting start time. If so return false.
      * <p>
      * Time complexity : O(nlogn)
      * The time complexity is dominated by sorting. Once the array has been sorted, only O(n) time is
@@ -337,22 +338,27 @@ public class IntervalQuestion {
     }
 
     /**
-     * Chronological Ordering Event
-     * Imagine we plot every start and end time in a single timeline in chronological order. Instead of considering a meeting
-     * (start/end time pair), we only consider each individual event and its meaning.
+     * Separate the start times and end times in two arrays and sort them respectively. Iterate the startTime array and
+     * maintain another ptr on endTime array. If startTime < endTime, increment roomCount, otherwise advance endTime ptr
+     * <p>
+     * Observation:
+     * 1. Imagine we plot every start and end time in a single timeline in chronological order. Instead of considering
+     * a meeting (start/end time pair), we only consider each individual event and its meaning.
      * When we encounter an ending event, that means some meeting that started earlier has ended now. We are not
      * really concerned with which meeting has ended. All we need is that some meeting ended thus making a room available.
      * <p>
-     * When we encounter a start event, we need to know the earliest end time of any meeting, so we can decide
+     * 2. When we encounter a start event, we need to know the earliest end time of any meeting, so we can decide
      * if we need a meeting room.
      * <p>
-     * Given two points above, we want to keep start and end time in separate array and sort them. So we can easily
+     * 3. Given two points above, we want to keep start and end time in separate array and sort them. So we can easily
      * compare each of them and keep track of the meeting end time.
      * <p>
-     * We use two index to iterate the start and end time array at the same time, and compare one by one.
-     * 1. For a given end time, the thing we know is there is a meeting ending and the room will be available if there is
-     * a meeting started at or later than the end time. Thus, if the start time is greater than it, we can use the room.
-     * 2. If the start time is earlier than the current end time, we need a meeting room for it.
+     * Algo:
+     * 1. Separate out the start times and the end times in their separate arrays and sort them respectively.
+     * 2. Iterate the start time array and maintain another ptr(endIdx) on the end time array to track the latest end time of a room
+     * - If the current start time < the latest (room) end time(end[endIdx]). We need a new room.
+     * - Otherwise, it means some meeting has ended by the time this meeting starts. So we can reuse one of the rooms.
+     * However, we also need to update the latest (room) end time by advancing the endIdx.
      * <p>
      * Time Complexity: O(NlogN) because all we are doing is sorting the two arrays for start timings and end timings
      * individually and each of them would contain N elements considering there are N intervals.
@@ -361,6 +367,7 @@ public class IntervalQuestion {
      * for the end times.
      */
     int minMeetingRooms(int[][] intervals) {
+        // Populate start and end time arrays and sort them
         int[] start = new int[intervals.length];
         int[] end = new int[intervals.length];
 
@@ -374,19 +381,26 @@ public class IntervalQuestion {
         int usedRoomsCount = 0;
         for (int startIdx = 0, endIdx = 0; startIdx < intervals.length; startIdx++) {
             if (start[startIdx] < end[endIdx])
-                // Current start time is earlier than end time, we need a meeting room.
+                // Current start time is earlier than the latest end time, so we need a meeting room.
                 // The room counter starts at 0, so the first start time will always increment room count
                 usedRoomsCount++;
             else
-                // Current start time is equal or later than end time. so we can use the room just ended
-                // But increment the next end time to track when the next meeting is available
+                // start[startIdx] >= end[endIdx]
+                // Current start time is equal or later than the latest end time. This mean a meeting has ended, so we
+                // can reuse one of the existing rooms
+                // Increment the end time ptr to track when the next meeting room will be available
                 endIdx++;
         }
         return usedRoomsCount;
     }
 
     /**
-     * MinHeap to track of the room availability based on the earliest end time
+     * Sort the array by the start time first. Use a MinHeap to track the end time of the rooms currently in use. Iterate the
+     * array and if the start time >= top of the heap(latest end time of rooms), remove it from the heap.
+     * We add the current meeting end time to the heap regardless. (Reuse this room w/ updated end time if the previous condition
+     * is true, otherwise, it means we get a new room). Finally the size of the heap is the total rooms we need.
+     * <p>
+     * Observation:
      * At any point in time we have multiple rooms that can be occupied and we don't really care which room
      * is free as long as we find one when required for a new meeting.
      * <p>
@@ -417,13 +431,13 @@ public class IntervalQuestion {
     int minMeetingRoomsMinHeap(int[][] intervals) {
         // Sort the intervals by start time
         Arrays.sort(intervals, Comparator.comparingInt(x -> x[0]));
-        // Each item in the MinHeap is the meeting room we currently use and its end time
+        // Each item in the MinHeap is the end time of the meeting room(s) currently in use
         PriorityQueue<Integer> roomEndTimeMinHeap = new PriorityQueue<>();
         for (int[] interval : intervals) {
             int startTime = interval[0];
             if (!roomEndTimeMinHeap.isEmpty() && startTime >= roomEndTimeMinHeap.peek())
                 // When the current meeting starts at or later than the meeting room ending the earliest in the MinHeap,
-                // i.e. the top element, which means the meeting can take this room. So we remove it from heap to claim it.
+                // i.e. the top element, which means the meeting can use this room. So we remove it from heap to claim it.
                 // (The room will be added to the heap w/ the updated end time later)
                 roomEndTimeMinHeap.poll();
             // Add the meeting room w/ end time of this meeting to the heap, so we can keep track of the room

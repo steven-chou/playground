@@ -16,6 +16,9 @@ import static org.assertj.core.data.Index.atIndex;
  *        algorithm for Array of Objects, i.e. Arrays.sort(Object[] a)
  *      - Collections.sort(List<T> list)/List.sort(Comparator). Same performance as Arrays.sort(Object[] a)
  *      - Comparable interface -> int compareTo(Obj)) & Comparator interface ->  int compare(ObjA, ObjB)
+ *      - Comparator using lambda
+ *         Ex: Comparator<Integer> byDistance = (a, b) -> Integer.compare(Math.abs(a - x), Math.abs(b - x));
+ *             ==> Comparator<Integer> byDistance = Comparator.comparingInt(a -> Math.abs(a - x));
  *      - Comparator.comparing static method and Lambda
  *      https://www.baeldung.com/java-comparator-comparable
  *      https://www.baeldung.com/java-8-comparator-comparing
@@ -421,8 +424,10 @@ public class SortingSearching {
         int[] input = new int[]{3, 2, 1, 5, 6, 4};
         Assertions.assertThat(findKthLargest(input, 2)).isEqualTo(5);
         Assertions.assertThat(findKthLargestMinHeap(input, 2)).isEqualTo(5);
+        Assertions.assertThat(findKthLargestMaxHeap(input, 2)).isEqualTo(5);
         input = new int[]{3, 3, 3, 5, 5, 4};
         Assertions.assertThat(findKthLargest(input, 5)).isEqualTo(3);
+        Assertions.assertThat(findKthLargestMaxHeap(input, 5)).isEqualTo(3);
     }
 
     /**
@@ -519,6 +524,23 @@ public class SortingSearching {
             }
         } //At this point, heap has top k the largest elements and the smallest one is at the top
         return minHeap.peek();
+    }
+
+    /**
+     * Another solution using the MaxHeap to find the K-th largest element.
+     * Time complexity: O(k⋅logn)
+     * Space complexity: O(k)
+     */
+    int findKthLargestMaxHeap(int[] nums, int k) {
+        PriorityQueue<Integer> maxHeap = new PriorityQueue<>(Comparator.reverseOrder());
+        for (int num : nums)
+            maxHeap.add(num);
+        int answer = 0;
+        while (!maxHeap.isEmpty() && k > 0) {
+            answer = maxHeap.poll();
+            k--;
+        }
+        return answer;
     }
 
     /**
@@ -1563,4 +1585,217 @@ public class SortingSearching {
         }
         return ans;
     }
+
+    /**
+     * Find K Closest Elements
+     * Given a sorted integer array arr, two integers k and x, return the k closest integers
+     * to x in the array. The result should also be sorted in ascending order.
+     * <p>
+     * An integer a is closer to x than an integer b if:
+     * <p>
+     * |a - x| < |b - x|, or
+     * |a - x| == |b - x| and a < b
+     * <p>
+     * <p>
+     * Input: arr = [1,2,3,4,5], k = 4, x = 3
+     * Output: [1,2,3,4]
+     * <p>
+     * Input: arr = [1,2,3,4,5], k = 4, x = -1
+     * Output: [1,2,3,4]
+     * <p>
+     * https://leetcode.com/problems/find-k-closest-elements/description/
+     */
+    @Test
+    void testFindClosestElements() {
+        Assertions.assertThat(findClosestElements(new int[]{1, 2, 3, 4, 5}, 4, 3)).containsExactly(1, 2, 3, 4);
+        Assertions.assertThat(findClosestElements(new int[]{1, 2, 3, 4, 5}, 4, -1)).containsExactly(1, 2, 3, 4);
+        Assertions.assertThat(findClosestElementsBinarySearch(new int[]{1, 2, 3, 4, 5}, 4, 3)).containsExactly(1, 2, 3, 4);
+        Assertions.assertThat(findClosestElementsBinarySearch(new int[]{1, 2, 3, 4, 5}, 4, -1)).containsExactly(1, 2, 3, 4);
+        Assertions.assertThat(findClosestElementsBinarySearch(new int[]{1}, 1, 1)).containsExactly(1);
+        Assertions.assertThat(findClosestElementsBinarySearch(new int[]{0, 1, 2, 2, 2, 3, 6, 8, 8, 9}, 5, 9)).containsExactly(3, 6, 8, 8, 9);
+        Assertions.assertThat(findClosestElementsBinarySearch(new int[]{1, 1, 2, 2, 2, 2, 2, 3, 3}, 3, 3)).containsExactly(2, 3, 3);
+
+        Assertions.assertThat(findClosestElementsBinarySearchAndWindow(new int[]{1, 2, 3, 4, 5}, 4, 3)).containsExactly(1, 2, 3, 4);
+        Assertions.assertThat(findClosestElementsBinarySearchAndWindow(new int[]{1, 2, 3, 4, 5}, 4, -1)).containsExactly(1, 2, 3, 4);
+        Assertions.assertThat(findClosestElementsBinarySearchAndWindow(new int[]{1, 3}, 1, 2)).containsExactly(1);
+        Assertions.assertThat(findClosestElementsBinarySearchAndWindow(new int[]{3, 5, 8, 10}, 2, 15)).containsExactly(8, 10);
+        Assertions.assertThat(findClosestElementsBinarySearchAndWindow(new int[]{0, 0, 1, 2, 3, 3, 4, 7, 7, 8}, 3, 5)).containsExactly(3, 3, 4);
+    }
+
+    /**
+     * Add all elements to the MinHeap sorting the element by the distance to x. Then pop K elements from the
+     * heap and sort k-sized list and return.
+     * <p>
+     * Time complexity: O(N⋅logN + K⋅logN + K⋅logK)
+     * (Add N numbers to heap) + (pop k numbers from heap) + (sort k numbers)
+     * Space complexity: O(N)
+     */
+    List<Integer> findClosestElements(int[] arr, int k, int x) {
+        Comparator<Integer> byDistance = (a, b) -> {
+            int result = Integer.compare(Math.abs(a - x), Math.abs(b - x));
+            if (result == 0)
+                return a.compareTo(b);
+            return result;
+        };
+
+        Queue<Integer> pq = new PriorityQueue<>(byDistance);
+        for (int num : arr) {
+            pq.add(num);
+        }
+        List<Integer> result = new ArrayList<>();
+        for (int i = 0; i < k; i++) {
+            result.add(pq.poll());
+        }
+        Collections.sort(result);
+        return result;
+    }
+
+    /**
+     * 1. Use binary search to find the number closest to x. Need to consider edge case, e.g. x is outside the array
+     * and prefer the smaller number when multiple numbers have the same distance to x.
+     * <p>
+     * 2. Use the found index as starting point, use left and right ptr to move one of them by comparing the element
+     * distance to x each time until they form a k-sized window.
+     * <p>
+     * 3. Return the k elements starting from left ptr.
+     * <p>
+     * Time complexity: O(log(N)+k)
+     * Space complexity: O(1)
+     */
+    List<Integer> findClosestElementsBinarySearchAndWindow(int[] arr, int k, int x) {
+        List<Integer> result = new ArrayList<>();
+        if (arr.length == k) {
+            for (int i = 0; i < k; i++)
+                result.add(arr[i]);
+            return result;
+        }
+
+        // Binary search to find the element, the first greater than or equal to x
+        int left = 0;
+        int right = arr.length - 1;
+        int idx = -1;
+        while (left <= right) {
+            int mid = (left + right) >>> 1;
+            if (arr[mid] >= x) {
+                idx = mid;
+                right = mid - 1;
+            } else {
+                // arr[mid] < x
+                left = mid + 1;
+            }
+        }
+        // Edge case(all numbers in the array are less than x): idx would remain -1, so set idx to right
+        idx = idx == -1 ? right : idx;
+        // Now we need to check if the element preceding idx also has the same distance to x
+        // Ex: x: 4, arr[idx]: 5, arr[idx-1]: 3, we should prefer smaller index element when distance are the same.
+        if (idx != 0 && Math.abs(arr[idx - 1] - x) <= Math.abs(arr[idx] - x))
+            idx--;
+
+        // Use two ptr, left and right, and idx as starting point to build a k-sized window
+        left = idx;
+        right = idx;
+        // Expand the window[left(inclusive) - right(inclusive)] until we have k elements
+        while (right - left + 1 < k) {
+            if (left > 0 && right < arr.length - 1) {
+                // Expand the side having the element w/ the smaller distance to x
+                if (Math.abs(arr[left - 1] - x) <= Math.abs(arr[right + 1] - x))
+                    --left;
+                else
+                    ++right;
+            } else if (left == 0) {
+                // Can't go left anymore, so expand right
+                ++right;
+            } else if (right == arr.length - 1) {
+                // Can't go right anymore, so expand left
+                --left;
+            }
+        }
+        // Collect the k elements from left ptr
+        while (k > 0) {
+            result.add(arr[left++]);
+            --k;
+        }
+        return result;
+    }
+
+    /**
+     * Use a custom binary search to find the optimal left bound of a k-sized window. The algo to search it is to
+     * compare the (arr[mid] + arr[mid+k]) / 2 with x. If x is smaller, search the left part, otherwise, search the
+     * right part. The logic behind this is unknown and not well explained on LeetCode and very confusing. There is
+     * no clear relation between this value and the distance to x from k elements in this window. Approach 2 is more
+     * convincing and easy to reason than this one.
+     * <p>
+     * Time complexity: O(log(N-k)+k)
+     * Space complexity: O(1)
+     */
+    List<Integer> findClosestElementsBinarySearch(int[] arr, int k, int x) {
+        // The search range is the possible index values can be used as the left bound of the k-sized window, which
+        // contains the k closet elements to x
+        int left = 0;
+        int right = arr.length - k; // Init to the index of the left bound of the last window in the array
+
+        int leftBound = left; // init to the final leftBound to the left ptr for the edge case of 1 element array
+        while (left <= right) {
+            int mid = (left + right) >>> 1;
+            // When the left bound of the next K-sized window is out of bound, this means the current mid is already on the left
+            // bound of the last window in the array. This window is the answer, so we can break here. The final leftBound
+            // will be taken care by the right bound check after the loop.
+            if (mid + k >= arr.length)
+                break;
+
+            // We compute the avg of two left bound values, and use it as the reference point to decide
+            // how to adjust/move the window. Note: this reference point does NOT take the distance to the X from any
+            // elements in the window at all. It is questionable why the LeetCode solution uses this and their
+            // explanation is also wrong and confusing. The only possible explanation is it uses the avg of the two left
+            // bound number to roughly estimate the distance to the X from K elements in the window. The algo is to make
+            // a window so the midVal can be close to the x as possible as we can. So if x <= midVal, we shift the left
+            // bound to left, otherwise, shift to the right
+            // assume
+            double midVal = ((double) arr[mid + k] + arr[mid]) / 2;
+            if (x <= midVal) {
+                leftBound = mid;
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+        // This is for the edge case that the last window is the answer. And the right ptr is never moved in the search
+        // and left == right + 1 after the above loop terminates
+        if (right == arr.length - k)
+            leftBound = right;
+
+        // Collect the K elements from the leftBound
+        List<Integer> result = new ArrayList<>();
+        for (int i = leftBound; i < leftBound + k; i++) {
+            result.add(arr[i]);
+        }
+        return result;
+    }
+
+    /**
+     * This is the version copied from LeetCode
+     */
+    List<Integer> findClosestElementsLeetCode(int[] arr, int k, int x) {
+        // Initialize binary search bounds
+        int left = 0;
+        int right = arr.length - k;
+
+        // This is the confusing part from the LeetCode provided solution
+        while (left < right) {
+            int mid = (left + right) / 2;
+            if (x - arr[mid] > arr[mid + k] - x) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        // Create output in correct format
+        List<Integer> result = new ArrayList<Integer>();
+        for (int i = left; i < left + k; i++) {
+            result.add(arr[i]);
+        }
+        return result;
+    }
+
+
 }

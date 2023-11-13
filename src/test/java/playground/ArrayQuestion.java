@@ -2149,4 +2149,255 @@ public class ArrayQuestion {
         nums[i] = nums[j];
         nums[j] = temp;
     }
+
+    /**
+     * First Missing Positive
+     * Given an unsorted integer array nums, return the smallest missing positive integer.
+     * You must implement an algorithm that runs in O(n) time and uses O(1) auxiliary space.
+     * <p>
+     * Input: nums = [1,2,0]
+     * Output: 3
+     * Explanation: The numbers in the range [1,2] are all in the array.
+     * <p>
+     * Input: nums = [3,4,-1,1]
+     * Output: 2
+     * Explanation: 1 is in the array but 2 is missing.
+     * <p>
+     * Input: nums = [7,8,9,11,12]
+     * Output: 1
+     * Explanation: The smallest positive integer 1 is missing.
+     * <p>
+     * https://leetcode.com/problems/first-missing-positive/description/
+     */
+    @Test
+    void testFirstMissingPositive() {
+        assertThat(firstMissingPositive(new int[]{1, 2, 0})).isEqualTo(3);
+        assertThat(firstMissingPositive(new int[]{3, 4, -1, 1})).isEqualTo(2);
+        assertThat(firstMissingPositive(new int[]{7, 8, 9, 11, 12})).isEqualTo(1);
+    }
+
+    /**
+     * Use the "Index as a hash key" approach to use the existing array to store the result of existence of [1..n] by changing
+     * the sign of original number. The answer is the smallest index of the positive number.
+     * <p>
+     * Observation:
+     * 1. To find the first missing positive number manually, we start to look from 1, 2, 3..k and check if it exists in
+     * the input array and the first one not found is the answer. However, given a n-sized array, we can sure the answer
+     * must be in the set of [1,2 ... n+1]. If the array is a continuous sequence like [1,2..n], the answer will be the
+     * n+1. Otherwise, the answer must fall within the [1..n] range.
+     * <p>
+     * 2. If there is no O(1) space constraint, the easiest solution is to put the array into a HashSet, then try each num
+     * in [1,2...n+1] to check existence in the HashSet and the first missing one is the answer.
+     * <p>
+     * 3. We can't use the extra memory, so we need to leverage the input array itself. Since the array has index[0..n-1],
+     * we can use the existing slot in array to map the result of the number existence from the sequence [1,2...n+1].
+     * In other words, we use the index of the array as key, which represents the number from the sequence. And we embed the
+     * info of existence of the corresponding number in the slot by modifying the existing element. This approach is called
+     * "Index as a hash key"
+     * <p>
+     * 4. Cuz we want to map the number in array to the index, we must first clean up/normalize the array otherwise the
+     * idx out of bound issue may occur. We can convert the original number to the range of [1-n] so it can be mapped to the
+     * index [0 - n-1].
+     * <p>
+     * Algo:
+     * 1. We want to use '1' to replace those numbers in the array thant fall outside the [1-n]. So we must first check if
+     * 1 is already present in the array before altering the array. If not, we're done and 1 is the answer.(Remember the answer
+     * set starts from 1)
+     * <p>
+     * 2. Replace negative numbers, zeros, and numbers larger than n by 1s
+     * 3. Iterate the array. Change the sign of v-th element if you meet number v. If v is equal to n, we use the first element
+     * (index:0). We also need to take the duplicate number into account, so we don't flip the sign of number multiple times.
+     * <p>
+     * For example, negative sign of nums[2] element means that number 2 is present in nums. The positive sign of nums[3]
+     * element means that number 3 is not present (missing) in nums.
+     * <p>
+     * 4. Iterate the array from index 1. Return the index of the first positive element, which means we didn't see that number
+     * at last iteration.
+     * <p>
+     * 5. Check the first element, i.e. existence of number n. If > 0, this is the answer.
+     * <p>
+     * 6. If on the previous step we didn't find the positive element in nums, that means that the answer is n + 1.
+     * <p>
+     * Time complexity: O(N)
+     * <p>
+     * Space complexity: O(1)
+     */
+    int firstMissingPositive(int[] nums) {
+        int n = nums.length;
+        // Check if 1 is present in the array. If not, 1 is the answer
+        boolean foundOne = false;
+        for (int num : nums) {
+            if (num == 1) {
+                foundOne = true;
+                break;
+            }
+        }
+        if (!foundOne)
+            return 1;
+
+        // Replace negative numbers, zeros, and numbers larger than n by 1s.
+        // After this conversion nums will contain only positive numbers.
+        for (int i = 0; i < n; i++) {
+            if (nums[i] <= 0 || nums[i] > n)
+                nums[i] = 1;
+        }
+
+        // Use index as a hash key and number sign as a presence detector. Ex, if nums[1] is negative that means
+        // that number `1` is present in the array. If nums[2] is positive - number 2 is missing.
+        for (int i = 0; i < n; i++) {
+            int val = Math.abs(nums[i]);
+            // If you meet number val in the array - change the sign of val-th element.
+            if (val == n)
+                // Use index 0 to store the info of the number n to avoid out of bound
+                nums[0] = -Math.abs(nums[0]);
+            else
+                nums[val] = -Math.abs(nums[val]);
+        }
+        // Return the index of the first positive element, which is the first missing positive
+        for (int i = 1; i < n; i++) {
+            if (nums[i] > 0)
+                return i;
+        }
+
+        // If we don't find any from the above, check the first element
+        if (nums[0] > 0)
+            return n;
+
+        // Otherwise, the next positive is n+1. This is the case when the nums contains exactly [1,2,3...n]
+        return n + 1;
+    }
+
+    /**
+     * Subarray Sum Equals K
+     * Given an array of integers nums and an integer k, return the total number of subarrays
+     * whose sum equals to k.
+     * <p>
+     * A subarray is a contiguous non-empty sequence of elements within an array.
+     * <p>
+     * Input: nums = [1,1,1], k = 2
+     * Output: 2
+     * <p>
+     * Input: nums = [1,2,3], k = 3
+     * Output: 2
+     * <p>
+     * https://leetcode.com/problems/subarray-sum-equals-k/description/
+     */
+    @Test
+    void testSubarraySum() {
+        assertThat(subarraySum(new int[]{1, 1, 1}, 2)).isEqualTo(2);
+        assertThat(subarraySum(new int[]{1, 2, 3}, 3)).isEqualTo(2);
+    }
+
+    /**
+     * Iterate the array and use a Map to store the current prefix sum and count so far. We check if the current prefix
+     * sum - k can be found in the Map, if so, add its count to the result.
+     * <p>
+     * Observation
+     * 1. If we use the brute force approach, we can iterate each number, and for each number, we start from next number
+     * as the sub-array and check if the sum is equal to k, and extending the sub-array to find all of them until the end.
+     * We can see for some prefix sums, they are repeatedly computed.
+     * <p>
+     * 2. We want to reuse the prefix sum if possible. Say if we are at index i, there are two cases that we can have
+     * sub-array(s) w/ sum equal to k at this position.
+     * (1) The sum from index 0 to i is k
+     * (2) The difference between the sum of a previous index j, (j < i) and the sum of index i is k. In other words,
+     * sum[i] − sum[j] = k
+     * <p>
+     * To generalize this. If we can find a sum[j] such that sum[i] − k = sum[j], then we find a eligible sub-array.
+     * For the first case, we can always assume a sum[j] equal to 0 always exists.
+     * <p>
+     * Algo:
+     * 1. We use a HashMap to store the prefixSum to its count/number of occurrences. We first insert the (prefixSum: 0, count: 1)
+     * into the map to cover the first case.
+     * <p>
+     * 2. Iterate the array and for each number,
+     * - Accumulate the current sum
+     * - Check if the currentPrefixSum - k exists in the map(This is to find the sum[j] above)
+     * - If so, we add the count to the result. (One count here means one sub-array)
+     * - Update/Insert the count of the current sum into the map.
+     * <p>
+     * Time complexity : O(n)
+     * Space complexity : O(n)
+     */
+    int subarraySum(int[] nums, int k) {
+        int result = 0;
+        int currentPrefixSum = 0;
+        // The value in the map, i.e. count, basically is the number of sub-arrays with the given sum
+        Map<Integer, Integer> prefixSumToCount = new HashMap<>();
+        // We need this dummy prefix sum: 0 for the use case of currentPrefixSum is equal to k
+        prefixSumToCount.put(0, 1);
+        for (int num : nums) {
+            currentPrefixSum += num;
+            int complementPrefixSum = currentPrefixSum - k;
+            // Check if we have a prefix sum that makes currentPrefixSum + complementPrefixSum = k
+            if (prefixSumToCount.containsKey(complementPrefixSum))
+                result += prefixSumToCount.get(complementPrefixSum);
+            // Update the count of the currentPrefixSum in the map
+            prefixSumToCount.put(currentPrefixSum, prefixSumToCount.getOrDefault(currentPrefixSum, 0) + 1);
+        }
+        return result;
+    }
+
+    /**
+     * Longest Consecutive Sequence
+     * Given an unsorted array of integers nums, return the length of the longest consecutive
+     * elements sequence.
+     * <p>
+     * You must write an algorithm that runs in O(n) time.
+     * <p>
+     * Input: nums = [100,4,200,1,3,2]
+     * Output: 4
+     * Explanation: The longest consecutive elements sequence is [1, 2, 3, 4]. Therefore its
+     * length is 4.
+     * <p>
+     * Input: nums = [0,3,7,2,5,8,4,6,0,1]
+     * Output: 9
+     * <p>
+     * https://leetcode.com/problems/longest-consecutive-sequence/description/
+     */
+    @Test
+    void testLongestConsecutive() {
+        assertThat(longestConsecutive(new int[]{100, 4, 200, 1, 3, 2})).isEqualTo(4);
+        assertThat(longestConsecutive(new int[]{0, 3, 7, 2, 5, 8, 4, 6, 0, 1})).isEqualTo(9);
+    }
+
+    /**
+     * Put all numbers into the HashSet. Then for each number that doesn't have a preceding number, use it as the
+     * starting element of a sequence and iteratively check if the next number exists in the HashSet to extend
+     * the sequence.
+     * <p>
+     * Observation:
+     * 1. To start a sequence, the first number must not have any preceding number in the array, otherwise it can
+     * only be in the middle/end of a sequence or just an one-element sequence itself.
+     * <p>
+     * Algo:
+     * 1. Put all numbers in a HashSet
+     * 2. For each number in the array which doesn't have preceding number(num - 1) in the HashSet, start a while
+     * loop to check the next number(num + 1) in the HashSet and increment the sequence length until next number
+     * is unavailable and then update the max sequence length so far.
+     * <p>
+     * Time complexity : O(n)
+     * Space complexity : O(n)
+     */
+    int longestConsecutive(int[] nums) {
+        int maxLength = 0;
+        Set<Integer> numbers = new HashSet<>();
+        for (int num : nums)
+            numbers.add(num);
+
+        for (int num : nums) {
+            if (!numbers.contains(num - 1)) {
+                // There is no number preceding num in the set, so We can start a sequence from num
+                int nextNum = num + 1;
+                int sequenceLength = 1;
+                // Keep checking if the next number exists in the set so the sequence can be extended
+                while (numbers.contains(nextNum)) {
+                    nextNum++;
+                    sequenceLength++;
+                }
+                maxLength = Math.max(maxLength, sequenceLength);
+            }
+        }
+        return maxLength;
+    }
 }

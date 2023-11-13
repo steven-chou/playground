@@ -671,8 +671,8 @@ public class LinkedListQuestion {
     }
 
     /**
-     * Add the head of each LinkedList to MinHeap first, then remove the top node from the heap and append to the result list,
-     * then add its next node to the heap if it is not null.
+     * Add the head of each LinkedList to MinHeap first, then iteratively remove the node from the heap and append
+     * to the result list, then add its next node to the heap if any.
      * <p>
      * The idea is we want to keep only one node from each LinkedList in the heap at one time, and take advantage of
      * sorting and retrieving the min value at constant time from the heap.
@@ -728,7 +728,8 @@ public class LinkedListQuestion {
             int j = 0;
             for (int i = 0; i < listCount - 1; i = i + 2) {
                 // merge each pair of lists into one
-                // j is increment by 1, it is ok to store the merged list in the previous list cuz it was already merged at the previous iteration
+                // j is increment by 1, it is ok to store the merged list in the previous list cuz it was already
+                // merged at the previous iteration
                 lists[j++] = mergeTwoLists(lists[i], lists[i + 1]);
             }
             listCount = listCount / 2; // now we reduce the number of lists half

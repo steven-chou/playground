@@ -882,7 +882,8 @@ public class Recursion {
     /**
      * Word Search
      * Given an m x n grid of characters board and a string word, return true if word exists in the grid.
-     * The word can be constructed from letters of sequentially adjacent cells, where adjacent cells are horizontally or vertically neighboring. The same letter cell may not be used more than once.
+     * The word can be constructed from letters of sequentially adjacent cells, where adjacent cells are horizontally or
+     * vertically neighboring. The same letter cell may not be used more than once.
      * <p>
      * board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"
      * Output: true
@@ -898,22 +899,32 @@ public class Recursion {
     int rowNum, colNum;
 
     /**
-     * DFS decision tree + Backtracking
+     * Iterates each cell in the grid. For each cell, call a function which first check if the current state is valid
+     * and has the matching char. If so, mark the cell visited and recursively explore four adjacent cells for the next
+     * char. Undo the changes before return and backtracking.
+     * <p>
+     * Base case: the index of matched char found is equal to the length of target string
+     * <p>
      * We would walk around the 2D grid, and at each step, we mark our choice before jumping into the next step.
-     * And at the end of each step, we would also revert our mark so that we will have a clean slate to try another direction. In addition, the exploration is done via the DFS strategy, where we go as far as possible before we try the next direction.
+     * And at the end of each step, we would also revert our mark so that we will have a clean slate to try another
+     * direction. In addition, the exploration is done via the DFS strategy, where we go as far as possible before we
+     * try the next direction.
      * Key points:
      * 1. The recursive method should have an index var and get increment by 1 when it is called,
      * so we can use it as base case(compare to the length of the word) to determine if we find the whole word
      * 2. We need to check the row and col boundary besides the cell value against the char in the word
-     * 3. When doing DFS recursive call, we need to call it for four adjacent cells, which means passing different row and col four times.
+     * 3. When doing DFS recursive call, we need to call it for four adjacent cells, which means passing different row
+     * and col four times.
      * 4. We need to mark the current visiting cell(setting val to a special char), so it won't be visited again.
      * We also need to revert it back once recursive call returns.
      * <p>
      * Time Complexity:O(N⋅3^L), where N is the number of cells in the board and L is the length of the word to be matched.
-     * 1. Besides the very first move, we can have at most 4 directions to move, the choices are reduced to 3. So it is basically
-     * 3-ary tree, each of the branches represent a potential exploration in the corresponding direction.
-     * Therefore, in the worst case, the total number of invocation would be the number of nodes in a full 3-nary tree, which is about 3^L
-     * 2. We iterate through the board for backtracking, i.e. there could be N times invocation for the backtracking function in the worst case.
+     * 1. Besides the very first move, we can have at most 4 directions to move, the choices are reduced to 3. So it is
+     * basically 3-ary tree, each of the branches represent a potential exploration in the corresponding direction.
+     * Therefore, in the worst case, the total number of invocation would be the number of nodes in a full 3-nary tree,
+     * which is about 3^L
+     * 2. We iterate through the board for backtracking, i.e. there could be N times invocation for the backtracking
+     * function in the worst case.
      * <p>
      * Space Complexity: O(L) where L is the length of the word to be matched.
      * The maximum length of the call stack would be the length of the word.

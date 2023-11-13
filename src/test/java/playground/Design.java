@@ -718,7 +718,7 @@ public class Design {
      * i.e. MinHeap.top <= MaxHeap.top or MinHeap.top >= MaxHeap.top
      * <p>
      * Time complexity: O(log n)
-     * pace complexity: O(n)
+     * Space complexity: O(n)
      */
     class MedianFinder {
         Queue<Integer> upperMinHeap;
@@ -730,7 +730,8 @@ public class Design {
         }
 
         public void addNum(int num) {
-            // Insert in lowerHeap if it's empty or if number being inserted is less than the peek of lowerHeap otherwise insert in upperHeap
+            // Insert in lowerHeap if it's empty or if number being inserted is less than the peek of lowerHeap
+            // otherwise insert in upperHeap
             if (lowerMaxHeap.isEmpty() || num <= lowerMaxHeap.peek())
                 lowerMaxHeap.offer(num);
             else
@@ -742,7 +743,7 @@ public class Design {
                 // If an element added above made upperHeap have one more element than lowerHeap then we poll it and put it into lowerHeap
                 lowerMaxHeap.offer(upperMinHeap.poll());
             else if (lowerMaxHeap.size() > upperMinHeap.size() + 1)
-                // If an element added above, made lowerHeap have 2 more elements then upperHeap then we put one into upperHeap from lowerHeap
+                // If an element added above, made lowerHeap have 2 more elements than upperHeap then we put one into upperHeap from lowerHeap
                 upperMinHeap.offer(lowerMaxHeap.poll());
         }
 
