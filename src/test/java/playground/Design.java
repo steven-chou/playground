@@ -655,9 +655,9 @@ public class Design {
             stackOne.push(x);
         }
 
-        // To remove the bottom element from s1, we have to pop all elements from s1 and to push them on to an
-        // additional stack s2, which helps us to store the elements of s1 in reversed order. This way the bottom
-        // element of s1 will be positioned on top of s2 and we can simply pop it from stack s2. Once s2 is empty,
+        // To remove the bottom element from s1, we have to pop all elements from s1 and push them on to
+        // stack s2, which helps us to store the elements of s1 in reversed order. This way the bottom
+        // element of s1 will be positioned on top of s2, and we can simply pop it from stack s2. Once s2 is empty,
         // the algorithm transfer data from s1 to s2 again.
         public int pop() {
             if (stackTwo.isEmpty()) {

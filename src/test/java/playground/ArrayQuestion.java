@@ -1,5 +1,6 @@
 package playground;
 
+import javafx.util.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -1359,14 +1360,21 @@ public class ArrayQuestion {
     }
 
     /**
-     * Iterate reversely thru the array, and move forward to find the number of days until a warmer day by using
-     * the number of days has been generated in the answer array.
+     * Iterate backwards thru the array, If current temp >= max temperature so far, update it and continue. Otherwise,
+     * search for the next higher temp from the current day forwards using the "day to next warmer day" result stored
+     * in the answer array. And save the result(accumulated days) in the answer array.
+     * <p>
+     * Algo:
      * The idea is when we iterate backward thru the array, the number of day in the answer array can be used for
-     * searching for the next warmer day. We also need to track the hottest day in case there is no warmer day.
-     * When we search for the next warmer day, we start from the next day temperature first, if it is hotter than 1
-     * is the answer, otherwise, we add its number of day to next warmer day in the answer array to the numOfDays var
-     * and check if the temperature on that day is warmer. We repeat this process until we find the warmer day in
-     * the future and keep adding the number of day to the numOfDays.
+     * searching for the next warmer day more quickly. We also track the hottest day so far while iterating so we can
+     * quickly tell if we can skip this element, i.e. no warmer day.
+     * <p>
+     * When we search for the next warmer day, we start from the next day temperature first. If it is hotter, 1 day
+     * is the answer, otherwise, we add its associated number of day to the next warmer day from the answer array to the
+     * current numOfDays var, and check if the temperature on that day(temperatures[i + numOfDays]) is warmer.
+     * We repeat this process until we find the warmer day in the future and keep adding the number of day to the numOfDays.
+     * This logic lets us quickly jump to the next day having the next warmer day until the day hotter than the current
+     * day is found. And the sum of all jumps we made is the answer.
      * <p>
      * Time complexity: O(N)
      * The nested while loop makes this algorithm look worse than O(N).
@@ -1376,20 +1384,21 @@ public class ArrayQuestion {
      * Space complexity: O(1)
      */
     int[] dailyTemperatures(int[] temperatures) {
-        int hottest = 0;
+        int maxTemp = 0;
         int[] answers = new int[temperatures.length];
         for (int i = temperatures.length - 1; i >= 0; i--) {
             int currentTemp = temperatures[i];
-            if (currentTemp >= hottest) {
+            if (currentTemp >= maxTemp) {
                 // Check if the current day is the hottest one seen so far
                 // Last day is always 0 in the answer array cuz there is no other future days
-                hottest = currentTemp;
+                maxTemp = currentTemp;
                 // We are iterating from the "future"(end of array), so if it is hotter than any future days, its associated
                 // answer must be zero, i.e. no warmer day. Therefore, skip and proceed to the next day (answer[i] remains 0)
                 continue;
             }
-            // There is a warmer day in the future we have seen
+            // currentTemp < maxTemp --> There is a warmer day in the future we have seen
             int numOfDays = 1; // init to 1, cuz we start to compare w/ the next day first
+            // Start to search for the next higher temperature
             while (temperatures[i + numOfDays] <= currentTemp) {
                 // Since the answer array has the info of the next warmer day for a given day, we use it to find the temperature of its
                 // next future warmer day until it is indeed warmer than the current temperature. We also accumulate the number of days
@@ -1402,10 +1411,12 @@ public class ArrayQuestion {
     }
 
     /**
-     * Use a monotonic decreasing stack to hold temperatures. Monotonic decreasing means that the stack will
-     * always be sorted in descending order. Because the problem is asking for the number of days, instead of
-     * storing the temperatures themselves, we should store the indices of the days, and use temperatures[i]
-     * to find the temperature of the ith day.
+     * Iterate the array and use monotonic decreasing stack to hold the index to find the next greater number(temperature).
+     * The index difference between the current temp index and popped-out item is the number of days for next warmer day.
+     * <p>
+     * Monotonic decreasing means that the stack will always be sorted in descending order. Because the problem is
+     * asking for the number of days, instead of storing the temperatures themselves, we should store the indices of
+     * the days, and use temperatures[i] to find the temperature of the ith day.
      * <p>
      * The idea is the stack holds all days which we haven't seen any warmer day yet while we iterate forward
      * thru the array. Therefore, if the current day's temperature is not warmer than the temperature on the
@@ -1438,10 +1449,10 @@ public class ArrayQuestion {
      */
     int[] dailyTemperaturesUseStack(int[] temperatures) {
         int[] answers = new int[temperatures.length];
-        Deque<Integer> stack = new ArrayDeque<>(); // Stores the index of temperatures array
+        Deque<Integer> stack = new ArrayDeque<>(); // Stores the index of temperature array
         for (int i = 0; i < temperatures.length; i++) {
             int currentTemp = temperatures[i];
-            while (!stack.isEmpty() && currentTemp > temperatures[stack.peek()]) {
+            while (!stack.isEmpty() && temperatures[stack.peek()] < currentTemp) {
                 // Today is warmer than the most recent previous day(top of the stack) which we haven't seen a warmer day
                 // Days in the stack means they haven't seen any warmer day yet
                 Integer prevDay = stack.pop();
@@ -1490,12 +1501,12 @@ public class ArrayQuestion {
     }
 
     /**
-     * Use decreasing Monotonic Stack to search for next greater number and record in a Map
+     * Use decreasing Monotonic Stack to search for next greater number and save in a Map
      * Iterate over the nums2 array from the left to right. Before pushing the current element to the stack,
      * we first check if the stack is empty and the top element in the stack is smaller than the current
      * element, if so, we pop it out and this current element is the next greater element of the pop-out
      * element. We need to keep checking the top element on the stack until the top one is not smaller than
-     * the current one. (This process is the standard process for decreasing Monotonic Stack, items on the
+     * the current one. (This is the standard process for decreasing Monotonic Stack, items on the
      * stack is descending from the bottom)
      * When we pop out from the stack, we put the (number, nextGreaterNumber) to the map and generate the
      * final result in the end
@@ -1514,8 +1525,8 @@ public class ArrayQuestion {
         Deque<Integer> stack = new ArrayDeque<>();
         for (int num : nums2) {
             while (!stack.isEmpty() && stack.peek() < num) {
-                // Popping out the number from the stack if it is smaller than the current num. In other words, we find
-                // the next greater for it now.
+                // Popping out the number from the stack if it is smaller than the current num. Cuz the current num comes
+                // after every element in the stack, it is literally the next greater number in the array.
                 Integer prevNum = stack.pop();
                 numToNextGreaterNum.put(prevNum, num);
             }
@@ -1584,7 +1595,7 @@ public class ArrayQuestion {
             // We store the index of the element in the stack, so we can easily put the greater number in the corresponding location
             // in the result array and also due to the requirement there can be duplicate number. However, the rule to determine
             // to pop from the stack is based on the number. This is the SOP of the decreasing Monotonic Stack implementation
-            while (!stack.isEmpty() && nums[i] > nums[stack.peek()]) {
+            while (!stack.isEmpty() && nums[stack.peek()] < nums[i]) {
                 Integer prevNumIdx = stack.pop();
                 result[prevNumIdx] = nums[i];
             }
@@ -1610,6 +1621,185 @@ public class ArrayQuestion {
     }
 
     /**
+     * 132 Pattern
+     * Given an array of n integers nums, a 132 pattern is a subsequence of three integers
+     * nums[i], nums[j] and nums[k] such that i < j < k and nums[i] < nums[k] < nums[j].
+     * <p>
+     * Return true if there is a 132 pattern in nums, otherwise, return false.
+     * <p>
+     * Input: nums = [1,2,3,4]
+     * Output: false
+     * Explanation: There is no 132 pattern in the sequence.
+     * <p>
+     * Input: nums = [3,1,4,2]
+     * Output: true
+     * Explanation: There is a 132 pattern in the sequence: [1, 4, 2].
+     * <p>
+     * Input: nums = [-1,3,2,0]
+     * Output: true
+     * Explanation: There are three 132 patterns in the sequence: [-1, 3, 2], [-1, 3, 0] and
+     * [-1, 2, 0].
+     * <p>
+     * https://leetcode.com/problems/132-pattern/description/
+     */
+    @Test
+    void testFind132pattern() {
+        assertThat(find132pattern(new int[]{1, 2, 3, 4})).isFalse();
+        assertThat(find132pattern(new int[]{3, 1, 4, 2})).isTrue();
+    }
+
+    /**
+     * For each number in the array, use decreasing monotonic stack to find the previous greater number,
+     * nums[j], while also maintaining the previous minimum number for each nums[j] in the stack. So we can
+     * compare the three numbers to determine if we find the pattern.
+     * <p>
+     * Observation:
+     * 1. We can break down the problem into two pieces.
+     * (1) Given the number, K(idx: k), we want to find the previous greater number for it, say J(idx: j)
+     * (2) If J is found, we want to find the previous minimum element for J, say I(idx: i)
+     * Finally we can check if these 3 numbers satisfies I < K < J
+     * <p>
+     * 2. We can use the monotonic decreasing stack to find the previous greater number. For the previous
+     * minimum element, we can maintain another var for each number to keep track of its previous minimum
+     * value.
+     * <p>
+     * Algo:
+     * 1. We maintain a monotonic decreasing stack. Each entry is a pair of number and the previous minimum
+     * number.
+     * 2. Iterate the array and popping the elements smaller or equal to the current number from the stack.
+     * 3. If the stack is not empty, the top element, say T, is the previous greater number for the current
+     * num, so pop it out and check its previous minimum number to see if we find the pattern,
+     * previous mini num of T < current num < T. If so, return true.
+     * <p>
+     * Time complexity : O(n)
+     * We push and pop the N elements on the stack.
+     * <p>
+     * Space complexity : O(n)
+     */
+    boolean find132pattern(int[] nums) {
+        // Pair[num, min value before num]
+        Deque<Pair<Integer, Integer>> stack = new ArrayDeque<>();
+        // For each number, we maintain its previous minimum number
+        int currentMin = nums[0];
+        // Each iteration we treat "num" as the nums[k]. Then we search for the previous greater number, i.e. nums[j],
+        // and the previous minimum number for nums[j], i.e. nums[i]
+        for (int num : nums) {
+            // find previous greater element, enforce strict decreasing monotonic stack
+            while (!stack.isEmpty() && stack.peek().getKey() <= num) {
+                stack.pop();
+            }
+            // after the while loop, only the elements which are greater than the current element are left in stack
+            if (!stack.isEmpty() && stack.peek().getValue() < num) {
+                // If the previous greater element exists, i.e. nums[j], then we check if the min value before j,
+                // i.e. nums[i], is less than the current number. If so, nums[i] < nums[k] < nums[j] is satisfied.
+                return true;
+            }
+            stack.push(new Pair<>(num, currentMin));
+            // Update the currentMin by taking the current num into account. We need this for the next iteration
+            currentMin = Math.min(num, currentMin);
+        }
+        return false;
+    }
+
+    /**
+     * Buildings With an Ocean View
+     * There are n buildings in a line. You are given an integer array heights of size n that represents
+     * the heights of the buildings in the line.
+     * <p>
+     * The ocean is to the right of the buildings. A building has an ocean view if the building can see
+     * the ocean without obstructions. Formally, a building has an ocean view if all the buildings to its
+     * right have a smaller height.
+     * <p>
+     * Return a list of indices (0-indexed) of buildings that have an ocean view, sorted in
+     * increasing order.
+     * <p>
+     * Input: heights = [4,2,3,1]
+     * Output: [0,2,3]
+     * Explanation: Building 1 (0-indexed) does not have an ocean view because building 2 is taller.
+     * <p>
+     * Input: heights = [4,3,2,1]
+     * Output: [0,1,2,3]
+     * Explanation: All the buildings have an ocean view.
+     * <p>
+     * Input: heights = [1,3,2,4]
+     * Output: [3]
+     * Explanation: Only building 3 has an ocean view.
+     * <p>
+     * https://leetcode.com/problems/buildings-with-an-ocean-view/description/
+     */
+    @Test
+    void testFindBuildings() {
+        assertThat(findBuildingsUseStack(new int[]{4, 2, 3, 1})).containsExactly(0, 2, 3);
+        assertThat(findBuildingsUseStack(new int[]{4, 3, 2, 1})).containsExactly(0, 1, 2, 3);
+        assertThat(findBuildingsUseStack(new int[]{1, 3, 2, 4})).containsExactly(3);
+        assertThat(findBuildingsUseStack(new int[]{2, 2, 2, 2})).containsExactly(3);
+    }
+
+    /**
+     * Observation:
+     * A building has ocean view if all buildings on its right are smaller than this building.
+     * In other words, we want to find which of the buildings do NOT have next greater or equal element.
+     * <p>
+     * Algo:
+     * Iterate the array and maintain a monotonic strictly decreasing stack. We pop out the buildings
+     * which have another building with equal or greater height in view. Then push the current building
+     * to the stack. After the loop ends, the elements left in the stack will be the ones which don't
+     * have any greater elements after them
+     * <p>
+     * Time complexity: O(N)
+     * Space complexity: O(N)
+     */
+    int[] findBuildingsUseStack(int[] heights) {
+        Deque<Integer> stack = new ArrayDeque<>();
+        // Maintain monotonic strictly decreasing stack to find next greater or equal element
+        for (int i = 0; i < heights.length; i++) {
+            while (!stack.isEmpty() && heights[stack.peek()] <= heights[i]) {
+                stack.pop();
+            }
+            stack.push(i);
+        }
+        // The elements left in the stack are the ones don't have any greater or equal elements after them
+        if (!stack.isEmpty()) {
+            int[] temp = new int[stack.size()];
+            // Need to iterate in reverse cuz we pop from the stack(Actually we can just iterate normally and use
+            // removeLast since we use Deque)
+            for (int i = temp.length - 1; i >= 0; i--) {
+                temp[i] = stack.pop();
+            }
+            return temp;
+        }
+        return new int[0];
+    }
+
+    /**
+     * Iterate the array from the end and keep track of the current max height. For any building higher
+     * than the current max height, add it to the list and update the max height. In the end, get each
+     * item from the list in reverse order and put it into the result array.
+     * <p>
+     * Time complexity: O(N)
+     * Space complexity: O(N)
+     */
+    int[] findBuildings(int[] heights) {
+        List<Integer> buildingIdxWithView = new ArrayList<>();
+        // Keep track of the max height so far
+        int maxHeight = -1;
+        // Iterate from the end so we can track the max height
+        for (int i = heights.length - 1; i >= 0; i--) {
+            if (heights[i] > maxHeight) {
+                // Higher than the current max height, so it has view
+                buildingIdxWithView.add(i);
+                maxHeight = heights[i];
+            }
+        }
+        int[] result = new int[buildingIdxWithView.size()];
+        for (int i = 0; i < result.length; i++) {
+            // While we iterate the result array forward, we need to get the item from list in reversed order
+            result[i] = buildingIdxWithView.get(buildingIdxWithView.size() - 1 - i);
+        }
+        return result;
+    }
+
+    /**
      * Trapping Rain Water
      * Given n non-negative integers representing an elevation map where the width of each bar is 1,
      * compute how much water it can trap after raining.
@@ -1628,11 +1818,13 @@ public class ArrayQuestion {
     void testTrap() {
         assertThat(trapWater(new int[]{0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1})).isEqualTo(6);
         assertThat(trapWater(new int[]{4, 2, 0, 3, 2, 5})).isEqualTo(9);
+        assertThat(trapWaterUseStack(new int[]{4, 2, 0, 3, 2, 5})).isEqualTo(9);
     }
 
     /**
-     * Use Two Pointers(head/tail) to track the max height on left and right side and compute the water
-     * amount as we move either one of pointers.
+     * Maintain Two Pointers(left/right) from both end. We keep track of the current max left/right bar height and advance
+     * the ptr w/ the bigger max value and compute the water amount(leftMax/rightMax - height). Continue this until two ptr
+     * are cross each other.
      * <p>
      * First, the maximum level of water it can trap after the rain, which is equal to the minimum of maximum height of bars
      * on both the sides minus its own height. So the water amount of a given position i is
@@ -1641,16 +1833,17 @@ public class ArrayQuestion {
      * *The left/right max is based on the current position i
      * <p>
      * However, we don't really need to know both left_max and right_max, we just need to know the value of the smaller
-     * one. So we can have two pts starting from head and tail, and calculate the maxLeft and maxRight as we go.
+     * one. So we can have two pointers starting from head and tail, and calculate the maxLeft and maxRight as we go.
      * <p>
      * How to decide to move left or move right?
-     * If maxLeft < maxRight, it means the water level is based on the left side (the left bar is smaller)
-     * then move left side:
+     * If maxLeft < maxRight, it means the water level is based on the left side (the left bar is smaller).
+     * We move left side:
      * - Move left by left += 1
      * - Update the leftMax first
      * - Compute the amount of trap water, which is maxLeft - height[left].
      * <p>
-     * Else if maxLeft > maxRight, it means the water level is based on the right side (the right bar is smaller) then move right side:
+     * Else (maxLeft >= maxRight), it means the water level is based on the right side (the right bar is smaller).
+     * We move right side:
      * - Move right by right -= 1.
      * - Update the maxRight first
      * - Compute the amount of trap water, which is maxRight - height[right].
@@ -1665,21 +1858,72 @@ public class ArrayQuestion {
         int leftPtr = 0, rightPtr = height.length - 1;
         int ans = 0;
         while (leftPtr < rightPtr) {
+            // A taller bar exists on left pointer's right side
             // The side with the smaller max height dominates the calculation of trapping water amount, i.e. min(leftMax,rightMax)−height[i]
             // So we just keep moving the ptr on the side with the smaller max value and add up the water amount.
             if (leftMax < rightMax) {
                 leftPtr++; // Move the ptr first cuz it starts at the 0 index and there is no trapping water for the first position
-
                 // The order of the following two lines matters! Cuz height[leftPtr] can be greater than leftMax and will cause
                 // the following subtraction calculation negative. Here we update the max from these two first, so we don't need
                 // to check that condition. In this case(height[left] > maxLeft), it will become ans += 0, which means there is no trap water
                 leftMax = Math.max(leftMax, height[leftPtr]);
                 ans += leftMax - height[leftPtr]; // Calculate the trap water amount
             } else {
+                // A taller bar exists on right pointer's left side
                 rightPtr--; // Move the ptr first cuz it starts at the length-1 index and there is no trapping water for the last position
                 rightMax = Math.max(rightMax, height[rightPtr]);
                 ans += rightMax - height[rightPtr];
             }
+        }
+        return ans;
+    }
+
+    /**
+     * Iterate the array and maintain the non-decreasing monotonic stack to look for all "valley bar", which has next
+     * greater bar and a previous bar, and compute the water volume for each of them.
+     * <p>
+     * Observation:
+     * 1. To be able to trap the water, we need two nonadjacent bars to save water, and there must be at least one
+     * valley bar between them. For bar[i], if we can find bar[j] and bar[k] where bar[j] > bar[i], bar[k] >
+     * bar[i] and j < i < k, then bar[i] is a valley bar.
+     * <p>
+     * 2. Hence, given the bar i, if it has a next greater bar, k(right bar), and a previous greater bar, j(left bar).
+     * We can trap water at i. And we just need to find all valley bars and calculate the water volume.
+     * <p>
+     * Algo:
+     * Iterate the array and maintain a non-decreasing monotonic stack(store index).
+     * - Continuously pop out the element from the stack if it is less than the current bar height
+     * -- Now the popped-out bar is the valley bar, and the current bar is the right bar of the valley.
+     * -- Next we check if the stack still has element, if so, this is the left bar of the valley(The stack is
+     * decreasing order so it must be greater than valley bar).
+     * -- Compute the height, min(left bar, right bar) - valley bar, and width and finally the volume.
+     * -- Push the current bar index to the stack.
+     */
+    int trapWaterUseStack(int[] height) {
+        Deque<Integer> stack = new ArrayDeque<>(); // Hold the index of height array
+        int ans = 0;
+        for (int i = 0; i < height.length; i++) {
+            int currentBarHeight = height[i];
+            // maintain non-decreasing monotonic stack
+            while (!stack.isEmpty() && height[stack.peek()] < currentBarHeight) {
+                // The current bar is the next greater element of the one at the stack top, which means current
+                // bar can be the right bar of a valley
+                int prevHeight = height[stack.pop()]; // This is the bottom of a valley
+                // At each iteration, we use the current bar as valley right bar and compute the water volume for the
+                // one previous bar on the left if its previous greater bar exists. We repeat this until currentBarHeight
+                // is NOT greater than the top bar on the stack, which means no valley and can't trap the water
+                if (!stack.isEmpty()) {
+                    // If the stack is not empty, cuz we maintain decreasing monotonic stack, the top element at the stack
+                    // is the previous greater element to the prevHeight. So now we can use it as the left bar of a valley
+
+                    // h (height) is the minimum of the previous greater(left bar) and the next greater(right bar) elements
+                    int h = Math.min(height[stack.peek()], currentBarHeight) - prevHeight;
+                    // w (width) is the space between next greater and previous greater element
+                    int w = i - (stack.peek() + 1);
+                    ans += h * w;
+                }
+            }
+            stack.push(i);
         }
         return ans;
     }
@@ -1701,12 +1945,113 @@ public class ArrayQuestion {
      */
     @Test
     void testLargestRectangleArea() {
+        assertThat(largestRectangleAreaLeetCode(new int[]{2, 1, 5, 6, 2, 3})).isEqualTo(10);
+        assertThat(largestRectangleAreaLeetCode(new int[]{2, 4})).isEqualTo(4);
         assertThat(largestRectangleArea(new int[]{2, 1, 5, 6, 2, 3})).isEqualTo(10);
         assertThat(largestRectangleArea(new int[]{2, 4})).isEqualTo(4);
+        assertThat(largestRectangleArea(new int[]{1, 2, 2, 2, 1})).isEqualTo(6);
     }
 
     /**
-     * Iterate array and use increasing Monotolic stack to find the previous smaller element and next
+     * Iterate array and use increasing Monotonic stack to find the previous smaller bar and next
+     * smaller bar for each one. Then iterate again and use those info to compute the rectangle for
+     * each bar and keep track of the max one.
+     * <p>
+     * Observation:
+     * 1. The height of the maximal rectangle will be equal to the shortest bar included in it.
+     * Otherwise, the rectangle would not be valid.
+     * <p>
+     * 2. Our goal is for each bar, compute the maximal rectangle which uses it as the shortest bar.
+     * Hence, the height of each rectangle is subject to the height of that bar.
+     * <p>
+     * 3. Now we will use the height(H) of each bar to compute its max area. We need to figure out the
+     * width to max out the rectangle area. To include adjacent bar in the rectangle to make it wider,
+     * its height must be equal or greater than H. Therefore, we can't include any bar shorter than H.
+     * While we consider adjacent bar to expand the rectangle, the shorter bars on the left or right
+     * side will become the boundary of the max rectangle we can get.
+     * <p>
+     * 4. Hence, for the i-th bar w/ height(H), the left bound of its max rectangle will be the first
+     * bar before i and shorter than H. The right bound will be the first bar after i and shorter than X
+     * <p>
+     * Algo:
+     * 1. Init nextSmallerIdx array using heights.length as value
+     * - We will store the index of the next smaller bar of each bar here
+     * - Need to make up a dummy smallest bar(idx: heights.length) beyond the right bound of array,
+     * so there will be always a next smaller bar for every bar.
+     * <p>
+     * 2. Init prevSmallerIdx array using -1 as value
+     * - We will store the index of the previous smaller bar of each bar here
+     * - Need to make up a dummy smallest bar(idx: -1) beyond the left bound of array, so there will
+     * be always a previous smaller bar for every bar.
+     * <p>
+     * 3. Iterate array and maintain increasing monotonic stack before pushing the bar index to the stack.
+     * - We pop out any bar taller than the current bar. Then the current bar is literally their next
+     * smaller bar, so we set this at the nextSmallerIdx array.
+     * - If the stack is not empty, the top bar at the stack will be the previous smaller bar of the
+     * current bar, so we set this at the prevSmallerIdx array.
+     * - Push the current bar index to the stack
+     * <p>
+     * 4. Iterate the array again, for each bar i, use the current bar height and the width
+     * (nextSmallerIdx[i] - prevSmallerIdx[i] - 1), to compute the area of the rectangle. We keep track
+     * of the max rectangle area so far.
+     * <p>
+     * Time complexity: O(n)
+     * Space complexity: O(n)
+     */
+    int largestRectangleArea(int[] heights) {
+        Deque<Integer> stack = new ArrayDeque<>(); // Hold the index of element in heights
+        int[] nextSmallerIdx = new int[heights.length];
+        int[] prevSmallerIdx = new int[heights.length];
+        // Init the nextSmallerIdx to heights.length, which is a dummy bar after the last bar. For the smallest bar
+        // or the last bar in the array, we will never find their next smaller in the stack/array. However, we still
+        // need a right bound to compute the rectangle width. So we choose a dummy bar(index: heights.length), just like
+        // there is a bar after the last bar and use it as the default value of nextSmallerIdx.
+        Arrays.fill(nextSmallerIdx, heights.length);
+        // Init the prevSmallerIdx to -1, which is a dummy bar before the first bar. For the smallest bar
+        // or the first bar in the array, we will never find their previous smaller in the stack/array. However, we still
+        // need a left bound to compute the rectangle width. So we choose a dummy bar(index: -1), just like there is a
+        // bar before the first bar and use it as the default value of prevSmallerIdx.
+        Arrays.fill(prevSmallerIdx, -1);
+
+        for (int i = 0; i < heights.length; i++) {
+            // enforce increasing monotonic stack
+            while (!stack.isEmpty() && heights[stack.peek()] > heights[i]) {
+                Integer prevTallerBarIdx = stack.pop();
+                // The current bar is the next smaller bar for every bar popped out from the stack
+                nextSmallerIdx[prevTallerBarIdx] = i;
+            }
+            // Previous while loop assures stack will remain monotonic increasing even after we push the current bar
+            if (!stack.isEmpty()) {
+                // At this point, elements on the stack must be smaller or equal to current height
+                // the index at the stack top refers to the previous smaller element for `i`th bar
+                prevSmallerIdx[i] = stack.peek();
+            }
+            stack.push(i);
+        }
+        int maxArea = 0;
+        for (int i = 0; i < heights.length; i++) {
+            int currentHeight = heights[i];
+            // Num of bars in the range[left, right]: right - left - 1
+            int width = nextSmallerIdx[i] - prevSmallerIdx[i] - 1;
+            maxArea = Math.max(maxArea, currentHeight * width);
+        }
+        // Note: If bar j precedes bar i, and height[j] == height[i], prevSmallerIdx[i] will be j in this
+        // case, which means the max rectangle using heights[i] as height will have wrong width.
+        // (Supposedly bar j should also be included). However, this is fine because when there are consecutive
+        // bars w/ the same height, the first one of them will always get the correct prevSmallerIdx, so its
+        // max rectangle will be correct. Since we keep track of the max area so far, the wrong/smaller
+        // rectangle computed from the rest of the bars doesn't matter.(In theory, they should all produce the
+        // same rectangle, but this is not the case due to the logic that we consider previous bar w/ same height
+        // as previous smaller one) See the test case [1, 2, 2, 2, 1].
+        return maxArea;
+    }
+
+    /**
+     * ---- This is the LeetCode official solution ----
+     * The difference is it doesn't use extra array to store the previous smaller and next smaller bar.
+     * It calculates the max rectangle when iterating, but the logic is harder to understand and remember.
+     * <p>
+     * Iterate array and use increasing Monotonic stack to find the previous smaller element and next
      * smaller bar as we go, so we can compute the max rectangle for each bar.
      * <p>
      * Key observation:
@@ -1760,25 +2105,25 @@ public class ArrayQuestion {
      * https://medium.com/algorithms-digest/largest-rectangle-in-histogram-234004ecd15a
      * https://myleetcodejourney.blogspot.com/2021/01/leet-code-84-largest-rectangle-in.html
      */
-    int largestRectangleArea(int[] heights) {
-        Deque<Integer> stack = new ArrayDeque<>();// This is an increasing(bar height) monotolic stack containing the index of heights array
+    int largestRectangleAreaLeetCode(int[] heights) {
+        Deque<Integer> stack = new ArrayDeque<>();// This is an increasing(bar height) monotonic stack containing the index of heights array
         int maxArea = 0;
         // The two dummy numbers we choose are hand-crafted to suit our algorithm of calculating the rectangle width.
-        // width =  dummyRightSmallerIdx - dummyLeftSmallerIdx - 1 = heights.length
         // For the smallest bar in the array, the rectangle spans cross all bars so every bar is included. This is also
         // the reason to push the dummyLeftSmallerIdx to the stack first, so it can be used as the previous smaller bar on the left(lIdx)
         // for the first bar and the smallest bar in the array.
         int dummyLeftSmallerIdx = -1, dummyRightSmallerIdx = heights.length;
         stack.push(dummyLeftSmallerIdx);
         for (int i = 0; i < heights.length; i++) {
-            // We use <= so that means, the stack will always be strictly decreasing - because elements are popped when they are equal
+            // We use <= so that means, the stack will always be strictly increasing - because elements are popped when they are equal
             // so equal elements will never stay in the stack
-            while (stack.peek() != dummyLeftSmallerIdx && heights[i] <= heights[stack.peek()]) {
+            //while (stack.peek() != dummyLeftSmallerIdx && heights[i] <= heights[stack.peek()]) {
+            while (stack.peek() != dummyLeftSmallerIdx && heights[stack.peek()] >= heights[i]) {
                 int rectHeight = heights[stack.pop()];
                 // idx of the next smaller bar on the right(rIdx)
                 // --> current index, i. (We are here cuz we just encounter a smaller bar when iterating to the right)
                 // idx of the previous smaller bar on the left(lIdx)
-                // --> top element on the stack (Remember this is an increasing monotolic stack, so it is smaller than the one just popped out)
+                // --> top element on the stack (Remember this is an increasing monotonic stack, so it is smaller than the one just popped out)
                 // Hence, the max rectangle which includes the current bar as the shortest bar can include the bars w/ the
                 // index in the range of [lIdx+1, rIdx-1] inclusive, so (rIdx-1)-(lIdx+1)+1 = rIdx-lIdx-1
                 int rectWidth = i - stack.peek() - 1;
