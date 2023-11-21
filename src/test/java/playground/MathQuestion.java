@@ -746,6 +746,27 @@ public class MathQuestion {
         Assertions.assertThat(calculateII("3+5 / 2*2-1")).isEqualTo(6);
     }
 
+    /**
+     * Use the Basic Calculator III solution as the basis but remove the usage of Queue and parentheses condition cuz we
+     * don't need to support parentheses
+     */
+    int calculateII(String s) {
+        int num = 0;
+        char prevOperator = '+';
+        Deque<Integer> stack = new ArrayDeque<>();
+        for (int i = 0; i < s.length(); i++) {
+            char currentChar = s.charAt(i);
+            if (Character.isDigit(currentChar)) {
+                num = 10 * num + (currentChar - '0');
+            } else if ("+-*/".indexOf(currentChar) != -1) {
+                eval(stack, num, prevOperator);
+                num = 0;
+                prevOperator = currentChar;
+            }
+        }
+        eval(stack, num, prevOperator);
+        return stack.stream().mapToInt(i -> i).sum();
+    }
 
     /**
      * Iterate the string and once the next char is [+ - * /], we evaluate the current operand and the last
@@ -765,11 +786,11 @@ public class MathQuestion {
      * lastEvalOperand [multiply/divide] currentNum, then it is added to the final result.
      * This is the KEY difference cuz these two operations take higher precedence so must be evaluated first.
      * Besides, cuz our logic is processing from left to right w/o respecting any operator precedence,
-     * for operations(* and /), we need to first subtract the lastEvalOperand from the final
-     * result, then eval and update lastEvalOperand. When we have continuous * or / in a row, e.g.
-     * 2 * 3 / 4 * 5, this subtraction logic still holds true, cuz the lastEvalOperand will have
-     * accumulated result in the end and added to the final result. The above sample is literally
-     * processed like (((2 * 3) / 4) * 5). The parentheses kinda depicts how the lastEvalOperand
+     * for operations(* and /), we need to first subtract the lastEvalOperand from the final result, then update
+     * lastEvalOperand to the evaluation result of lastEvalOperand and current num w/ the operation(* or /).
+     * When we have continuous * or / in a row, e.g. 2 * 3 / 4 * 5, this subtraction logic still holds true, cuz the
+     * lastEvalOperand will have accumulated result in the end and added to the final result. The above sample is
+     * literally processed like (((2 * 3) / 4) * 5). The parentheses kinda depicts how the lastEvalOperand
      * evaluation is expanded
      * <p>
      * Time Complexity: O(n), where n is the length of the string s.
@@ -777,7 +798,7 @@ public class MathQuestion {
      * <p>
      * Note: Another solution uses the stack, but it has worse space complexity, O(n)
      */
-    int calculateII(String s) {
+    int calculateIIVer2(String s) {
         int result = 0;
         int currentNum = 0;
         int lastEvalOperand = 0;
@@ -852,8 +873,44 @@ public class MathQuestion {
     }
 
     /**
-     * Use stack to track the sign(+/-) before every parentheses, and apply it to every sign of the term inside
-     * parentheses, so we can add every term as we go.
+     * Use the Basic Calculator III solution as basis and remove the support of "* /"
+     * Use the existing eval method here, but in fact we can remove the switch condition for * and /
+     */
+    int calculateI(String s) {
+        Queue<Character> queue = new ArrayDeque<>();
+        for (int i = 0; i < s.length(); i++)
+            queue.offer(s.charAt(i));
+        return calI(queue);
+    }
+
+    int calI(Queue<Character> queue) {
+        int num = 0;
+        char prevOperator = '+';
+        Deque<Integer> stack = new ArrayDeque<>();
+        while (!queue.isEmpty()) {
+            Character currentChar = queue.poll();
+            if (Character.isDigit(currentChar)) {
+                num = 10 * num + (currentChar - '0');
+            } else if ("+-".indexOf(currentChar) != -1) {
+                eval(stack, num, prevOperator);
+                num = 0;
+                prevOperator = currentChar;
+            } else if (currentChar.equals('(')) {
+                num = calI(queue);
+            } else if (currentChar.equals(')')) {
+                break;
+            }
+        }
+        eval(stack, num, prevOperator);
+        return stack.stream().mapToInt(i -> i).sum();
+    }
+
+    /**
+     * This is another implementation before I found the template working for all Basic Calculator problem.
+     * <p>
+     * Push/pop a "sign" var(1 or -1) to/from the stack when encountering '(' or ')'. Sign is updated when encountering
+     * '+' or '-'. Use it to track the sign before every parenthesis, and multiply it to every term inside parentheses,
+     * so we can just add every term to the result as we go.
      * <p>
      * There are two ideas to simplify the problem.
      * 1. We can treat minus as plus negative number, so we only need to deal with addition operation
@@ -866,7 +923,7 @@ public class MathQuestion {
      * <p>
      * When we encounter an operator(+ or -),
      * For the (1), we maintain a sign int variable, which is either 1 or -1, to represent + or - operation.
-     * For the (2), we use a stack to track the sign state when we entering parentheses, we push it to the
+     * For the (2), we use a stack to track the sign state when we enter parentheses, we push it to the
      * stack when encountering the (, pop it out when encountering the ).
      * When we encounter + or -, we always peek the sign before the current parentheses on the stack, then
      * multiply it to the current + or -, i.e. 1 or -1
@@ -874,7 +931,7 @@ public class MathQuestion {
      * Algo:
      * 1. Start from +1 sign and scan s from left to right;
      * 2. If c == digit: This number = Last digit * 10 + This digit;
-     * -  If this is the last char or there is no more digit afterwards, Add num * sign to result;
+     * -  If this is the last char or the next char is NOT digit, Add num * sign to result;
      * 3. if c == '+': This sign = signBeforeParentheses * 1; clear num;
      * 4. if c == '-': This sign = signBeforeParentheses * -1; clear num;
      * 5. if c == '(': Push the current sign to stack; (sign before the open parenthesis)
@@ -883,14 +940,14 @@ public class MathQuestion {
      * Time Complexity: O(N), where N is the length of the string.
      * Space Complexity: O(N), where N is the length of the string.
      */
-    int calculateI(String s) {
+    int calculateIVer2(String s) {
         if (s == null) return 0;
         int result = 0;
         int sign = 1;// we use 1 for +, -1 for -
         int num = 0;
 
         Deque<Integer> stack = new ArrayDeque<>();
-        stack.push(sign);// We need to push 1 to the stack first, so it can work for scenario when - is the first char
+        stack.push(sign);// We need to push 1 to the stack first, so it can work for scenario when "-" is the first char
 
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
@@ -917,6 +974,158 @@ public class MathQuestion {
             }
         }
         return result;
+    }
+
+    /**
+     * Basic Calculator III
+     * Implement a basic calculator to evaluate a simple expression string.
+     * <p>
+     * The expression string contains only non-negative integers, '+', '-', '*', '/' operators,
+     * and open '(' and closing parentheses ')'. The integer division should truncate toward zero.
+     * <p>
+     * You may assume that the given expression is always valid. All intermediate results will be
+     * in the range of [-231, 231 - 1].
+     * <p>
+     * Note: You are not allowed to use any built-in function which evaluates strings as
+     * mathematical expressions, such as eval().
+     * <p>
+     * Input: s = "1+1"
+     * Output: 2
+     * <p>
+     * Input: s = "6-4/2"
+     * Output: 4
+     * <p>
+     * Input: s = "2*(5+5*2)/3+(6/2+8)"
+     * Output: 21
+     * <p>
+     * https://leetcode.com/problems/basic-calculator-iii/description/
+     */
+    @Test
+    void testCalculatorIII() {
+        Assertions.assertThat(calculateIII("6-(2+3)+1")).isEqualTo(2);
+        Assertions.assertThat(calculateIII("(1+(4+5+2)-3)+(6+8)")).isEqualTo(23);
+        Assertions.assertThat(calculateIII("2*(5+5*2)/3+(6/2+8)")).isEqualTo(21);
+    }
+
+    /**
+     * Add all char to the queue first and remove each one at a time. When encountering +-* /, evaluate the last number
+     * w/ last operator, and push the result to the stack. The stack contains the number or multiplication/division
+     * result. If encountering (, recursively call the same method to evaluate the expression in the parentheses.
+     * <p>
+     * All Basic Calculator problems have similar requirement.
+     * Basic Calculator I: Must support (, ), +, -, non-negative int
+     * Basic Calculator II: Must support +, -, *, /, non-negative int
+     * Basic Calculator III: Must support (, ), +, -, *, /, non-negative int
+     * <p>
+     * Basic Calculator III includes everything from I and II. We just need to remove certain functions for the
+     * solution of I and II.
+     * <p>
+     * Observation:
+     * 1. When we iterate the expression str, we need to first evaluate the sub-expression enclosed by the most inner
+     * parentheses, and take its result to evaluate its the outer sub-expression if any. This kind of execution path
+     * is similar to the DFS, which we can recursively go down to the most inner sub-expression and iterate each term
+     * there and return the evaluated result and return to its enclosed parentheses and so on, until the top level
+     * expression.
+     * <p>
+     * 2. We will still continue to iterate the char in str even when we process the expression in the parentheses at
+     * the recursion. But it will be easier if putting every char in the queue and keep removing the char from it to
+     * iterate the str, so we don't need to pass or use a global pointer when we make recursive call.
+     * <p>
+     * 3. To easier access the previous operand or the evaluated sub-expression result from the parentheses, we can push
+     * them to the stack. Instead of updating a expression evaluation result in the iteration, we can just keep adding
+     * the number or the result of multiplication and division operation to the stack and we just sum up the every
+     * number in the stack in the end. This will make us to be able to evaluate the multiplication and division first,
+     * and leave the addition in the end. For the subtraction, we just negate the number and add it to the stack.
+     * <p>
+     * Algo:
+     * 1. Add all char to the queue
+     * 2. Pass the queue to the "cal" method, and the previous operator is default to +
+     * 3. For each char removed from the queue
+     * - Build up all digit char and set to a var num
+     * - If it is "+-* /", we evaluate the num w/ the previous operator and push the result to the stack.(May involve
+     * the top element on the stack for * and /)
+     * - If it is "(", recursively call "cal" method. We need to first evaluate the segment of expression in the
+     * parentheses. The returned result is set to num.
+     * - If it is ")", we break the loop. This condition is for the end of one segment of expression in the parentheses.
+     * 4. We need to evaluate the num, prevOp one more time. This is for the last number in the sub-expression enclosed
+     * by the parentheses or the input expression str.
+     * 5. Sum up all numbers on the stack and this is the result.
+     * <p>
+     * Reference:
+     * https://leetcode.com/problems/basic-calculator-iii/solutions/1727380/java-this-simple-template-can-be-used-for-basic-calculator-i-ii-iii/
+     * <p>
+     * Time Complexity : O(n)
+     * Space Complexity : O(n)
+     */
+    int calculateIII(String s) {
+        if (s == null)
+            return 0;
+        // Put all chars to the queue, so it is easier to track the reaming chars when doing the recursive call
+        Queue<Character> q = new ArrayDeque<>();
+        for (char c : s.toCharArray())
+            q.offer(c);
+        return cal(q);
+    }
+
+    private int cal(Queue<Character> q) {
+        // it can be set to the last number we encountered, or the evaluated result from the last enclosed parentheses we just exit
+        int num = 0;
+        Deque<Integer> stack = new ArrayDeque<>();
+        char prevOp = '+';
+        while (!q.isEmpty()) {
+            char currentChar = q.poll();
+            if (Character.isDigit(currentChar)) {
+                num = 10 * num + currentChar - '0'; // Number can be multi-digit, so need to keep building it up.
+            } else if (currentChar == '(') {
+                // Recursively call cal method to evaluate every term enclosed by it and the close parenthesis first.
+                // It may make another recursive call internally depending on if there are any nested parentheses
+                num = cal(q);
+            } else if ("+-*/".indexOf(currentChar) != -1) {
+                // Trigger the evaluation logic encounter the operator.
+                // Evaluate the num and the top element on the stack(* or /) w/ PREVIOUS operator and push the result to
+                // stack
+                eval(stack, num, prevOp);
+                // Rest the num and update the previous operator to current char
+                num = 0;
+                prevOp = currentChar;
+            } else if (currentChar == ')') {
+                // We finish a segment of a sub-expression inside the parentheses
+                // This is also the base case for the recursion to terminate
+                break;
+            }
+        }
+        // Trigger eval after the loop for two reasons
+        // 1. When we have processed every char in the expression. But the last number in the expression or the evaluated
+        // result of the last parentheses is not evaluated w/ the num yet.
+        // 2. When We break the loop after exiting a closed parenthesis, we need to evaluate the last number, so we
+        // can sum up the result on the stack and return.
+        eval(stack, num, prevOp);
+        return stack.stream().mapToInt(a -> a).sum(); // sum up all number on the stack
+    }
+
+    private void eval(Deque<Integer> stack, int num, char op) {
+        // We need to first compute operands involving the "*" and "/" operation first cuz they have higher precedence.
+        // The idea is we will leave the addition at the very end so the final result of the expression will be computed by
+        // summing up every number(not necessary the exact number in the original expression) on the stack. For the
+        // subtraction, we negate the number and push it to the stack.
+        switch (op) {
+            case '+':
+                stack.push(num); // just push the number to the stack
+                break;
+            case '-':
+                stack.push(-num); // flip the sign of the number and push to the stack
+                break;
+            case '*':
+                // Multiply the last number(top element on the stack) by num and push result to the stack
+                stack.push(stack.pop() * num);
+                break;
+            case '/':
+                // Divide the last number(top element on the stack) by num and push result to the stack
+                stack.push(stack.pop() / num);
+                break;
+            default:
+                break;
+        }
     }
 
 }

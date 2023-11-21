@@ -651,6 +651,108 @@ public class StringQuestion {
     }
 
     /**
+     * Longest Valid Parentheses
+     * Given a string containing just the characters '(' and ')', return the length of the longest
+     * valid (well-formed) parentheses substring.
+     * <p>
+     * Input: s = "(()"
+     * Output: 2
+     * Explanation: The longest valid parentheses substring is "()".
+     * <p>
+     * Input: s = ")()())"
+     * Output: 4
+     * Explanation: The longest valid parentheses substring is "()()".
+     * <p>
+     * Input: s = ""
+     * Output: 0
+     * <p>
+     * https://leetcode.com/problems/longest-valid-parentheses/description/
+     */
+    @Test
+    void testLongestValidParentheses() {
+        assertThat(longestValidParentheses("(()()")).isEqualTo(4);
+        assertThat(longestValidParentheses("(()")).isEqualTo(2);
+        assertThat(longestValidParentheses(")()())")).isEqualTo(4);
+        assertThat(longestValidParentheses("()(()")).isEqualTo(2);
+        assertThat(longestValidParentheses("(()(((()")).isEqualTo(2); //"))((",
+    }
+
+    /**
+     * Iterate the str and update the maxLength when left and right parenthesis count are equal. Reset both counts
+     * when right > left. Iterate again but in reverse and update the maxLength when left and right parenthesis count
+     * are equal. But reset both counts when left > right.
+     * <p>
+     * Observation:
+     * 1. We can iterate the string and keep track the count of valid pair of parentheses. When we have the equal
+     * number of left and right parentheses, increment the length by 2. If we encounter an extra right parenthesis,
+     * which makes right more than left. It means the current valid parentheses sequence has to stop, and the count
+     * should also be reset. On the other hand, we want to extend the sequence when we have more left parenthesis
+     * than the right. Cuz we may encounter right parenthesis later to be paired w/ these left parenthesis, thus
+     * making the sequence longer.
+     * <p>
+     * 2. However, the above approach may be too optimal at certain cases. In a case like "(((()))", it won't detect
+     * the valid parentheses sequence after the first redundant left parenthesis, cuz the number of left and right
+     * is never equal. Therefore, we need something more to compensate the logic. If we iterate the string in reversed
+     * order and this time we still apply similar logic but we naturally change to accept more right parenthesis
+     * than left. This will help us to detect the aforementioned parentheses sequence.
+     * <p>
+     * Algo:
+     * 1. Use left and right to track the total count of left and right parenthesis
+     * 2. Iterate the string and update the corresponding count
+     * - If left == right, update the maxLength
+     * - If right > left, reset both left and right count
+     * 3. Reset both left and right count after the first iteration
+     * 4. Iterate the string in REVERSED order and update the corresponding count
+     * - If left == right, update the maxLength
+     * - If left > right , reset both left and right count
+     * 5. return the maxLength
+     * <p>
+     * Time complexity: O(n)
+     * Space complexity: O(1)
+     */
+    int longestValidParentheses(String s) {
+        int left = 0, right = 0, maxlength = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) == '(')
+                left++;
+            else
+                right++;
+            if (left == right)
+                maxlength = Math.max(maxlength, left * 2);
+            else if (right > left) {
+                // Trigger the reset when we have more right than left
+                // When we scan from left to right and have more right parenthesis than left parenthesis, e.g. "())"
+                // there is no way we can extend the current parenthesis pair length. However, it is possible if we have
+                // more left than right, cuz we may encounter one or more right parentheses later.
+                left = right = 0;
+            }
+        }
+        // In the first iteration we naively hope we will eventually find the right parenthesis to pair the extra left one(s).
+        // So it is possible that a true longest parentheses string preceding a lonely left parenthesis will never be detected,
+        // cuz left != right and reset condition is not triggered either.
+        // Ex: For "()((())", maxlength will be 2 after the first iteration.
+        // So we need to iterate in reversed direction to detect the longest parentheses and use the opposite condition to reset.
+        left = right = 0; // Reset the left and right before the 2nd reverse iteration
+        for (int i = s.length() - 1; i >= 0; i--) {
+            if (s.charAt(i) == '(')
+                left++;
+            else
+                right++;
+            if (left == right)
+                maxlength = Math.max(maxlength, left * 2);
+            else if (left > right) {
+                // Trigger the reset when we have more left than right(This is DIFFERENT from the above iteration)
+                // When we scan from right to left and have more left parenthesis than right parenthesis, e.g. "(()"
+                // there is no way we can extend the current parenthesis pair length. However, it is possible if we have
+                // more right than left, cuz we may encounter one or more left parentheses later.
+                // This condition is the OPPOSITE to the one when iterating from left to right.
+                left = right = 0;
+            }
+        }
+        return maxlength;
+    }
+
+    /**
      * Decode String
      * Given an encoded string, return its decoded string.
      * <p>
@@ -771,6 +873,99 @@ public class StringQuestion {
             decodedSb.append(stack.pop());
         }
         return decodedSb.reverse().toString(); // reversed str is our answer
+    }
+
+    /**
+     * Remove Duplicate Letters
+     * Given a string s, remove duplicate letters so that every letter appears once and only once.
+     * You must make sure your result is
+     * the smallest in lexicographical order among all possible results.
+     * <p>
+     * Input: s = "bcabc"
+     * Output: "abc"
+     * <p>
+     * Input: s = "cbacdcbc"
+     * Output: "acdb"
+     * <p>
+     * https://leetcode.com/problems/remove-duplicate-letters/description/
+     */
+    @Test
+    void testRemoveDuplicateLetters() {
+        assertThat(removeDuplicateLetters("bcabc")).isEqualTo("abc");
+        assertThat(removeDuplicateLetters("cbacdcbc")).isEqualTo("acdb");
+        assertThat(removeDuplicateLetters("abacb")).isEqualTo("abc");
+    }
+
+    /**
+     * Build the map of char to index of its last occurrence in the str. Iterate the str and push the char to the
+     * stack, but popping any char in the stack if it is larger than the current char and will occur later.
+     * Finally build the answer from char on the stack in reverse order.
+     * <p>
+     * Observation:
+     * 1. Which string is greater depends on the comparison between the first unequal corresponding character
+     * in the two strings. As a result any string beginning with a will always be less than any string beginning
+     * with b, regardless of the ends of both strings. Hence, the optimal solution will have the smallest
+     * characters as early as possible. Ex: azyx is smaller than bacd in lexicographical order.
+     * <p>
+     * 2. If there are multiple smallest letters, then we pick the leftmost one simply because it gives us
+     * more options and more chance to get a optimal solution.
+     * <p>
+     * 3. As we iterate over our string, if character[i] is greater than character[i-1] and another occurrence
+     * of character[i-1] exists later in the string, deleting character i will always lead to the optimal solution.
+     * Ex: input: bcabc
+     * Say when we iterate to 'a', we had "bc" in our building string. We can see we will encounter 'b' and 'c'
+     * again in the later iteration. Cuz 'a' is smaller than 'b' and 'c', we should drop them and put 'a' as the
+     * first char. 'b' and 'c' will be added later regardless, and the order of them being inserted doesn't really
+     * matter. Cuz as long as 'a' is at the first char, it will beat other string beginning with the bigger char.
+     * <p>
+     * 4. When we need to look backward or check the previous visited elements while iterating, and the computed
+     * result also depends on that decision. Stack is a good data structure candidate in this case.
+     * <p>
+     * Algo:
+     * 1. Build the map of char to index of its last occurrence in the string
+     * 2. Use the Stack to store the building string, and a Set to store the char added to the set.
+     * 3. Iterate the string char
+     * - If current char is in the set, skip it.
+     * - If current char is smaller than top char on the stack and we will encounter the same char at later iteration
+     * (checking the charToLastIdx map), keep popping such char from the stack. Also update the Set.
+     * - Push the current char to the stack and update the stack.
+     * 4 Build the final answer by iterating the stack in reverse order.
+     * <p>
+     * Time complexity : O(N)
+     * Space complexity : O(N)
+     */
+    String removeDuplicateLetters(String s) {
+        Set<Character> charOnStack = new HashSet<>(); // Keep track of what char is already added to the stack
+        // This help us know if the given char will be seen again while iterating the array
+        Map<Character, Integer> charToLastIdx = new HashMap<>();
+        for (int i = 0; i < s.length(); i++) {
+            charToLastIdx.put(s.charAt(i), i);
+        }
+        Deque<Character> stack = new ArrayDeque<>();
+        for (int i = 0; i < s.length(); i++) {
+            char currentChar = s.charAt(i);
+            if (charOnStack.contains(currentChar))
+                // current char is on the stack, we can't have duplicate so skip it
+                continue;
+            // Before we push the current char to the stack, we need to remove the top char on the stack if both condition meet
+            // 1. Current char is smaller than top char. Cuz we want to put the smaller char in the front if possible.
+            //    Ex: "ab" is better than "ba"
+            // 2. We can only remove the top char for the case (1) ONLY if we know we will see this char again. Every
+            //    unique char must be added to the stack at once in the end per requirement.
+            while (!stack.isEmpty() && stack.peek() > currentChar // current char is smaller
+                    && charToLastIdx.get(stack.peek()) > i) { // we will see the top char later
+                Character topChar = stack.pop();
+                charOnStack.remove(topChar);
+            }
+            stack.push(currentChar);
+            charOnStack.add(currentChar);
+        }
+
+        StringBuilder stb = new StringBuilder();
+        // Build the str by iterating the stack in reversed order
+        while (!stack.isEmpty())
+            stb.append(stack.removeLast());
+        return stb.toString();
     }
 
     /**
