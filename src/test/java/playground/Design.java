@@ -787,17 +787,17 @@ public class Design {
      * lRUCache.get(4);    // return 4
      * https://leetcode.com/problems/lru-cache/description/
      * <p>
-     * Use HashMap w/ value point to the node in Doubly Linked List w/ dummy head and tail node.
-     * The most recently used node(called by put/get) will be moved to the end of linked list(before the tail node)
-     * Therefore nodes toward the head are least recently used, so when the put call exceeds the capacity,
-     * we delete the node after the head node.
+     * Use a Double Linked List to track the most/least recently used. The node before the dummy tail node is the most
+     * recently added/accessed, while the node after the head dummy node is the least recently used.
+     * The ListNode class has a prev and next ptr to implement the linked list. We also need a Map<Integer, ListNode>
+     * for the mapping from key to the node to track the existence and capacity.
      * <p>
      * Time complexity: O(1) for both get and put
      * Space complexity: O(capacity)
      */
-    class LRUCache {
+    static class LRUCache {
 
-        private class ListNode {
+        private static class ListNode {
             int key;
             int val;
             ListNode prev;
@@ -809,10 +809,10 @@ public class Design {
             }
         }
 
-        private int capacity;
-        private Map<Integer, ListNode> keyToNode;
+        private final int capacity;
+        private final Map<Integer, ListNode> keyToNode;
         // The dummy head and tail nodes will help us to easily add/remove nodes on both ends
-        private ListNode head; // Least recently used
+        private final ListNode head; // Least recently used
         private ListNode tail; // Most recently used
 
         public LRUCache(int capacity) {
@@ -838,6 +838,12 @@ public class Design {
             tail.prev = node;
         }
 
+        /**
+         * 1. If map doesn't contain the key, return -1
+         * 2. Otherwise, get the ListNode for the key from the map
+         * 3. Remove the ListNode from the linked list(connect the prev node to next node)
+         * 4. Add the ListNode before the tail node
+         */
         public int get(int key) {
             if (!keyToNode.containsKey(key))
                 return -1;
@@ -848,6 +854,13 @@ public class Design {
             return node.val;
         }
 
+        /**
+         * 1. If key exists, first remove the node from the linked list(connect the prev node to next node)
+         * 2. Create a new ListNode and add it to the end of the linked list (before tail node)
+         * 3. Put (key -> node) entry to the keyToNode map
+         * 4. If the map size is greater than capacity, remove the entry by the key of the ListNode after
+         * the head(head.next.key), then remove the ListNode(head.next) from the linked list
+         */
         public void put(int key, int value) {
             if (keyToNode.containsKey(key)) {
                 removeNode(keyToNode.get(key));

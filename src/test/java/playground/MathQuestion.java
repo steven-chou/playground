@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /* TODO- Useful Tips:
      - Take digits of one-by-one from an integer from the last digit
         <1> Use mod
@@ -53,6 +55,118 @@ public class MathQuestion {
                 ans.add(Integer.toString(i));
         }
         return ans;
+    }
+
+    /**
+     * Reverse Integer
+     * https://leetcode.com/problems/reverse-integer/solution/
+     * EPI 4.8
+     */
+    @Test
+    void testReverseInt() {
+        int num = 123;
+        org.junit.jupiter.api.Assertions.assertEquals(321, reverseInt(num));
+        num = -123;
+        org.junit.jupiter.api.Assertions.assertEquals(-321, reverseInt(num));
+        num = 120;
+        org.junit.jupiter.api.Assertions.assertEquals(21, reverseInt(num));
+    }
+
+    //Time Complexity: O(log(x)). There are roughly log10(x) digits in x. Space Complexity: O(1)
+    int reverseInt(int x) {
+        int ans = 0;
+        while (x != 0) {
+            int pop = x % 10; // mod operation gives us the right most digit
+            x /= 10; // int div drops the right most digit, and the loop continues until it becomes zero
+            /*
+            MAX_VALUE = 2147483647, MIN_VALUE = -2147483648
+            To explain the following check, lets assume that ans is positive.
+                1. If temp = ans⋅10 + pop causes overflow, then it must be that ans ≥ INT_MAX/10
+                2. If ans > INT_MAX/10, then temp = ans⋅10 + pop is guaranteed to overflow.
+                3. If ans == INT_MAX/10, then temp = ans⋅10 + pop will overflow if and only if pop > 7
+            Similar logic can be applied when ans is negative.
+             */
+            if (ans > Integer.MAX_VALUE / 10 || (ans == Integer.MAX_VALUE / 10 && pop > 7))
+                return 0;
+            if (ans < Integer.MIN_VALUE / 10 || (ans == Integer.MIN_VALUE / 10 && pop < -8))
+                return 0;
+            ans = ans * 10 + pop; // This can cause an overflow, so we need above check
+        }
+        return ans;
+    }
+
+    /**
+     * Plus One
+     * You are given a large integer represented as an integer array digits, where each digits[i]
+     * is the ith digit of the integer. The digits are ordered from most significant to least
+     * significant in left-to-right order. The large integer does not contain any leading 0's.
+     * <p>
+     * Increment the large integer by one and return the resulting array of digits.
+     * <p>
+     * Input: digits = [1,2,3]
+     * Output: [1,2,4]
+     * Input: digits = [9]
+     * Output: [1,0]
+     * <p>
+     * Input: digits = [9]
+     * Output: [1,0]
+     * Explanation: The array represents the integer 9.
+     * Incrementing by one gives 9 + 1 = 10.
+     * Thus, the result should be [1,0].
+     * https://leetcode.com/problems/plus-one/solution/
+     */
+    @Test
+    void testPlusOne() {
+        int[] intArray1 = new int[]{4, 3, 2, 1};
+        int[] intArray2 = new int[]{1, 2, 9};
+        int[] intArray3 = new int[]{9, 9};
+        assertThat(plusOne(intArray1)).containsExactly(4, 3, 2, 2);
+        assertThat(plusOne(intArray2)).containsExactly(1, 3, 0);
+        assertThat(plusOne(intArray3)).containsExactly(1, 0, 0);
+    }
+
+    /**
+     * Iterate backward thru array and set the digit to 0 if it is 9, otherwise, increment the digit by 1 and
+     * return the array. If the loop ends and not return yet, we return a new array w/ prepending 1.
+     * <p>
+     * Observation:
+     * 1. When the rightmost digit is not 9, adding one to it won't result in any carry
+     * 2. When the rightmost digit is 9, adding one to it will result in carry, and the carry will make the
+     * preceding digit zero and result in another carry if it is also 9. Otherwise, the 1 will be just added
+     * to that digit.
+     * 3. Therefore, we can generalize that 1 will be added to the rightmost digit, which is not equal to 9,
+     * and all its subsequent digits of nine should be set to 0.
+     * <p>
+     * Algo:
+     * Iterate from the end of array.
+     * If it is 9, set it to 0. (We want to set every 9 to 0 before we encounter any non-nine digit)
+     * Else increase this rightmost not-nine by 1, then return the array.(We are done)
+     * If it doesn't return after the iteration, that means all the digits were equal to nine.
+     * So they have all been set to zero.
+     * We then append the digit 1 in front of the other digits and return the result.
+     * For example, 999 ---> 1000
+     * Time Complexity: O(n).
+     * Space Complexity: O(n)
+     */
+    int[] plusOne(int[] digits) {
+        for (int i = digits.length - 1; i >= 0; i--) {
+            // Move from the end
+            if (digits[i] == 9)
+                // We set every 9 to 0 before we encounter any non-nine digit
+                digits[i] = 0;
+            else {
+                // Here we encounter the rightmost not-nine digit, so we increase this by 1
+                digits[i]++;
+                // We are done here!
+                return digits;
+            }
+        }
+        // We're here because all the digits were equal to nine, and now they have all been set to zero.
+        // So we need to append the digit 1 in front of the digits and return the result.
+        // For example, 999 ---> 1000
+        digits = new int[digits.length + 1]; // Make a new array, all default to 0
+        digits[0] = 1;
+        return digits;
     }
 
     /**

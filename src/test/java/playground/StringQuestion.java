@@ -80,44 +80,6 @@ public class StringQuestion {
     }
 
     /**
-     * Reverse Integer
-     * https://leetcode.com/problems/reverse-integer/solution/
-     * EPI 4.8
-     */
-    @Test
-    void testReverseInt() {
-        int num = 123;
-        Assertions.assertEquals(321, reverseInt(num));
-        num = -123;
-        Assertions.assertEquals(-321, reverseInt(num));
-        num = 120;
-        Assertions.assertEquals(21, reverseInt(num));
-    }
-
-    //Time Complexity: O(log(x)). There are roughly log10(x) digits in x. Space Complexity: O(1)
-    int reverseInt(int x) {
-        int ans = 0;
-        while (x != 0) {
-            int pop = x % 10; // mod operation gives us the right most digit
-            x /= 10; // int div drops the right most digit, and the loop continues until it becomes zero
-            /*
-            MAX_VALUE = 2147483647, MIN_VALUE = -2147483648
-            To explain the following check, lets assume that ans is positive.
-                1. If temp = ans⋅10 + pop causes overflow, then it must be that ans ≥ INT_MAX/10
-                2. If ans > INT_MAX/10, then temp = ans⋅10 + pop is guaranteed to overflow.
-                3. If ans == INT_MAX/10, then temp = ans⋅10 + pop will overflow if and only if pop > 7
-            Similar logic can be applied when ans is negative.
-             */
-            if (ans > Integer.MAX_VALUE / 10 || (ans == Integer.MAX_VALUE / 10 && pop > 7))
-                return 0;
-            if (ans < Integer.MIN_VALUE / 10 || (ans == Integer.MIN_VALUE / 10 && pop < -8))
-                return 0;
-            ans = ans * 10 + pop; // This can cause an overflow, so we need above check
-        }
-        return ans;
-    }
-
-    /**
      * First Unique Character in a String
      * https://leetcode.com/problems/first-unique-character-in-a-string/solution/
      */

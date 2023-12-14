@@ -5,12 +5,21 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+/**
+ * TODO Linked List tips
+ *   1. Sentinel/dummy head/tail node
+ *      - When the problem asks for return a head of new list, it is very common to add a head dummy node fist, and
+ *        have another ptr(tail) starting at the head then continue to append the new node and advance the ptr. So we
+ *        can just return the head.next as returning answer in the end.
+ *      - To handle some edge cases where operations have to be performed at the head or the tail.
+ */
 public class LinkedListQuestion {
 
     /**
      * Delete Node in a Linked List
      * You are given the node to be deleted node. You will not be given access to the first node of head.
-     * All the values of the linked list are unique, and it is guaranteed that the given node node is not the last node in the linked list.
+     * All the values of the linked list are unique, and it is guaranteed that the given node is not the last node in
+     * the linked list.
      * https://leetcode.com/problems/delete-node-in-a-linked-list/solution/
      */
     @Test
@@ -124,6 +133,8 @@ public class LinkedListQuestion {
     /**
      * Reverse Linked List
      * Given the head of a singly linked list, reverse the list, and return the reversed list.
+     * Input: head = [1,2,3,4,5]
+     * Output: [5,4,3,2,1]
      * https://leetcode.com/problems/reverse-linked-list/solution/
      */
     @Test
@@ -137,8 +148,18 @@ public class LinkedListQuestion {
     }
 
     /**
-     * Need one ptr to first save the "next" node, and another "previous" ptr(init to null) to store the current
-     * node reference before moving to the next node
+     * Need to maintain a prev ptr(init to null) to store the current ptr first before advancing the current ptr.
+     * 1. Save the current ptr's next node ref,
+     * 2. Update current ptr next to prev ptr
+     * 3. Move prev ptr to current ptr
+     * 4. Move current ptr to the saved next node
+     * 5. Return the prev ptr in the end
+     * <p>
+     * Observation:
+     * While traversing the list, we can change the current node's next pointer to point to its previous element.
+     * Since a node does not have reference to its previous node, we must store its previous element beforehand.
+     * We also need another pointer to store the next node before changing the reference.
+     * Do not forget to return the new head reference at the end!
      * Time Complexity: O(L).
      * Space Complexity: O(1)
      */
@@ -196,8 +217,10 @@ public class LinkedListQuestion {
     }
 
     /**
-     * Use a dummy head and tail ptr to compare the l1 and l2 node value then update the tail.next
-     * then advance either l1 and l2 ptr until one of them reach the end then append the other to the tail
+     * Create a dummy head and use tail ptr to iterate l1 and l2. At each iteration, append the smaller node
+     * of them to the tail ptr, then advance either l1 or l2 and tail ptr until one of them reach the end
+     * then append the other to the tail
+     * <p>
      * First we maintain a dummy "head" node that allows to return the head of merged list later.
      * We also maintain a "tail" node for this merged list, and we keep updating its next ptr to the
      * added new node from L1 or L2
@@ -239,6 +262,14 @@ public class LinkedListQuestion {
 
     /**
      * Palindrome Linked List
+     * Given the head of a singly linked list, return true if it is a palindrome
+     * or false otherwise.
+     * <p>
+     * Input: head = [1,2,2,1]
+     * Output: true
+     * <p>
+     * Input: head = [1,2]
+     * Output: false
      * https://leetcode.com/problems/palindrome-linked-list/
      */
     @Test
@@ -259,48 +290,51 @@ public class LinkedListQuestion {
     }
 
     /**
-     * Reverse Second Half In-place approach
-     * 1. Find the end of the first half.
-     * 2. Reverse the second half.
-     * 3. Determine whether there is a palindrome.
-     * 4. Restore the list.
-     * 5. Return the result.
-     * Time Complexity: O(n). Space Complexity: O(1)*
-     * An inferior solution with space complexity O(n) is copying ListNode to an ArrayList, and use two pointers iterating from both side and do comparison
+     * First find the end node of the first half. Then reverse the second half of the list in-place, and
+     * then iterate both half and compare node value one by one. Afterwards, reverse the second half ti
+     * restore the list.
+     * <p>
+     * 1.Find the end node of the first half. (Use 2 runners one fast and one slow approach)
+     * The first half may be one node more if the original list has odd-number nodes.
+     * 2.Reverse the second half.
+     * 3.Iterate both half list and compare the node value
+     * 4.Reverse the 2nd half list and restore the list to original
+     * <p>
+     * Time Complexity: O(n). Space Complexity: O(1)
+     * An inferior solution with space complexity O(n) is copying ListNode to an ArrayList, and use two pointers
+     * iterating from both side and do comparison
      */
     boolean isPalindrome(ListNode head) {
         if (head == null) {
             return true;
         }
-        // Find the end of first half and reverse second half.
+        // Find the end node of the first half and reverse second half.
         ListNode firstHalfEnd = findEndOfFirstHalf(head);
         ListNode reversedSecondHead = reverseList(firstHalfEnd.next);
 
-        // Check whether there is a palindrome.
         ListNode p1 = head;
         ListNode p2 = reversedSecondHead;
-        boolean result = true;
-        while (result && p2 != null) {
+        while (p2 != null) { // Length of the 2nd half will be shorter by one if the original list length is odd number
             // Compare the node from p1 and p2
-            // p1(first half) may have the middle node at the end, so its length may be larger than p2 so we have that
-            // covered in the while condition
-            if (p1.val != p2.val) {
-                result = false;
-            }
+            if (p1.val != p2.val)
+                return false;
             p1 = p1.next;
             p2 = p2.next;
         }
-        // Restore the second half list and return the result.
+        // Restore the second half list
         firstHalfEnd.next = reverseList(reversedSecondHead);
-        return result;
+        return true;
     }
 
     /**
-     * Two runners pointer technique TODO: Memorize this!
-     * we have 2 runners one fast and one slow, running down the nodes of the Linked List.
+     * Return the end node of the 1st half of the list.
+     * Middle node if the input list has odd-number nodes, which means the first half will have one node more than the
+     * 2nd half
+     * Algo:
+     * We have 2 runners one fast and one slow, running down the nodes of the Linked List.
      * In each second, the fast runner moves down 2 nodes, and the slow runner just 1 node.
      * By the time the fast runner gets to the end of the list, the slow runner will be half way.
-     * If there is an odd-number of nodes, then the "middle" node should remain attached to the first half.
+     * <p>
      * For example:
      * [1,2,3,4,5] ---> [1,2,(S->)3], [4,(F->)5]
      * [1,2,3,4] ---> [1,(S->)2], [3,(F->)4]
@@ -443,7 +477,8 @@ public class LinkedListQuestion {
     /**
      * Add Two Numbers
      * You are given two non-empty linked lists representing two non-negative integers.
-     * The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.
+     * The digits are stored in reverse order, and each of their nodes contains a single
+     * digit. Add the two numbers and return the sum as a linked list.
      * <p>
      * You may assume the two numbers do not contain any leading zero, except the number 0 itself.
      * <p>
@@ -471,10 +506,10 @@ public class LinkedListQuestion {
     }
 
     /**
-     * Iterate two lists and create new node for the retruning list
-     * 1. Need to keep track of the carry when we sum up the valuses from two lists
-     * 2. The loop won't termintae until we reach the ends of both lists and carry is also 0
-     * Pseudocode
+     * Iterate two lists while l1 != null or l2 != null or carry != 0. We compute the sum of two nodes plus
+     * carry. Create the new node and append to the current node and update carry and advance current ptr,
+     * l1 and l2 if possible.
+     * Algo
      * - Initialize current node to dummy head of the returning list.
      * - Initialize carry to 0.
      * - Loop through lists l1 and l2 until you reach both ends and carry is 0.
@@ -533,6 +568,7 @@ public class LinkedListQuestion {
         Assertions.assertThat(node.next.next.next.val).isEqualTo(2);
         Assertions.assertThat(node.next.next.next.next.val).isEqualTo(4);
     }
+
 
     /**
      * Put the odd nodes in a linked list and the even nodes in another. Then link the evenList to the tail of the oddList.
@@ -671,8 +707,8 @@ public class LinkedListQuestion {
     }
 
     /**
-     * Add the head of each LinkedList to MinHeap first, then iteratively remove the node from the heap and append
-     * to the result list, then add its next node to the heap if any.
+     * Add the head of each LinkedList to MinHeap first, then iteratively remove one node from the heap and append
+     * to the result list(tail ptr), then add its next node to the heap if not null.
      * <p>
      * The idea is we want to keep only one node from each LinkedList in the heap at one time, and take advantage of
      * sorting and retrieving the min value at constant time from the heap.

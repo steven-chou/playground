@@ -13,7 +13,9 @@ import static org.assertj.core.data.Index.atIndex;
  *   1. Java built-in sorting methods:
  *      - Arrays.sort(int[] a) uses dual-pivot Quicksort on primitives. It offers O(n⋅log(n)) performance and is typically faster than
  *        traditional (one-pivot) Quicksort implementations. However, it uses a stable, adaptive, iterative implementation of mergesort
- *        algorithm for Array of Objects, i.e. Arrays.sort(Object[] a)
+ *        algorithm for Array of Objects, i.e. Arrays.sort(Object[] a).
+ *        Space Complexity: O(n)
+ *        https://stackoverflow.com/questions/22571586/will-arrays-sort-increase-time-complexity-and-space-time-complexity
  *      - Collections.sort(List<T> list)/List.sort(Comparator). Same performance as Arrays.sort(Object[] a)
  *      - Comparable interface -> int compareTo(Obj)) & Comparator interface ->  int compare(ObjA, ObjB)
  *      - Comparator using lambda

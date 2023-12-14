@@ -28,8 +28,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 	        List<Integer> output = new ArrayList<>();
             for (int value : intArray) output.add(value);
         2. List<Integer> output = IntStream.of(intArray).boxed().collect(Collectors.toList());
+     - Set ---> Array
+        mySet.stream().mapToInt(i -> i).toArray()
      - ArrayList vs LinkedList in Java --- IMPORTANT!
-     https://stackoverflow.com/questions/322715/when-to-use-linkedlist-over-arraylist-in-java
+         https://stackoverflow.com/questions/322715/when-to-use-linkedlist-over-arraylist-in-java
      - Map tips
        1. For Map<K, List<V>>, use computeIfAbsent(myKey, k -> new ArrayList<>()).add(myValue) to simplify the logic to check if
           the map contains myKey and init the ArrayList conditionally and add the myValue to the list. (Also apply to MultiMap use case)
@@ -37,17 +39,51 @@ import static org.assertj.core.api.Assertions.assertThat;
      - Creating subarray
        T[] copyOfRange(T[] original, int from, int to)
        Ex: int[] remainingArray = Arrays.copyOfRange(myArray, 2, myArray.length) --> Copy all element from idx 2 to the end
+     - To iterate the array in circular way(iterate to the head after the last element)
+       Let index = (index + 1) % array.length
+     - Reverse the array in place (Also applies to reverse a string)
+       void reverse(int[] array, int start, int end) {
+           while (start < end) {
+            int temp = array[start];
+            array[start] = array[end];
+            array[end] = temp;
+            start++;
+            end--;
+        }
+      - MUST know array util functions
+        -- Copies the specified range of the specified array into a new array
+            Arrays.copyOfRange(int[] original, int from, int to)
+}
+
  */
 public class ArrayQuestion {
 
-    /*
-     TODO: MEMORIZE
-      1. Reverse array(https://www.baeldung.com/java-invert-array)
-
-     */
-
     /**
      * Remove Duplicates from Sorted Array
+     * Given an integer array nums sorted in non-decreasing order, remove the duplicates in-place
+     * such that each unique element appears only once. The relative order of the elements should
+     * be kept the same. Then return the number of unique elements in nums.
+     * <p>
+     * Consider the number of unique elements of nums to be k, to get accepted, you need to do
+     * the following things:
+     * <p>
+     * - Change the array nums such that the first k elements of nums contain the unique elements
+     * in the order they were present in nums initially. The remaining elements of nums are not
+     * important as well as the size of nums.
+     * <p>
+     * - Return k.
+     * <p>
+     * Input: nums = [1,1,2]
+     * Output: 2, nums = [1,2,_]
+     * Explanation: Your function should return k = 2, with the first two elements of nums being
+     * 1 and 2 respectively.
+     * It does not matter what you leave beyond the returned k (hence they are underscores).
+     * <p>
+     * Input: nums = [0,0,1,1,1,2,2,3,3,4]
+     * Output: 5, nums = [0,1,2,3,4,_,_,_,_,_]
+     * Explanation: Your function should return k = 5, with the first five elements of nums being
+     * 0, 1, 2, 3, and 4 respectively.
+     * It does not matter what you leave beyond the returned k (hence they are underscores).
      * https://leetcode.com/problems/remove-duplicates-from-sorted-array/description/
      */
     @Test
@@ -57,30 +93,46 @@ public class ArrayQuestion {
         assertThat(intArray).containsExactly(1, 2, 3, 4, 5, 6, 4, 5, 5, 6);
     }
 
-
-    //Time Complexity: O(N). Space Complexity: O(1)
-    public int removeDuplicates(int[] nums) {
+    /**
+     * Maintain two ptr(k:0, i:1) to iterate the array. If nums[k] != nums[i], advance k ptr and set num[k] to num[i]
+     * Otherwise just continue the loop, i.e. i++.
+     * <p>
+     * Time Complexity: O(N).
+     * Space Complexity: O(1)
+     */
+    int removeDuplicates(int[] nums) {
         if (nums.length == 0 || nums.length == 1)
             return nums.length;
-        int insertedIndex = 1;
+        int k = 0; // ptr to track the last unique number from the head
         for (int i = 1; i < nums.length; i++) {
-            // We skip to next index if we see a duplicate element
-            if (nums[i - 1] != nums[i]) {
-//              Storing the unique element at insertIndex index and incrementing the insertIndex by 1
-                nums[insertedIndex] = nums[i];
-                insertedIndex++;
+            // i starts at the 2nd element
+            if (nums[k] != nums[i]) {
+                // advance k ptr and set its value to nums[i] if ptr i is on the element w/ different value
+                k++;
+                nums[k] = nums[i];
             }
         }
-        return insertedIndex;
+        return k + 1; // k is the index of the last unique element, so we need to increment by 1
     }
 
 
     /**
      * Best Time to Buy and Sell Stock I
-     * You are given an array prices where prices[i] is the price of a given stock on the ith day.
-     * You want to maximize your profit by choosing a SINGLE day to buy one stock and choosing a different day in the future to sell that stock.
-     * (Only one buy and sell transaction in the end)
-     * Return the maximum profit you can achieve from this transaction. If you cannot achieve any profit, return 0.
+     * Given an array prices where prices[i] is the price of a given stock on the ith day.
+     * You want to maximize your profit by choosing a SINGLE day to buy one stock and choosing
+     * a different day in the future to sell that stock.
+     * <p>
+     * Return the maximum profit you can achieve from this transaction. If you cannot achieve any
+     * profit, return 0.
+     * <p>
+     * Input: prices = [7,1,5,3,6,4]
+     * Output: 5
+     * Explanation: Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5.
+     * Note that buying on day 2 and selling on day 1 is not allowed because you must buy before you sell.
+     * <p>
+     * Input: prices = [7,6,4,3,1]
+     * Output: 0
+     * Explanation: In this case, no transactions are done and the max profit = 0.
      * https://leetcode.com/problems/best-time-to-buy-and-sell-stock/description/
      */
     @Test
@@ -88,19 +140,39 @@ public class ArrayQuestion {
         int[] intArray = new int[]{7, 1, 5, 3, 6, 4};
         // Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5.
         // Note that buying on day 2 and selling on day 1 is not allowed because you must buy before you sell.
-        assertThat(maxProfitOne(intArray)).isEqualTo(5);
+        assertThat(maxProfitOneBuySell(intArray)).isEqualTo(5);
         intArray = new int[]{7, 6, 4, 3, 1};
         // no transactions are done and the max profit = 0
-        assertThat(maxProfitOne(intArray)).isEqualTo(0);
+        assertThat(maxProfitOneBuySell(intArray)).isEqualTo(0);
 
     }
 
-    // Simple One Pass approach:
-    // The points of interest are the peaks and valleys in the given graph. We need to find the largest price following
-    // each valley, which difference could be the max profit. We can maintain two variables - minprice and maxprofit
-    // corresponding to the smallest valley and maximum profit (maximum difference between selling price and minprice)
-    // obtained so far respectively.
-    // Time Complexity: O(N). Space Complexity: O(1)
+    /**
+     * Iterate the array an keep track of the minPrice and maxProfit(currentPrice - minPrice). Update minPrice if current
+     * price is smaller, otherwise, calculate the profit and update maxProfit
+     * <p>
+     * Observation:
+     * We need to find the largest price following each valley, which difference could be the max profit.
+     * We can maintain two variables - minPrice and maxProfit corresponding to the smallest valley and maximum
+     * profit (maximum difference between selling price and minPrice) obtained so far respectively.
+     * We iterate the list in one pass
+     * For each iteration we do either one of the two things
+     * 1. Found a smaller minPrice: this new minPrice MAY produce the larger maxProfit later on(we do NOT do
+     * anything w/ maxProfit here)
+     * 2. Update maxProfit so far if the difference between current value and minPrice is bigger
+     * Time Complexity: O(N).
+     * Space Complexity: O(1)
+     */
+    int maxProfitOneBuySell(int[] prices) {
+        int maxProfit = 0; // Keep track of the largest difference so far
+        int minPrice = Integer.MAX_VALUE; // Keep track of the best buy day so far
+        for (int price : prices) {
+            minPrice = Math.min(price, minPrice);
+            maxProfit = Math.max(maxProfit, price - minPrice);
+        }
+        return maxProfit;
+    }
+
     int maxProfitOne(int[] prices) {
         int maxProfit = 0; // Keep track of the largest difference so far
         int minPrice = Integer.MAX_VALUE; // Keep track of the best buy day so far
@@ -116,12 +188,30 @@ public class ArrayQuestion {
         return maxProfit;
     }
 
+
     /**
      * Best Time to Buy and Sell Stock II
-     * You are given an integer array prices where prices[i] is the price of a given stock on the ith day.
-     * On each day, you may decide to buy and/or sell the stock. You can only hold at most one share of the stock at any time.
-     * However, you can buy it then immediately sell it on the same day.(Transactions on multiple days is allowed)
+     * You are given an integer array prices where prices[i] is the price of a given stock on
+     * the ith day.
+     * On each day, you may decide to buy and/or sell the stock. You can only hold at most one
+     * share of the stock at any time. However, you can buy it then immediately sell it on the same day.
      * Find and return the maximum profit you can achieve.
+     * <p>
+     * Input: prices = [7,1,5,3,6,4]
+     * Output: 7
+     * Explanation: Buy on day 2 (price = 1) and sell on day 3 (price = 5), profit = 5-1 = 4.
+     * Then buy on day 4 (price = 3) and sell on day 5 (price = 6), profit = 6-3 = 3.
+     * Total profit is 4 + 3 = 7.
+     * <p>
+     * Input: prices = [1,2,3,4,5]
+     * Output: 4
+     * Explanation: Buy on day 1 (price = 1) and sell on day 5 (price = 5), profit = 5-1 = 4.
+     * Total profit is 4.
+     * <p>
+     * Input: prices = [7,6,4,3,1]
+     * Output: 0
+     * Explanation: There is no way to make a positive profit, so we never buy the stock to achieve
+     * the maximum profit of 0.
      * https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/description/
      */
     @Test
@@ -134,16 +224,21 @@ public class ArrayQuestion {
         intArray = new int[]{1, 2, 3, 4, 5};
         // Buy on day 1 (price = 1) and sell on day 5 (price = 5), profit = 5-1 = 4.
         assertThat(maxProfitTwo(intArray)).isEqualTo(4);
-
     }
 
-    // Simple One Pass approach:
-    // Instead of looking for every peak following a valley, we can simply go on crawling over the slope and keep
-    // on adding the profit obtained from every consecutive transaction. In the end,we will be using the peaks
-    // and valleys effectively, but we need not track the costs corresponding to the peaks and valleys along with
-    // the maximum profit, but we can directly keep on adding the difference between the consecutive numbers of the
-    // array if the second number is larger than the first one, and at the total sum we obtain will be the maximum profit.
-    // Time Complexity: O(N). Space Complexity: O(1)
+    /**
+     * Iterate the price array from 2nd day, if it is bigger than the previous day, add the price difference
+     * to the maxProfit.
+     * <p>
+     * Observation:
+     * We don't really care what day(s) to buy and sell. As long as the graph is ascending, we can make profit.
+     * <p>
+     * Algo:
+     * Instead of looking for peak following a valley, we just iterate the list and keep on adding the profit,
+     * i.e. positive difference between the consecutive numbers in the list, and the total sum in the end
+     * is the max profit.
+     * Time Complexity: O(N). Space Complexity: O(1)
+     */
     int maxProfitTwo(int[] prices) {
         int maxProfit = 0;
         for (int i = 1; i < prices.length; i++) {
@@ -153,9 +248,143 @@ public class ArrayQuestion {
         return maxProfit;
     }
 
+    /**
+     * Best Time to Buy and Sell Stock III
+     * You are given an array prices where prices[i] is the price of a given stock on
+     * the ith day.
+     * <p>
+     * Find the maximum profit you can achieve. You may complete at most two transactions.
+     * <p>
+     * Note: You may not engage in multiple transactions simultaneously (i.e., you must
+     * sell the stock before you buy again).
+     * <p>
+     * Input: prices = [3,3,5,0,0,3,1,4]
+     * Output: 6
+     * Explanation: Buy on day 4 (price = 0) and sell on day 6 (price = 3), profit = 3-0 = 3.
+     * Then buy on day 7 (price = 1) and sell on day 8 (price = 4), profit = 4-1 = 3.
+     * <p>
+     * Input: prices = [1,2,3,4,5]
+     * Output: 4
+     * Explanation: Buy on day 1 (price = 1) and sell on day 5 (price = 5), profit = 5-1 = 4.
+     * Note that you cannot buy on day 1, buy on day 2 and sell them later, as you are
+     * engaging multiple transactions at the same time. You must sell before buying again.
+     * <p>
+     * Input: prices = [7,6,4,3,1]
+     * Output: 0
+     * Explanation: In this case, no transaction is done, i.e. max profit = 0.
+     * https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iii/description/
+     */
+    @Test
+    void maxProfitToBuySellStockThree() {
+        int[] intArray = new int[]{8, 10, 3, 7, 4, 9, 2, 3};
+        // Buy at 3, Sell at 7, Buy again at 4, sell at 9
+        assertThat(maxProfitWithMaxTwoTransactions(intArray)).isEqualTo(9);
+        intArray = new int[]{3, 3, 5, 0, 0, 3, 1, 4};
+        assertThat(maxProfitWithMaxTwoTransactions(intArray)).isEqualTo(6);
+        // Buy on day 4 (price = 0) and sell on day 6 (price = 3), profit = 3-0 = 3.
+        // Then buy on day 7 (price = 1) and sell on day 8 (price = 4), profit = 4-1 = 3.
+        intArray = new int[]{1, 2, 3, 4, 5};
+        assertThat(maxProfitWithMaxTwoTransactions(intArray)).isEqualTo(4);
+        // Buy on day 1 (price = 1) and sell on day 5 (price = 5), profit = 5-1 = 4.
+    }
+
+    /**
+     * Iterate the array and track the minPrice, maxProfitAfterFirstSell, maxProfitLeftAfterSecondBuy and
+     * maxProfitAfterSecondSell. maxProfitAfterSecondSell is the answer to return.
+     * <p>
+     * Observation:
+     * This is the extension of the FIRST Best Time to Buy and Sell Stock question. The difference is now
+     * we also need to track the profit if we make the second buy-sell transaction.
+     * <p>
+     * Algo:
+     * 1. Track the best profit after selling the first stock we can make so far by tracking the minPrice.
+     * This part is the same as the first problem in this series.
+     * <p>
+     * 2. Track the best profit if we do the 2nd buy-sell
+     * - If we buy the 2nd stock today, which means the first stock was sold before the current day, the
+     * max profit(or the money we still have), maxProfitLeftAfterSecondBuy, we can have after the buy is
+     * maxProfitAfterFirstSell - buy price of the current stock
+     * - If we already bought the 2nd stock, the profit we can make when selling it now is to add the
+     * current selling price to the maxProfitLeftAfterSecondBuy
+     * <p>
+     * 3. Return the maxProfitAfterSecondSell.
+     * - In the case of one buy-sell maximizes the profit, maxProfitLeftAfterSecondBuy would be equal to
+     * maxProfitAfterFirstSell.
+     * <p>
+     * Time Complexity: O(N).
+     * Space Complexity: O(1)
+     * <p>
+     * https://cs.stackexchange.com/questions/60668/o1-space-on-complexity-algorithm-for-buy-and-sell-stock-twice-interview-que
+     * LeetCode comment from aaronschwartzmessing
+     */
+    int maxProfitWithMaxTwoTransactions(int[] prices) {
+        int minPrice = Integer.MAX_VALUE;
+        int maxProfitAfterFirstSell = 0;
+        int maxProfitLeftAfterSecondBuy = Integer.MIN_VALUE;
+        int maxProfitAfterSecondSell = 0;
+
+        for (int p : prices) {
+            // The max profit we can make from one buy-sell transaction. This is the same as the first problem in the
+            // stock buy and sell problem series
+            minPrice = Math.min(p, minPrice);
+            maxProfitAfterFirstSell = Math.max(p - minPrice, maxProfitAfterFirstSell);
+            // If we buy the 2nd stock today, which means the first stock was sold before the current day, the max
+            // profit we can have after the buy is maxProfitAfterFirstSell - buy price of the current stock
+            maxProfitLeftAfterSecondBuy = Math.max(maxProfitAfterFirstSell - p, maxProfitLeftAfterSecondBuy);
+            // We already bought the 2nd stock, so the profit we can make when selling it is to add the current selling
+            // price to the maxProfitLeftAfterSecondBuy
+            maxProfitAfterSecondSell = Math.max(p + maxProfitLeftAfterSecondBuy, maxProfitAfterSecondSell);
+            // Note: When looking at maxProfitLeftAfterSecondBuy and maxProfitAfterSecondSell together, we see it first
+            // subtracts "p" from maxProfitAfterFirstSell in maxProfitLeftAfterSecondBuy, then adds p to
+            // maxProfitLeftAfterSecondBuy in maxProfitAfterSecondSell. Cuz doing the 2nd buy-sell may not necessarily
+            // maximize the profit. This is just to track "what if" we make the 2nd transaction, and this logic will
+            // make the maxProfitAfterSecondSell equal to maxProfitAfterFirstSell(p in maxProfitLeftAfterSecondBuy and
+            // maxProfitAfterSecondSell will be just canceled out) if one transaction yield the max profit.
+        }
+        return maxProfitAfterSecondSell;
+    }
+
+    /**
+     * Best Time to Buy and Sell Stock IV
+     * You are given an integer array prices where prices[i] is the price of a given stock
+     * on the ith day, and an integer k.
+     * <p>
+     * Find the maximum profit you can achieve. You may complete at most k transactions:
+     * i.e. you may buy at most k times and sell at most k times.
+     * <p>
+     * Note: You may not engage in multiple transactions simultaneously (i.e., you must
+     * sell the stock before you buy again).
+     * <p>
+     * Input: k = 2, prices = [2,4,1]
+     * Output: 2
+     * Explanation: Buy on day 1 (price = 2) and sell on day 2 (price = 4), profit = 4-2 = 2.
+     * <p>
+     * Input: k = 2, prices = [3,2,6,5,0,3]
+     * Output: 7
+     * Explanation: Buy on day 2 (price = 2) and sell on day 3 (price = 6), profit = 6-2 = 4.
+     * Then buy on day 5 (price = 0) and sell on day 6 (price = 3), profit = 3-0 = 3.
+     * <p>
+     * https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv/description/
+     */
+    @Test
+    void maxProfitToBuySellStockFour() {
+    }
+
+    int maxProfitFour(int k, int[] prices) {
+        // TBD
+        return 0;
+    }
 
     /**
      * Rotate Array
+     * Given an integer array nums, rotate the array to the right by k steps, where k is non-negative.
+     * Note: 0 <= k <= 10^5
+     * <p>
+     * Input: nums = [1,2,3,4,5,6,7], k = 3
+     * Output: [5,6,7,1,2,3,4]
+     * <p>
+     * Input: nums = [-1,-100,3,99], k = 2
+     * Output: [3,99,-1,-100]
      * https://leetcode.com/problems/rotate-array/solution/
      */
     @Test
@@ -163,14 +392,23 @@ public class ArrayQuestion {
         int[] intArray = new int[]{1, 2, 3, 4, 5, 6, 7};
         rotate(intArray, 2);
         Assertions.assertArrayEquals(new int[]{6, 7, 1, 2, 3, 4, 5}, intArray);
-
     }
 
     /**
-     * This approach is based on the fact that when we rotate the array k times, k elements from the
-     * back end of the array come to the front and the rest of the elements from the front shift backwards.
-     * So we firstly reverse all the elements of the array. Then, reversing the first k elements followed
-     * by reversing the rest n−k elements gives us the required result.
+     * Firstly reverse all the elements of the array. Then reverse the first K elements followed by reversing
+     * the rest N−K elements. (Need to normalize K by K %= nums.length)
+     * <p>
+     * Observation:
+     * When we rotate the array K times, K elements from the back end of the array come to the front and
+     * the rest of the elements from the front shift backwards.
+     * Ex: [1,2,3,4,5,6,7], k=3
+     * ==> [5,6,7,1,2,3,4]
+     * <p>
+     * Algo:
+     * 1. Cuz 0 <= k <= 10^5, we need to normalize k using k mod array.length
+     * 2. Reverse all elements
+     * 3. Reverse first k elements
+     * 4. Reverse last n-k elements
      * Time Complexity: O(N). Space Complexity: O(1)
      */
     void rotate(int[] nums, int k) {
@@ -180,7 +418,6 @@ public class ArrayQuestion {
         reverse(nums, k, nums.length - 1);
     }
 
-    // TODO: MEMORIZE! Use while loop to reverse array
     void reverse(int[] nums, int start, int end) {
         while (start < end) {
             int temp = nums[start];
@@ -193,16 +430,26 @@ public class ArrayQuestion {
 
     /**
      * Contains Duplicate
+     * Given an integer array nums, return true if any value appears at least twice in the array,
+     * and return false if every element is distinct.
+     * <p>
+     * Input: nums = [1,2,3,1]
+     * Output: true
+     * <p>
+     * Input: nums = [1,2,3,4]
+     * Output: false
      * https://leetcode.com/problems/contains-duplicate/solution/
      */
     @Test
     void containsDuplicate() {
         int[] intArray = new int[]{1, 1, 3, 4, 5, 6};
-        Assertions.assertTrue(checkDuplicate(intArray));
+        assertThat(checkDuplicate(intArray)).isTrue();
+        assertThat(checkDuplicateUseSet(intArray)).isTrue();
     }
 
     /**
-     * Approach 1: Sorting
+     * First sort the array, then iterate the array and compare each element with its subsequent
+     * element.
      * Time Complexity: O(n log(n)). Space Complexity: O(1)
      */
     boolean checkDuplicate(int[] nums) { // O(n Log n), Space: O(1)
@@ -216,118 +463,114 @@ public class ArrayQuestion {
     }
 
     /**
-     * Approach 2: Use Set (Slower)
+     * Iterate array and add number to set, if add method returns false, duplicate is found
      * Time Complexity: O(n). Space Complexity: O(n)
      */
-    boolean checkDuplicateSet(int[] nums) {
+    boolean checkDuplicateUseSet(int[] nums) {
         Set<Integer> numSet = new HashSet<>(nums.length);
         for (Integer n : nums) {
-            if (numSet.contains(n))
+            if (!numSet.add(n))
                 return true;
             numSet.add(n);
         }
         return false;
     }
 
-    /**
-     * Single Number
-     * Given a non-empty array of integers nums, every element appears twice except for one. Find that single one.
-     * You must implement a solution with a linear runtime complexity and use only constant extra space.
-     * https://leetcode.com/problems/single-number/solution/
-     */
-    @Test
-    void singleNumber() {
-        int[] intArray = new int[]{1, 1, 3, 4, 4};
-        Assertions.assertEquals(3, checkSingleNumber(intArray));
-    }
-
-    /**
-     * Time Complexity: O(n). Space Complexity: O(1)
-     */
-    int checkSingleNumber(int[] nums) { // O(n), Space: O(1)
-        int a = 0;
-        for (int i : nums) {
-            a ^= i;
-        }
-        return a;
-    }
-
-    int checkSingleNumberMap(int[] nums) { // O(n), Space: O(n)
-        Map<Integer, Integer> numToCount = new HashMap<>();
-        for (int num : nums) {
-            Integer count = numToCount.getOrDefault(num, 0);
-            numToCount.put(num, ++count);
-        }
-        for (Map.Entry<Integer, Integer> entry : numToCount.entrySet()) {
-            if (entry.getValue().equals(1))
-                return entry.getKey();
-        }
-        return 0;
-    }
 
     /**
      * Intersection of Two Arrays
+     * Given two integer arrays nums1 and nums2, return an array of their intersection.
+     * Each element in the result must be unique and you may return the result in any order.
+     * <p>
+     * Input: nums1 = [1,2,2,1], nums2 = [2,2]
+     * Output: [2]
+     * <p>
+     * Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]
+     * Output: [9,4]
+     * Explanation: [4,9] is also accepted.
      * https://leetcode.com/problems/intersection-of-two-arrays/solution/
      */
     @Test
     void findIntersect() {
         int[] intArray1 = new int[]{1, 2, 2, 1};
         int[] intArray2 = new int[]{2, 2};
-        Assertions.assertArrayEquals(new int[]{2}, intersectUnique(intArray1, intArray2));
+        assertThat(intersectUnique(intArray1, intArray2)).containsOnly(2);
         // Another approach is using the Map solution of the findIntersectTwo question and
         // put the matched integer in a Set instead of the original array
     }
 
-    //Time Complexity: O(n + m). Space Complexity: O(n+m)
+    /**
+     * First turn two arrays to two Sets, then use retainAll method, i.e. set1.retainAll(set2). Then
+     * convert set1 to array and return it.
+     * Time Complexity: O(n + m). Space Complexity: O(n+m)
+     */
     int[] intersectUnique(int[] nums1, int[] nums2) {
-        // TODO: Useful tips => Converting int array to Set using Stream
         Set<Integer> set1 = Arrays.stream(nums1).boxed().collect(Collectors.toSet());
         Set<Integer> set2 = Arrays.stream(nums2).boxed().collect(Collectors.toSet());
-        set1.retainAll(set2);
+        set1.retainAll(set2); // set1 will be modified so that its value is the intersection of the two sets.
         return set1.stream().mapToInt(i -> i).toArray();
     }
 
     /**
      * Intersection of Two Arrays II
+     * Given two integer arrays nums1 and nums2, return an array of their intersection.
+     * Each element in the result must appear as many times as it shows in both arrays and
+     * you may return the result in any order.
+     * <p>
+     * Input: nums1 = [1,2,2,1], nums2 = [2,2]
+     * Output: [2,2]
+     * Example 2:
+     * <p>
+     * Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]
+     * Output: [4,9]
+     * Explanation: [9,4] is also accepted.
      * https://leetcode.com/problems/intersection-of-two-arrays-ii/solution/
      */
     @Test
     void findIntersectTwo() {
         int[] intArray1 = new int[]{4, 9, 5};
         int[] intArray2 = new int[]{9, 4, 9, 8, 4};
-        Assertions.assertArrayEquals(new int[]{9, 4}, intersect(intArray1, intArray2));
+        assertThat(intersect(intArray1, intArray2)).containsOnly(9, 4);
     }
 
-    //Time Complexity: O(n + m). Space Complexity: O(min(n,m))
+    /**
+     * Iterate the smaller array and build the number to count Map. Then iterate the other array and check if
+     * each number is in the map and count > 0, if so, add the num to the result and update the decrement
+     * the count in the map
+     * Time Complexity: O(n + m).
+     * Space Complexity: O(min(n,m))
+     */
     int[] intersect(int[] nums1, int[] nums2) {
         if (nums1.length > nums2.length)
             // check array sizes and use a hash map for the smaller array
             intersect(nums2, nums1);
         Map<Integer, Integer> valToCount = new HashMap<>();
-        for (int i : nums1) {
-            valToCount.put(i, valToCount.getOrDefault(i, 0) + 1);
-        }
-        int k = 0;
-        for (int i : nums2) {
-            int count = valToCount.getOrDefault(i, 0);
+        List<Integer> result = new ArrayList<>();
+        for (int num : nums1)
+            valToCount.put(num, valToCount.getOrDefault(num, 0) + 1);
+        // Iterate num2 and check if it also exist in the Map, if so, add to the result and update the count in the Map
+        for (int n : nums2) {
+            Integer count = valToCount.getOrDefault(n, 0);
             if (count > 0) {
-                // When we find common numbers, copy them to the first array starting from the beginning
-                nums1[k++] = i;
-                valToCount.put(i, --count);
+                result.add(n);
+                valToCount.put(n, count - 1);
             }
         }
-        return Arrays.copyOfRange(nums1, 0, k);
+        return result.stream().mapToInt(i -> i).toArray();
     }
 
     /**
-     * When the two input arrays are sorted, or the output needs to be sorted.
-     * This approach can be considered.
-     * Time Complexity: O(nlog n + mlog m). Space Complexity: O(n+m)
+     * Sort two arrays. Then use Two Pointers to iterate both arrays. Advance the ptr whose number is less.
+     * If both point to the same number, add to the result and advance both.
+     * This approach can be used if either the input arrays are sorted already or the result needs to be sorted
+     * Time Complexity: O(n⋅log n + m⋅log m)
+     * Space Complexity: O(n+m)
      */
     int[] intersectWithSort(int[] nums1, int[] nums2) {
         Arrays.sort(nums1);
         Arrays.sort(nums2);
-        int i = 0, j = 0, k = 0;
+        List<Integer> result = new ArrayList<>();
+        int i = 0, j = 0;
         while (i < nums1.length && j < nums2.length) {
             if (nums1[i] < nums2[j])
                 ++i;
@@ -335,59 +578,22 @@ public class ArrayQuestion {
                 ++j;
             else {
                 // nums1[i] == nums2[j]
-                nums1[k++] = nums1[i++];
+                result.add(nums1[i]);
+                i++;
                 j++;
             }
         }
-        return Arrays.copyOfRange(nums1, 0, k);
+        return result.stream().mapToInt(n -> n).toArray();
     }
 
-
-    /**
-     * Plus One
-     * You are given a large integer represented as an integer array digits, where each digits[i] is the
-     * ith digit of the integer. The digits are ordered from most significant to least significant in
-     * left-to-right order. The large integer does not contain any leading 0's.
-     * Increment the large integer by one and return the resulting array of digits.
-     * https://leetcode.com/problems/plus-one/solution/
-     */
-    @Test
-    void testPlusOne() {
-        int[] intArray1 = new int[]{4, 3, 2, 1};
-        int[] intArray2 = new int[]{1, 2, 9};
-        int[] intArray3 = new int[]{9, 9};
-
-        Assertions.assertArrayEquals(new int[]{4, 3, 2, 2}, plusOne(intArray1));
-        Assertions.assertArrayEquals(new int[]{1, 3, 0}, plusOne(intArray2));
-        Assertions.assertArrayEquals(new int[]{1, 0, 0}, plusOne(intArray3));
-    }
-
-    //Time Complexity: O(n). Space Complexity: O(n)
-    public int[] plusOne(int[] digits) {
-        for (int i = digits.length - 1; i >= 0; i--) {
-            // Move from the end
-            if (digits[i] == 9)
-                // We set every 9 to 0 before we encounter any non-nine digit
-                digits[i] = 0;
-            else {
-                // Here we encounter the rightmost not-nine digit, so we increase this by 1
-                digits[i]++;
-                // We are done here!
-                return digits;
-            }
-        }
-        /*
-        We're here because all the digits were equal to nine. Now they have all been set to zero.
-        We then append the digit 1 in front of the other digits and return the result.
-        For example, 999 ---> 1000
-         */
-        digits = new int[digits.length + 1];
-        digits[0] = 1;
-        return digits;
-    }
 
     /**
      * Move Zeroes
+     * Given an integer array nums, move all 0's to the end of it while maintaining the
+     * relative order of the non-zero elements.
+     * <p>
+     * Input: nums = [0,1,0,3,12]
+     * Output: [1,3,12,0,0]
      * https://leetcode.com/problems/move-zeroes/solution/
      */
     @Test
@@ -397,21 +603,28 @@ public class ArrayQuestion {
         Assertions.assertArrayEquals(new int[]{1, 3, 12, 0, 0}, nums);
     }
 
-    // Time Complexity: O(n). Space Complexity: O(1)
+    /**
+     * Use extra pointer to track the next non-zero number should be placed(nextNonZeroNumInsertIdx: 0)
+     * Then iterate the array, if current number is not zero, set it to nextNonZeroNumInsertIdx position,
+     * and increment nextNonZeroNumInsertIdx. After the first loop, start the 2nd loop from the nextNonZeroNumInsertIdx
+     * and set every element to zero until the end.
+     * Time Complexity: O(n)
+     * Space Complexity: O(1)
+     */
     void moveZeroes(int[] nums) {
         // To track the index where the next non-zero element should be placed.
-        int nextNonZeroValInsertIndx = 0;
+        int nextNonZeroNumInsertIdx = 0;
         for (int num : nums) {
             if (num != 0) {
                 // If the current element is non-zero, assign it to the position nums[i] in the array.
                 // This moves the non-zero element to the left side of the array.
-                nums[nextNonZeroValInsertIndx] = num;
-                nextNonZeroValInsertIndx++;
+                nums[nextNonZeroNumInsertIdx] = num;
+                nextNonZeroNumInsertIdx++;
             }
         }
         // At this point, we already moved all non-zero element to the left side.
-        for (int i = nextNonZeroValInsertIndx; i < nums.length; i++) {
-            // Start from nextNonZeroValInsertIndx and set every element to zero until the end
+        for (int i = nextNonZeroNumInsertIdx; i < nums.length; i++) {
+            // Start from nextNonZeroNumInsertIdx and set every element to zero until the end
             nums[i] = 0;
         }
     }
@@ -481,14 +694,19 @@ public class ArrayQuestion {
         assertThat(twoSumII(nums, 9)).containsOnly(1, 2);
     }
 
+
     /**
+     * Use Two Pointers, left(head) and right(tail). Start from two end, if sum of them is greater than target,
+     * advance right, if less, advance left. Otherwise, return left and right index(we found the answer)
+     * <p>
+     * Algo:
      * Two Pointers at head and tail - move one of them depending on the comparison of their sum and target
      * We use two indices, initially pointing to the first and the last element, respectively.
      * Compare the sum of these two elements with target. If the sum is equal to target, we found the
      * exactly only solution. If it is less than target, we increase the smaller index by one. If it is
      * greater than target, we decrease the larger index by one. Move the indices and repeat the comparison
-     * until the solution is found. This approach uses the fact of assending order, moveing to right will
-     * increase the sum, while mvoing to left will decrease.
+     * until the solution is found. This approach uses the fact of ascending order, moving to right will
+     * increase the sum, while moving to left will decrease.
      * <p>
      * Time complexity: O(n).
      * Space complexity: O(1)
@@ -533,13 +751,13 @@ public class ArrayQuestion {
 
     /**
      * Double for loops - Fix the first number and iterate the elements after it and use Set to look up visited number
-     * This is the extension of the 2 Sum question. This solution doesn't sort/change the input array so it has
+     * This is the extension of the 2 Sum question. This solution doesn't sort/change the input array, so it has
      * worse performance(check Leetcode for other solutions)
      * Algo:
      * Start iterating num array from beginning (Outer loop)
-     * - First we check if we have visited the num before from the outter loop in a Set
+     * - First we check if we have visited the num before from the outer loop in a Set
      * - If not, this means now we pick the first number
-     * - 	Start iterating num array from the next elemnt of it
+     * - 	Start iterating num array from the next element of it
      * - 		This means now we pick the second number, so we compute the compliment, which means the 3rd number we need
      * - 		Check if we have visited such number from the visitedNum Set in the inner loop
      * - 			If we did, construct the triplet and sort it and add to the result
@@ -552,18 +770,19 @@ public class ArrayQuestion {
      */
     List<List<Integer>> threeSum(int[] nums) {
         Set<List<Integer>> results = new HashSet<>();
-        Set<Integer> outerLoopVisited = new HashSet<>(); // Keep track of the number we visited
+        Set<Integer> outerLoopVisited = new HashSet<>(); // Keep track of the number we visited in the outer loop
         for (int i = 0; i < nums.length; i++) { // Fix the first number
             if (outerLoopVisited.add(i)) { // skip the duplicate
-                Set<Integer> visitedNum = new HashSet<>(); // Keep track the num we've seen
+                Set<Integer> innerLoopVisited = new HashSet<>(); // Keep track the num we've seen in the inner loop
                 for (int j = i + 1; j < nums.length; j++) { // Inner loop starts form the next element
-                    int compliment = -nums[i] - nums[j]; // The 3rd number we need to form the triplet
-                    if (visitedNum.contains(compliment)) { // Look back to check if we have seen it
+                    // Now we fix the 2nd number, then compute the 3rd number we need to form the triplet
+                    int compliment = -nums[i] - nums[j]; // 0-(a+b) -> -a-b
+                    if (innerLoopVisited.contains(compliment)) { // Check the Set to see if we have seen it
                         List<Integer> triplet = Arrays.asList(nums[i], nums[j], compliment);
-                        triplet.sort(null); // Need to sort it otherwise to avoid same elements but different order
+                        triplet.sort(null); // Need to sort it to avoid same triplet but different order
                         results.add(triplet);
                     }
-                    visitedNum.add(nums[j]);
+                    innerLoopVisited.add(nums[j]);
                 }
             }
         }
@@ -573,6 +792,17 @@ public class ArrayQuestion {
 
     /**
      * Valid Sudoku
+     * Determine if a 9 x 9 Sudoku board is valid. Only the filled cells need to be validated
+     * according to the following rules:
+     * <p>
+     * Each row must contain the digits 1-9 without repetition.
+     * Each column must contain the digits 1-9 without repetition.
+     * Each of the nine 3 x 3 sub-boxes of the grid must contain the digits 1-9 without repetition.
+     * <p>
+     * Note:
+     * <p>
+     * A Sudoku board (partially filled) could be valid but is not necessarily solvable.
+     * Only the filled cells need to be validated according to the mentioned rules.
      * https://leetcode.com/problems/valid-sudoku/solution/
      * EPI 5.17
      */
@@ -606,107 +836,62 @@ public class ArrayQuestion {
     }
 
     /**
-     * 1. Use three HashSet char arrays to store the char from the input for rows, columns and boxes(one box is 3x3).
-     * 2. Iterate the input 2D array, for each (r,c), check the existence in the associated hashset for the row, column and box respectively. If it exists, return false, i.e. invalid sudoku. otherwise, add to the set.
-     * 3. Return true after the end of loop
-     * Time Complexity: O(n^2). Space Complexity: O(n^2)
+     * Iterate 2D board array and use 3 Map with Set, rowIdxToCharSet, colIdxToCharSet and boxIdxToCharSet
+     * to record visited number and check if the current cell value is duplicate.
+     * <p>
+     * Observation:
+     * 1. A valid sudoku board should satisfy three conditions: (1) each row, (2) each column, and (3)
+     * each box has no duplicate numbers.
+     * <p>
+     * 2. We can use three sets to check duplicate char for each row, column and 3x3 boxes.
+     * <p>
+     * Algo:
+     * 1. Create 3 maps. rowIdxToCharSet, colIdxToCharSet, and boxIdxToCharSet
+     * For each 3x3 box. Each cell in the board is assigned a box ID, which is Pair(rowIndex/3, columnIndex/3)
+     * So all cell in the same 3x3 box have the same box ID
+     * <p>
+     * 2. Iterate the 2D board array,
+     * -  Check if the cell value exists in these 3 sets. If so, the board is invalid, return false.
+     * -  Add the cell value to all 3 sets.
+     * <p>
+     * Time Complexity: O(n^2)
+     * Space Complexity: O(n^2): 3 x n (max entries of Map) x n (max size of each set)
      */
     boolean isValidSudoku(char[][] board) {
-        final int N = 9;
-        HashSet<Character>[] rows = new HashSet[N];
-        HashSet<Character>[] cols = new HashSet[N];
-        HashSet<Character>[] boxes = new HashSet[N];
-        for (int i = 0; i < N; i++) {
-            rows[i] = new HashSet<>();
-            cols[i] = new HashSet<>();
-            boxes[i] = new HashSet<>();
+        Map<Integer, Set<Character>> rowIdxToCharSet = new HashMap<>(); // Set for each row
+        Map<Integer, Set<Character>> colIdxToCharSet = new HashMap<>(); // Set for each column
+        // Set for each 3x3 box. Each cell in the board is assigned a box ID, which is Pair(rowIndex/3, columnIndex/3).
+        // So all cell in the same 3x3 box have the same box ID
+        Map<Pair<Integer, Integer>, Set<Character>> boxIdxToCharSet = new HashMap<>();
+        // Init the Set in the map
+        for (int i = 0; i < 9; i++) {
+            rowIdxToCharSet.put(i, new HashSet<>());
+            colIdxToCharSet.put(i, new HashSet<>());
         }
-        for (int r = 0; r < N; r++) {
-            for (int c = 0; c < N; c++) {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++)
+                boxIdxToCharSet.put(new Pair<>(i, j), new HashSet<>());
+        }
+        // Iterate over the board
+        for (int r = 0; r < board.length; r++) {
+            for (int c = 0; c < board[0].length; c++) {
                 char val = board[r][c];
-                // Skip the dot
-                if (val == '.')
+                if (val == '.') // Skip empty cell, i.e. '.'
                     continue;
-                // Check the row
-                if (rows[r].contains(val))
+                if (rowIdxToCharSet.get(r).contains(val)
+                        || colIdxToCharSet.get(c).contains(val)
+                        || boxIdxToCharSet.get(new Pair<>(r / 3, c / 3)).contains(val))
+                    // board is invalid if the cell value is found in any one of the three sets
                     return false;
-                rows[r].add(val);
-
-                // Check the column
-                if (cols[c].contains(val))
-                    return false;
-                cols[c].add(val);
-
-                /*
-                Here is the KEY. Given row and column index, we need to figure out a way to assign the position(box) to
-                one of the 9 boxes.
-                Same logic as flattening a 2d matrix to linear array, (row_num * total_num_of_columns)+(col_num)
-
-                Think about if you are at position x = 4, y = 4 (the very center cell). You are also in block 4.
-                If you evaluate row/3 you get 1 which essentially means you skipped 1 row of blocks. A block row has
-                3 blocks in it (thus *3). So in this scenario:
-                (row/3)*3 = (4/3)*3 = 1*3 = 3 // you are skipping 3 blocks in the first row
-                But how many blocks are you skipping in the second row?
-                y/3 = 4/3 = 1 block
-                So you have skipped over 4 blocks total, and you are on the 5th block, but it's indexed as 4 due to 0.
-                 */
-                int boxIdx = (r / 3) * 3 + c / 3;
-
-                // Check the box
-                if (boxes[boxIdx].contains(val))
-                    return false;
-                boxes[boxIdx].add(val);
+                // add current cell value to three sets
+                rowIdxToCharSet.get(r).add(val);
+                colIdxToCharSet.get(c).add(val);
+                boxIdxToCharSet.get(new Pair<>(r / 3, c / 3)).add(val);
             }
         }
         return true;
     }
-
-    //Time Complexity: O(1). Space Complexity: O(1) Cuz the board is always 9x9, 81 cells.
-    boolean isValidSudokuWithMap(String[][] board) {
-        // init data
-        Map<Integer, Integer>[] rows = new HashMap[9];
-        Map<Integer, Integer>[] columns = new HashMap[9];
-        Map<Integer, Integer>[] boxes = new HashMap[9];
-        for (int i = 0; i < 9; i++) {
-            rows[i] = new HashMap<>();
-            columns[i] = new HashMap<>();
-            boxes[i] = new HashMap<>();
-        }
-
-        // validate a board
-        for (int i = 0; i < 9; i++) {
-            for (int j = 0; j < 9; j++) {
-                String num = board[i][j];
-                if (!num.equals(".")) {
-                    int n = Integer.parseInt(num);
-                    /*
-                    Here the KEY. Given row and column index, we need to figure out a way to assign the position(box) to
-                    one of the 9 boxes.
-                    Same logic as flattening a 2d matrix to linear array, (row_num * total_num_of_columns)+(col_num)
-
-                    Think about if you are at position x = 4, y = 4 (the very center cell). You are also in block 4.
-                    If you evaluate row/3 you get 1 which essentially means you skipped 1 row of blocks. A block row has
-                    3 blocks in it (thus *3). So in this scenario:
-                    (row/3)*3 = (4/3)*3 = 1*3 = 3 // you are skipping 3 blocks in the first row
-                    But how many blocks are you skipping in the second row?
-                    y/3 = 4/3 = 1 block
-                    So you have skipped over 4 blocks total, and you are on the 5th block, but it's indexed as 4 due to 0.
-                     */
-                    int boxIndex = (i / 3) * 3 + j / 3;
-
-                    // keep the current cell value
-                    rows[i].put(n, rows[i].getOrDefault(n, 0) + 1);
-                    columns[j].put(n, columns[j].getOrDefault(n, 0) + 1);
-                    boxes[boxIndex].put(n, boxes[boxIndex].getOrDefault(n, 0) + 1);
-
-                    // check if this value has been already seen before
-                    if (rows[i].get(n) > 1 || columns[j].get(n) > 1 || boxes[boxIndex].get(n) > 1)
-                        return false;
-                }
-            }
-        }
-        return true;
-    }
+    
 
     /**
      * Rotate Image/Matrix

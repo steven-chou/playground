@@ -7,7 +7,8 @@ import java.math.BigInteger;
 
 /*
  * TODO Tips:
- *  1. To retrieve the right-most bit in an integer n, one could either apply the modulo operation (i.e. n % 2) or the bit AND operation (i.e. n & 1)
+ *  1. To retrieve the right-most bit in an integer n, one could either apply the modulo operation (i.e. n % 2) or the
+ *     bit AND operation (i.e. n & 1)
  *  2. To add the binary result to another binary, use | (OR) operator
  *  3. Java bit-wise operators: https://www.baeldung.com/java-bitwise-operators
  *  4. More about Java integer type:
@@ -18,8 +19,63 @@ import java.math.BigInteger;
         which yields 11010101, then adding 1, which results in 11010110, or -42.
         To decode a negative number, first invert all of the bits, then add 1.
         For example, -42, or 11010110 inverted, yields 00101001, or 41, so when you add 1 you get 42.
+    5. XOR can be useful to find if the unique number in an array
+        If we take XOR of zero and some bit, it will return that bit a ^ 0 = a
+        If we take XOR of two same bits, it will return 0.  a ^ a = 0
+        and a ^ b ^ a = (a ^ a) ^ b = 0 ^ b = b
  */
 public class BitManipulate {
+    /**
+     * Single Number
+     * Given a non-empty array of integers nums, every element appears twice except for one.
+     * Find that single one.
+     * Solution must be linear runtime complexity and use only constant extra space.
+     * <p>
+     * Input: nums = [2,2,1]
+     * Output: 1
+     * <p>
+     * Input: nums = [4,1,2,1,2]
+     * Output: 4
+     * https://leetcode.com/problems/single-number/solution/
+     */
+    @Test
+    void singleNumber() {
+        int[] intArray = new int[]{1, 1, 3, 4, 4};
+        Assertions.assertThat(checkSingleNumber(intArray)).isEqualTo(3);
+    }
+
+    /**
+     * Init a var v to 0 then iterate each number and update v to the XOR of v and the number (v ^= num).
+     * Return v in the end.
+     * <p>
+     * Observation:
+     * If we take XOR of zero and some bit, it will return that bit
+     * a ^ 0 = a
+     * If we take XOR of two same bits, it will return 0
+     * a ^ a = 0
+     * and a ^ b ^ a = (a ^ a) ^ b = 0 ^ b = b
+     * <p>
+     * Algo:
+     * 1. Declare a local var, a = 0
+     * 2. Iterate each number in the array, update a to the XOR of a and the number.
+     * Cuz XOR of two identical number will be 0, so the what bits of a is the single unique number
+     * 3. Return a
+     * <p>
+     * We can XOR all bits together to find the unique number.
+     * In the code, , then for each item i, do a ^= i
+     * return a back in the end
+     * <p>
+     * Time Complexity: O(n)
+     * Space Complexity: O(1)
+     */
+    int checkSingleNumber(int[] nums) {
+        int a = 0;
+        for (int i : nums) {
+            a ^= i;
+        }
+        return a;
+    }
+
     /**
      * Number of 1 Bits
      * https://leetcode.com/problems/number-of-1-bits/editorial/
@@ -106,13 +162,17 @@ public class BitManipulate {
 
     /**
      * Add Binary
+     * Given two binary strings a and b, return their sum as a binary string.
+     * Input: a = "11", b = "1"
+     * Output: "100"
+     * <p>
+     * Input: a = "1010", b = "1011"
+     * Output: "10101"
      * https://leetcode.com/problems/add-binary/solution/
      */
     @Test
     void testAddBinary() {
         String a = "11", b = "1";
-
-
         Assertions.assertThat(addBinary(a, b)).isEqualTo("100");
         a = "1010";
         b = "1011";
@@ -130,8 +190,9 @@ public class BitManipulate {
     1. Sum without considering carry: x ^ y (XOR). This simulates summing of two binaries WITHOUT taking carry into account.
     2. Get the carry bits: x & y (AND).
     3. Shift carry bits 1 bit left: x & y << 1. so that carry is applied to the right position.
+       Ex: (1111 & 0010) << 1 ==> 00100
        Step 2 & 3 is to compute the real carry that will be used for the XOR operation(binary addition) in the next iteration
-    4. By above step. x + y actually means "sum without carries" + "all the carries"
+    4. By above step. x + y is done by "sum without carries" + "all the carries"
     5. we repeat 1 - 3 in the loop. "sum without carries" + "all the carries" until carries becomes 0.
     6. When carries = 0, "sum without carries" is the actual sum.
     Note: The reason we need the loop is that when the carry is non-zero(Step 2 & 3) in each iteration, that means there is carry implicitly
@@ -140,11 +201,10 @@ public class BitManipulate {
           no more carry, and we get the final answer.
           In nutshell, the binary addition is consist of two operations here, XOR and the carry calculation(AND w/ << 1). And we need to
           keep injecting the non-zero carry to do XOR w/ the previous XORed binary until no more carry.
-
      */
     String addBinary(String a, String b) {
-        BigInteger x = new BigInteger(a, 2);
-        BigInteger y = new BigInteger(b, 2);
+        BigInteger x = new BigInteger(a, 2); // will hold the answer after 1st iteration
+        BigInteger y = new BigInteger(b, 2); // will hold the carry after 1st iteration
         BigInteger zero = new BigInteger("0", 2);
         BigInteger carry, answer;
         while (y.compareTo(zero) != 0) {
@@ -206,20 +266,16 @@ public class BitManipulate {
      * Algo:
      * - While carry is nonzero: y != 0:
      * -	- Current answer without carry is XOR of x and y: answer = x ^ y.
-     * -   - Current carry is left-shifted AND of x and y: carry = (x & y) << 1.
+     * -    - Current carry is left-shifted AND of x and y: carry = (x & y) << 1.
      * -	- Job is done, prepare the next loop: x = answer, y = carry.
      * - Return x
      * <p>
      * Java integer type uses two's complement to store signed integer, so all management of
      * negative numbers, signs, and subtractions are taken care of by default.
      * <p>
-     * Time complexity: O(1).
+     * Time complexity: O(1)
      * <p>
      * Space complexity: O(1)
-     *
-     * @param a
-     * @param b
-     * @return
      */
     int getSum(int a, int b) {
         while (b != 0) {
@@ -231,5 +287,4 @@ public class BitManipulate {
         return a;
     }
 
-    
 }
