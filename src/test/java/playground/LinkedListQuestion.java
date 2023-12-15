@@ -309,7 +309,7 @@ public class LinkedListQuestion {
             return true;
         }
         // Find the end node of the first half and reverse second half.
-        ListNode firstHalfEnd = findEndOfFirstHalf(head);
+        ListNode firstHalfEnd = findEndNodeOfFirstHalfList(head);
         ListNode reversedSecondHead = reverseList(firstHalfEnd.next);
 
         ListNode p1 = head;
@@ -339,10 +339,10 @@ public class LinkedListQuestion {
      * [1,2,3,4,5] ---> [1,2,(S->)3], [4,(F->)5]
      * [1,2,3,4] ---> [1,(S->)2], [3,(F->)4]
      */
-    ListNode findEndOfFirstHalf(ListNode head) {
+    ListNode findEndNodeOfFirstHalfList(ListNode head) {
         ListNode fast = head;
         ListNode slow = head;
-        while (fast.next != null && fast.next.next != null) {// TODO: key
+        while (fast.next != null && fast.next.next != null) {
             fast = fast.next.next;
             slow = slow.next;
         }
@@ -839,8 +839,9 @@ public class LinkedListQuestion {
     }
 
     /**
-     * Iterate the given Linked List first to create the new node and put in the oldNodeToNewNode Map.
-     * Then iterate the original list again to set the next and random ptr value of new nodes using the map.
+     * Iterate the Linked List first to create the new node and put in the oldNodeToNewNode Map.
+     * Then iterate the list again to set the next and random ptr value of the new nodes using the
+     * old node to look up new node in the map.
      * <p>
      * Time Complexity: O(n)
      * Space complexity: O(n)
@@ -961,7 +962,7 @@ public class LinkedListQuestion {
      * Use Fast and Slow Pointer approach, fast ptr goes 2 steps and slow goes 1 step at a time when the fast ptr and its
      * next is not null. The slow ptr in the end is the mid-point.
      * <p>
-     * Time Complexity: O(N), where NNN is the number of nodes in the given list.
+     * Time Complexity: O(N), where N is the number of nodes in the given list.
      * Space Complexity: O(1), the space used by slow and fast.
      */
     ListNode middleNode(ListNode head) {
@@ -1022,9 +1023,9 @@ public class LinkedListQuestion {
     /**
      * First find the middle of the linked list, then reverse the second part of the list, then merge two lists.
      * This problem is a combination of three easy problems:
-     * 1. Find Middle of the Linked List
-     * If there are two middle nodes, return the second middle node.
-     * Example: for the list 1->2->3->4->5->6, the middle element is 4.
+     * 1. Find end node of the first half of the Linked List(Modified version of Find Middle of the Linked List problem)
+     * Example: for the list 1->2->3->4->5->6, the end node of the 1st half is 3.
+     * -        for the list 1->2->3->4->5, the end node of the 1st half is 3.
      * <p>
      * 2. Reverse Linked List
      * Once a middle node has been found, reverse the second part of the list.
@@ -1037,40 +1038,37 @@ public class LinkedListQuestion {
      * Space complexity: O(1)
      */
     void reorderList(ListNode head) {
-        // Find the middle
-        ListNode fast = head, slow = head;
-        while (fast != null && fast.next != null) {
+        // Find the middle node, i.e. End node of the first half
+        ListNode slow = head, fast = head;
+        while (fast.next != null && fast.next.next != null) {
             slow = slow.next;
             fast = fast.next.next;
         }
-        // Now slow ptr is the head of the 2nd part
 
-        // Reverse the second part of the list
-        ListNode prev = null, current = slow;
-        while (current != null) {
-            ListNode next = current.next;
-            current.next = prev;
-            prev = current;
-            current = next;
+        ListNode firstHalfEndNode = slow; // Need to keep this ref, so we can use it later
+        // For the odd-number size list, we want the 1st half have one more node than 2nd half, so it will be
+        // easier to merge as the required result
+        // Reverse 2nd half
+        ListNode prev = null, ptr = slow.next;
+        while (ptr != null) {
+            ListNode next = ptr.next;
+            ptr.next = prev;
+            prev = ptr;
+            ptr = next;
         }
-        // Now prev is the head of reversed 2nd part
+
+        ListNode ptrOne = head, ptrTwo = prev;
+        // IMPORTANT - Must set to null, so the first half list is not linked to any node in 2nd half list
+        firstHalfEndNode.next = null;
 
         // Merge two lists
-        ListNode firstCurrent = head, secondCurrent = prev;
-        while (secondCurrent.next != null) {
-            // The terminate condition is VERY crucial
-            // After reverse the second part, the next ptr of the last node of the first part is still point to the last node of the
-            // second part. So we need to consider the two ptr positions at two different condition when we finished the merge
-            // Odd-sized list
-            // 1 -----> 4 -----> 2 (firstCurrent) -----> 3 (secondCurrent) -----> null
-            // Even-sized list
-            // 1 -----> 5 -----> 2 -----> 4 -----> 3 (firstCurrent & secondCurrent) -----> null
-            ListNode firstNext = firstCurrent.next;
-            ListNode secondNext = secondCurrent.next;
-            firstCurrent.next = secondCurrent;
-            secondCurrent.next = firstNext;
-            firstCurrent = firstNext;
-            secondCurrent = secondNext;
+        while (ptrTwo != null) { // Use ptrTwo as condition cuz the first half list may have one node more
+            ListNode orig1stNext = ptrOne.next;
+            ListNode orig2ndNext = ptrTwo.next;
+            ptrOne.next = ptrTwo;
+            ptrTwo.next = orig1stNext;
+            ptrOne = orig1stNext;
+            ptrTwo = orig2ndNext;
         }
     }
 

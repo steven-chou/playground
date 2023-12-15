@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *        In other word, a binary tree with N nodes and height h: N <= 2^h+1 - 1
  *        That is: h >= log N (logarithm of N to base 2)
  *  2. Useful tips when implementing the solution using "stack" or "queue" data structure
- *  - Use Deque<Node> stack = new ArrayDeque<>(); --> This obj supports common ops of queue and stack
+ *      - Use Deque<Node> stack = new ArrayDeque<>(); --> This obj supports common ops of queue and stack
  *  3. Binary tree traversal is usually implemented in
  *  - Recursive
  *  - Iterative using stack to simulate recursion process (DFS)
@@ -287,6 +287,15 @@ public class TreeQuestion {
 
     /**
      * Maximum Depth of Binary Tree
+     * Given the root of a binary tree, return its maximum depth.
+     * A binary tree's maximum depth is the number of nodes along the longest path from the
+     * root node down to the farthest leaf node.
+     * <p>
+     * Input: root = [3,9,20,null,null,15,7]
+     * Output: 3
+     * <p>
+     * Input: root = [1,null,2]
+     * Output: 2
      * https://leetcode.com/problems/maximum-depth-of-binary-tree/solution/
      */
     @Test
@@ -300,22 +309,32 @@ public class TreeQuestion {
     }
 
     /**
-     * Top-down Recursion using DFS
-     * Traverse the tree (left and right respectively) and record the maximum depth during the traversal.(and increment by 1 for that level before return)
+     * Traverse the left and right child respectively and record the height during the traversal.
+     * The recursive function should return the max of left and right height and plus 1(for the level count)
      * Time Complexity: O(N). Space Complexity: O(logN)
      */
     int maxDepth(TreeNode root) {
-        if (root == null) {
+        if (root == null)
             return 0;
-        } else {
-            int leftHeight = maxDepth(root.left);
-            int rightHeight = maxDepth(root.right);
-            return java.lang.Math.max(leftHeight, rightHeight) + 1;
-        }
+        int leftHeight = maxDepth(root.left);
+        int rightHeight = maxDepth(root.right);
+        return Math.max(leftHeight, rightHeight) + 1;
     }
 
     /**
      * Validate Binary Search Tree
+     * Given the root of a binary tree, determine if it is a valid binary search tree (BST).
+     * A valid BST is defined as follows:
+     * The left subtree of a node contains only nodes with keys less than the node's key.
+     * The right subtree of a node contains only nodes with keys greater than the node's key.
+     * Both the left and right subtrees must also be binary search trees.
+     * <p>
+     * Input: root = [2,1,3]
+     * Output: true
+     * <p>
+     * Input: root = [5,1,4,null,null,3,6]
+     * Output: false
+     * Explanation: The root node's value is 5 but its right child's value is 4.
      * https://leetcode.com/problems/validate-binary-search-tree/solution/
      */
     @Test
@@ -355,19 +374,20 @@ public class TreeQuestion {
     }
 
     /**
-     * Recursive Traversal with Valid Range
-     * We keep both upper and lower limits for each node while traversing the tree, and compare the node value
-     * not with children values but with these limits. Then one repeats the same step recursively for left and right subtrees.
+     * Pass the nullable max and min value when recursively visit each node. If the current node <= min
+     * or >= max, return false. The recursive function is called on left child w/ current node value as
+     * mas, right child w/ current node value as min
      * Time Complexity: O(N). Space Complexity: O(N)
      */
-    boolean isValidBST(TreeNode root) {// TODO: Remember this implmentation
+    boolean isValidBST(TreeNode root) {
         // Use null to denote negative/positive infinity as initial lower/upper bound
         return validate(root, null, null);
     }
 
     boolean validate(TreeNode node, Integer low, Integer high) {
-        // Empty trees are valid BSTs
         if (node == null)
+            // Empty trees are valid BSTs. We validate every internal node while traversal to the leaf node,
+            // which means it is also valid so far when we reach here
             return true;
         // The current node's value must be between low and high.
         if ((low != null && node.val <= low) || (high != null && node.val >= high))
@@ -1075,6 +1095,14 @@ public class TreeQuestion {
     }
 
     /**
+     * Initialize current node with root
+     * While current is not null or stack is not empty
+     * - Keep pushing left child onto stack, till we reach current node's left-most child
+     * - Pop and visit the left-most node from stack
+     * - Set current to the right child of the popped node
+     * Note:
+     * The left child nodes push earlier will be popped first, and they are basically the "root" of subtrees,
+     * so will be visited before we push their right child to the stack
      * Time Complexity: O(N). Space Complexity: O(N)
      */
     List<Integer> inorderTraversalIterative(TreeNode root) {
@@ -1092,6 +1120,8 @@ public class TreeQuestion {
             current = stack.pop();
             result.add(current.val);
             current = current.right;
+            // This right child node will be push to the stack at next iteration. But it will be pop from the stack
+            // ONLY if it doesn't have any left child, cuz the inner while loop first push all left child nodes to the stack
         }
         return result;
     }

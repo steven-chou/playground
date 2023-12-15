@@ -211,9 +211,9 @@ public class BinarySearchTree {
      * - Keep pushing left child onto stack, till we reach current node's left-most child
      * - Pop and visit the left-most node from stack
      * - Set current to the right child of the popped node
-     * -- The left child nodes push earlier will be popped first, and they are basically the "root" of subtrees, so will be visited before
-     * we push their right child to the stack
-     * -- This right child node will be push(for sure) & pop from the stack(if it doesn't have any left child) at next iteration at outer while loop
+     * Note:
+     * The left child nodes push earlier will be popped first, and they are basically the "root" of subtrees,
+     * so will be visited before we push their right child to the stack
      * Time Complexity: O(N). Space Complexity: O(N)
      */
     public void traverseInOrderIterative() {
@@ -228,6 +228,8 @@ public class BinarySearchTree {
             current = stack.pop();
             visit(current.value);
             current = current.right;
+            // This right child node will be push to the stack at next iteration. But it will be pop from the stack
+            // ONLY if it doesn't have any left child, cuz the inner while loop first push all left child nodes to the stack
         }
     }
 
