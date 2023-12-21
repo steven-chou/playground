@@ -33,8 +33,6 @@ public class BinarySearchTreeTest {
 
         bt.traverseInOrder(bt.root);
         System.out.println();
-        bt.traverseInOrderWithoutRecursion();
-        System.out.println();
         bt.traverseInOrderIterative();
     }
 

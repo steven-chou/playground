@@ -24,9 +24,29 @@ import java.util.concurrent.atomic.AtomicInteger;
  *  2. Useful tips when implementing the solution using "stack" or "queue" data structure
  *      - Use Deque<Node> stack = new ArrayDeque<>(); --> This obj supports common ops of queue and stack
  *  3. Binary tree traversal is usually implemented in
- *  - Recursive
- *  - Iterative using stack to simulate recursion process (DFS)
- *  - Iterative using queue to simulate recursion process (BFS)
+ *      - Pointer from the root and move downward to left or right child
+ *      - Recursive
+ *      - Iterative using stack to simulate recursion process (DFS)
+ *      - Iterative using queue to simulate recursion process (BFS)
+ *  4. When the problem relates to check or validate sth for the tree, the approach is usually creating a
+ *     recursive method to traversal from root to the leaf node. The following are some tips.
+        1. First think what should be done at the recursive method when at the very basic use case, such as
+           we are at the leaf node or we are at root node in a 3-node BST
+        2. Define the base case first, i.e. the input node is null usually. What should be returned or what
+           should we do particularly
+        3. If the traversal from root is to validate/check/find sth, keep in mind the method MAY return early
+           even before reaching the leaf node if the logic is to return false early. This part is the core logic of
+           the method.
+        4. The recursive method can either defined as returning sth back to the caller then subsequently bubble
+           up. Or some kind of collection parameter like List such as nodes visited or AtomicInteger such as max/min
+           value, passed around and get updated. The alternative is to define them as instance variable.
+        5. The recursive call may be placed at the return statement directly to explore the left and right
+           child nodes or inside the core logic part. The former pattern is usually used for validating or
+           finding sth, so the recursion will return early if the condition is satisfied. The latter is used for
+           scenario that you need to collect or do sth from both right and left sub-tree in the bottom-up manner,
+           which results in a DFS style on left and right child separately.
+    5. When the problem asks ALL paths satisfying certain condition. It may be able to be solved by using recursion to
+       explore left and right subtree respectively and undo/remove visited node before backtracking.
 
  */
 public class TreeQuestion {
@@ -45,6 +65,36 @@ public class TreeQuestion {
             this.left = left;
             this.right = right;
         }
+    }
+
+    /**
+     * Helper method to generate the Tree using the LeetCode binary tree representation.
+     * Level order traversal, where null signifies a path terminator where no node exists below
+     * https://support.leetcode.com/hc/en-us/articles/360011883654-What-does-1-null-2-3-mean-in-binary-tree-representation-
+     * https://leetcode.com/problems/recover-binary-search-tree/solutions/32539/Tree-Deserializer-and-Visualizer-for-Python/
+     *
+     * @param nodes Integer array, e.g. [1,null,2,3]
+     * @return the root node of the tree
+     */
+    TreeNode createBinaryTree(Integer... nodes) {
+        TreeNode[] treeNodes = new TreeNode[nodes.length];
+        Stack<TreeNode> stack = new Stack<>();
+        int n = 0;
+        for (int i = nodes.length - 1; i >= 0; i--) {
+            TreeNode node = (nodes[i] == null) ? null : new TreeNode(nodes[i]);
+            treeNodes[nodes.length - 1 - (n++)] = node;
+            stack.push(node);
+        }
+        TreeNode root = stack.pop();
+        for (TreeNode node : treeNodes) {
+            if (node != null) {
+                if (!stack.empty())
+                    node.left = stack.pop();
+                if (!stack.empty())
+                    node.right = stack.pop();
+            }
+        }
+        return root;
     }
 
     /**
@@ -482,6 +532,14 @@ public class TreeQuestion {
 
     /**
      * Symmetric Tree
+     * Given the root of a binary tree, check whether it is a mirror of
+     * itself (i.e., symmetric around its center).
+     * <p>
+     * Input: root = [1,2,2,3,4,4,3]
+     * Output: true
+     * <p>
+     * Input: root = [1,2,2,null,3,null,3]
+     * Output: false
      * https://leetcode.com/problems/symmetric-tree/editorial/
      */
     @Test
@@ -520,32 +578,34 @@ public class TreeQuestion {
     }
 
     boolean isSymmetric(TreeNode root) {
-        return isMirror(root, root);
+        return isMirror(root.left, root.right);
     }
 
     /**
-     * Recursively check if the left subtree is a mirror reflection of the right subtree.
+     * Recursively compare the left child of node 1 with the right child of node 2, and the
+     * right child of node 1 with the left child of node 2. Returns false if two nodes are not equal.
+     * null and null is considered equal.
      * Time Complexity: O(N). Space Complexity: O(N)
      */
     boolean isMirror(TreeNode t1, TreeNode t2) {
-        // null is symmetric
+        // null is symmetric, if we make here, it means the nodes visited on this path are valid so far
         if (t1 == null && t2 == null)
             return true;
-        // Only one null node on either side is not
-        if (t1 == null || t2 == null)
+        if ((t1 == null) || (t2 == null) || (t1.val != t2.val))
+            // Two nodes are not equal if one is null and not the other, or node value are different
             return false;
-        /*
-         * To be symmetric, it must be
-         * 1. Their two roots have the same value.
-         * 2. The right subtree of each tree is a mirror reflection of the left subtree of the other tree.
-         */
-        return (t1.val == t2.val)
-                && isMirror(t1.left, t2.right)
-                && isMirror(t1.right, t2.left);
+        // To check symmetric, compare the left child of node 1 with the right child of node 2,
+        // and the right child of node 1 with the left child of node 2
+        return isMirror(t1.left, t2.right) && isMirror(t1.right, t2.left);
     }
 
     /**
      * Binary Tree Level Order Traversal
+     * Given the root of a binary tree, return the level order traversal of its nodes'
+     * values. (i.e., from left to right, level by level).
+     * <p>
+     * Input: root = [3,9,20,null,null,15,7]
+     * Output: [[3],[9,20],[15,7]]
      * https://leetcode.com/problems/binary-tree-level-order-traversal/description/
      */
     @Test
@@ -574,33 +634,35 @@ public class TreeQuestion {
     }
 
     /**
-     * Traversal the tree using BFS w/ the trick that we need to collect all nodes at the same level in the queue before
-     * proceeding to the next level
+     * Traversal the tree using Queue at BFS manner. Need to get the current queue size first, i.e. the numbers
+     * of node added at last iteration. Then only remove those number of nodes from the queue and add them to
+     * the list of that level
+     * <p>
      * Time Complexity: O(N). Space Complexity: O(N)
      */
     List<List<Integer>> levelOrder(TreeNode root) {
-        List<List<Integer>> levels = new ArrayList<>();
         if (root == null)
-            return levels;
+            return new ArrayList<>();
+        List<List<Integer>> levels = new ArrayList<>();
         Queue<TreeNode> queue = new ArrayDeque<>();
-        int level = 0;
-        queue.add(root);
+        queue.offer(root);
         while (!queue.isEmpty()) {
-            levels.add(new ArrayList<>());
-            // We need to get the total num of the nodes from the current queue size first cuz the size keeps changing
-            int levelLength = queue.size();
-            for (int i = 0; i < levelLength; i++) {
-                // To construct the list of nodes at one level, we need this loop to get the exact top "n" element
-                // in the queue
-                TreeNode node = queue.remove();
-                levels.get(level).add(node.val);
-
+            List<Integer> currentLvl = new ArrayList<>();
+            // Get the total num of the nodes from the current queue size first cuz the size will change
+            // when adding the child node while iterating
+            int qSize = queue.size();
+            // Only iterate the nodes in the current queue. They are all at the same level which were
+            // added from the last iteration.
+            for (int i = 0; i < qSize; i++) {
+                TreeNode node = queue.poll();
+                currentLvl.add(node.val);
+                // Add child nodes to the queue, so they will be visited at next "level" iteration
                 if (node.left != null)
-                    queue.add(node.left);
+                    queue.offer(node.left);
                 if (node.right != null)
-                    queue.add(node.right);
+                    queue.offer(node.right);
             }
-            level++;
+            levels.add(currentLvl);
         }
         return levels;
     }
@@ -697,55 +759,40 @@ public class TreeQuestion {
     }
 
     /**
-     * BFS and use Deque to store traversal result of each level
-     * Start the BFS traversal from the root. We use a deque(LinkedList)
-     * to let us add to the head or tail of the list while we still visit each node
-     * in normal BFS way. This mimics the behavior of zigzag traversal.
-     * For each level, we start from an empty deque container to hold all the values
-     * of the same level. Depending on the ordering of each level, i.e. either
-     * from-left-to-right or from-right-to-left, we decide at which end of the deque
-     * to add the new element.
-     * One key point is that after we add the nodes to be visited into the queue
-     * we need to insert a sort of delimiter (e.g. a null node) to separate
-     * nodes of different levels . The delimiter marks the end of a level, as well
-     * as the beginning of a new level. We need it to determine when we need to add
-     * the nodes to the final result list, and flip the flag for the insertion location
-     * of the linkedList(tail or head).
-     * Note: The null node should be added to the queue right after the root node, so
-     * in the while loop we just need to check if we get a null node from the queue.
+     * Use BFS traversal by level and maintain a boolean flag(iterateFromLeft). For the nodes at the
+     * same level removed from the queue, if iterateFromLeft is true, add to the end of LinkedList,
+     * otherwise, add to the head of LinkedList. After iterating one level, add LinkedList to the
+     * result list and flip the iterateFromLeft flag.
+     * <p>
      * Time Complexity: O(N), where N is the number of nodes in the tree.
-     * Space Complexity: O(N) where NNN is the number of nodes in the tree.
+     * Space Complexity: O(N) where N is the number of nodes in the tree.
      */
     List<List<Integer>> zigzagLevelOrder(TreeNode root) {
         if (root == null)
             return new ArrayList<>();
         List<List<Integer>> results = new ArrayList<>();
-        Queue<TreeNode> queue = new LinkedList<>(); // Can't use ArrayDeque cuz we will add null element
+        Queue<TreeNode> queue = new ArrayDeque<>();
         boolean iterateFromLeft = true;
-        LinkedList<Integer> levelList = new LinkedList<>();
         queue.offer(root);
-        queue.offer(null);
+        // Perform BFS traversal by level
         while (!queue.isEmpty()) {
-            TreeNode node = queue.poll();
-            if (node != null) {
+            int qSize = queue.size();
+            // Use LinkedList so we can insert at head/tail to create different order
+            LinkedList<Integer> levelList = new LinkedList<>();
+            for (int i = 0; i < qSize; i++) {
+                TreeNode node = queue.poll();
                 if (iterateFromLeft)
-                    levelList.addLast(node.val);
+                    levelList.add(node.val);
                 else
                     levelList.addFirst(node.val);
                 if (node.left != null)
                     queue.offer(node.left);
                 if (node.right != null)
                     queue.offer(node.right);
-            } else {
-                // We visited all nodes at one level
-                results.add(new ArrayList<>(levelList));
-                levelList.clear();
-                if (!queue.isEmpty())
-                    // Add the null node to queue as an indicator of the delimiter of the levels
-                    queue.offer(null);
-                // Flip the direction before iterating the next level
-                iterateFromLeft = !iterateFromLeft;
             }
+            results.add(levelList);
+            // Flip the direction before iterating the next level
+            iterateFromLeft = !iterateFromLeft;
         }
         return results;
     }
@@ -940,9 +987,12 @@ public class TreeQuestion {
     }
 
     /**
-     * Iterative Inorder Traversal
-     * Cuz input is BST, we know that inorder traversal of BST is an array sorted in the ascending order.
-     * All we need is doing inorder traversal, and stop after the kth element.
+     * Do Inorder traversal using stack to iteratively visit the tree. After popping the node from
+     * the stack, decrement "k". If k becomes 0, the current node is the kth smallest node
+     * <p>
+     * Observation:
+     * When doing inorder traversal over BST, we visit the node value in the ascending order.
+     * <p>
      * Time complexity: O(H+k), where H is the tree height.
      * This complexity is defined by the stack, which contains at least H + k elements,
      * since before starting to pop out one has to go down to a leaf.
@@ -1102,7 +1152,7 @@ public class TreeQuestion {
      * - Set current to the right child of the popped node
      * Note:
      * The left child nodes push earlier will be popped first, and they are basically the "root" of subtrees,
-     * so will be visited before we push their right child to the stack
+     * so will be visited before we pop its right child from the stack
      * Time Complexity: O(N). Space Complexity: O(N)
      */
     List<Integer> inorderTraversalIterative(TreeNode root) {
@@ -1115,27 +1165,37 @@ public class TreeQuestion {
         while (!stack.isEmpty() || current != null) {
             while (current != null) {
                 stack.push(current);
+                // Keep pushing the left child to the stack, so they will be visited first later
                 current = current.left;
             }
             current = stack.pop();
             result.add(current.val);
             current = current.right;
-            // This right child node will be push to the stack at next iteration. But it will be pop from the stack
-            // ONLY if it doesn't have any left child, cuz the inner while loop first push all left child nodes to the stack
+            // This right child node will be pushed to the stack at the next iteration. However, the inner
+            // while loop will iteratively push its left childs to the stack. Therefore, the right child
+            // will only be pop out after the left and parent nodes are pop and visited
         }
         return result;
     }
 
+
     /**
      * Lowest Common Ancestor of a Binary Search Tree
-     * Given a binary search tree (BST), find the lowest common ancestor (LCA) node of two given nodes in the BST.
+     * Given a binary search tree (BST), find the lowest common ancestor (LCA) node of two
+     * given nodes in the BST.
      * <p>
-     * According to the definition of LCA on Wikipedia: “The lowest common ancestor is defined between two nodes p and q as the lowest node in T that has both p and q as descendants (where we allow a node to be a descendant of itself).”
+     * According to the definition of LCA on Wikipedia: “The lowest common ancestor is defined
+     * between two nodes p and q as the lowest node in T that has both p and q as descendants
+     * (where we allow a node to be a descendant of itself).”
      * <p>
      * Input: root = [6,2,8,0,4,7,9,null,null,3,5], p = 2, q = 8
      * Output: 6
      * Explanation: The LCA of nodes 2 and 8 is 6.
      * <p>
+     * Input: root = [6,2,8,0,4,7,9,null,null,3,5], p = 2, q = 4
+     * Output: 2
+     * Explanation: The LCA of nodes 2 and 4 is 2, since a node can be a descendant of itself
+     * according to the LCA definition.
      * https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/description/
      */
     @Test
@@ -1160,14 +1220,28 @@ public class TreeQuestion {
     }
 
     /**
-     * Traversal down from the root, once we find the split point, which means p and q's value are not
-     * both greater or less than the node's value.
+     * Start a ptr from root node, move ptr to right child if both node p and q are less than ptr node,
+     * move ptr to left child if both node p and q are larger than ptr node. Otherwise, the current
+     * ptr node is the LCA node.
+     * <p>
+     * Observation:
+     * 1. We can use the BST property to know from a given node, whether node p and q are both on right/left
+     * sub-tree or not.
+     * 2. LCA node must be a node that makes the node p and q NOT both fall on the one of the sub-tree,
+     * which means LCA must be one of the conditions:
+     * p < LCA < q
+     * q < LCA < p
+     * p < LCA(q)
+     * q < LCA(p)
+     * LCA(p) < q
+     * LCA(q) < p
+     * <p>
      * Algo:
      * 1. Start traversing the tree from the root node.
-     * 2. If both the nodes p and q are in the right subtree, then continue the search with right subtree starting step 1.
-     * 3. If both the nodes p and q are in the left subtree, then continue the search with left subtree starting step 1.
-     * 4. If both step 2 and step 3 are not true, this means we have found the node which is common to node p's and
-     * q's subtrees. and hence we return this common node as the LCA.
+     * 2. If both the nodes p and q are less than current node, move the ptr to right node.
+     * 3. If both the nodes p and q are more than current node, move the ptr to left node.
+     * 4. Otherwise, this means we have found the node which is common to node p's and q's subtrees.
+     * and hence we return this common node as the LCA.
      * <p>
      * Time Complexity : O(N), where N is the number of nodes in the BST.
      * In the worst case we might be visiting all the nodes of the BST.
@@ -1188,14 +1262,21 @@ public class TreeQuestion {
 
     /**
      * Lowest Common Ancestor of a Binary Tree
-     * Given a binary tree, find the lowest common ancestor (LCA) of two given nodes in the tree.
+     * Given a binary tree, find the lowest common ancestor (LCA) of two given nodes
+     * in the tree.
      * <p>
-     * According to the definition of LCA on Wikipedia: “The lowest common ancestor is defined between two nodes p and q as the lowest node in T that has both p and q as descendants (where we allow a node to be a descendant of itself).”
+     * According to the definition of LCA on Wikipedia: “The lowest common ancestor is defined
+     * between two nodes p and q as the lowest node in T that has both p and q as descendants
+     * (where we allow a node to be a descendant of itself).”
      * <p>
      * Input: root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 1
      * Output: 3
      * Explanation: The LCA of nodes 5 and 1 is 3.
      * <p>
+     * Input: root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 4
+     * Output: 5
+     * Explanation: The LCA of nodes 5 and 4 is 5, since a node can be a descendant of itself
+     * according to the LCA definition.
      * https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/description/
      */
     @Test
@@ -1220,22 +1301,25 @@ public class TreeQuestion {
     }
 
     /**
-     * Iterative using parent pointers
-     * We first traversal the tree from the root(use stack/queue) to build a node -> parent node look up map for p and q.
-     * Then we can build a set containing p and all its ancestors from the map. Then we take q and its all ancestor by looking
-     * up the map to check if it exists in the set. The first found node is the LCA node.
+     * First traversal the tree in BFS to build nodeToParent Map. Then build the Set(pAncestors) containing node
+     * p and all its ancestor nodes by looking up the map. Then iterate from node q to all its ancestor node by
+     * looking up the map and check if it is found in the pAncestors set. If so, that is LCA.
+     * <p>
+     * Observation:
+     * We can't access the parent of a given node, so we need do some pre-process to get the child-parent data
+     * stored at somewhere like Map first. So we can easily traversal from bottom up to visit its ancestors
+     * form any node.
+     * <p>
      * Algo:
-     * 1. Start from the root node and traverse the tree.
-     * 2. Until we find p and q both, keep storing the parent pointers in a dictionary.
-     * 3. Once we have found both p and q, we get all the ancestors for p using the parent dictionary and add
-     * to a set called ancestors.
-     * 4. Similarly, we traverse through ancestors for node q. If the ancestor is present in the ancestors set for p,
-     * this means this is the first ancestor common between p and q (while traversing upwards) and hence this is the LCA node.
+     * 1. Perform BFS from root node and build the node to parent Map until it contains entry for node p and q
+     * 2. Get all the ancestors for p using the nodeToParent map and add to a set(pAncestors) including p itself.
+     * 3. Traverse node q and all it ancestors. If the ancestor is present in the ancestors set for p,
+     * this means this is the first ancestor common between p and q and hence this is the LCA node.
      * <p>
      * Time Complexity : O(N), where N is the number of nodes in the binary tree.
      * In the worst case we might be visiting all the nodes of the binary tree.
      * <p>
-     * O(N). In the worst case space utilized by the stack, the parent pointer map
+     * O(N). In the worst case space utilized by the queue, the parent pointer map
      * and the ancestor set, would be N each, since the height of a skewed binary tree could be N.
      */
     TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
@@ -1531,8 +1615,8 @@ public class TreeQuestion {
     }
 
     /**
-     * Use in-order DFS traversal. At each node, first subtract the current node value from the target sum.
-     * If it is a leaf node, check if target sum is reduced to 0. If not leaf node, recursively call for
+     * Use recursive DFS traversal. At each node, first subtract the current node value from the target sum.
+     * If current node is a leaf node, check if target sum has become 0. If not leaf node, recursively call for
      * left and right child w/ the updated target sum.
      * <p>
      * Time complexity: O(n)
@@ -1597,10 +1681,14 @@ public class TreeQuestion {
     }
 
     /**
-     * Path Sum II
-     * Similar to the Path Sum problem, we still use in-order DFS traversal w/ the same logic, but need to
-     * keep track of every visited node and collect the path when the target sum is reduced to zero at the
-     * leaf node, and then remove the current node from the path when backtrack.
+     * First update target sum by subtracting the current node value and add the node value to the path list.
+     * If the current node is leaf node and target sum is equal to 0, add the path list to the result list.
+     * Otherwise, recursively call w/ updated target sum and left child and right child separately.
+     * Finally, remove the current node from the path list before backtrack.
+     * <p>
+     * Observation:
+     * The question asks to return ALL root-to-leaf paths. This implies we need to explore all traversal
+     * path in the tree that meet the condition. Therefore, we should use recursion w/ backtracking
      * <p>
      * Time complexity: O(N⋅logN) where N is the number of nodes in a tree. In the worst case, we could have a
      * complete binary tree, then there would be N/2 leafs and tree height is logN. Say if every leaf node
@@ -1676,48 +1764,58 @@ public class TreeQuestion {
     }
 
     /**
-     * Use DFS to traversal to the leaves first, and then start summing up the edge of left and right child, and return
-     * the larger one between the left and right + 1 when backtrack.
+     * Recursively get the longest paths from current node to leaf for the left and right subtree.
+     * Update the longestPathOfTwoNodes w/ the sum of two paths(left & right), finally return the larger
+     * one between the left and right + 1 when backtrack to the parent node.
      * <p>
      * Observation:
-     * 1. The longest path has to be between two leaf nodes
-     * 2. the longest path in the tree would consist of a node, its longest left branch, and its longest right
-     * branch, so our algorithm is to find the node where the sum of its longest left and right branches is maximized
+     * 1. The "path" in the question is basically the edge count from a node to the other.
+     * 2. The longest path should be between two leaf nodes when it is NOT a skewed tree.
+     * Otherwise, it is guarantee that one of two nodes must be leaf.
+     * 3. The longest path of two nodes in the tree must go thru a node having the max sum of
+     * the longest path from its left subtree and right subtree.
      * <p>
-     * DFS to count each node's branch lengths, because it would allow us to dive deep into the leaves first,
-     * and then start counting the edges upwards.
-     * <p>
-     * We also need to take the following two cases into account whilie when visiting a node in DFS:
-     * <p>
-     * 1. Both left and right branches of the current node may form the longest path
-     * - We need to keep track of the max of (leftPath + rightPath)
-     * 2. One of the current node's left/right branches may be just part of the longest path.
-     * - The DFS recursive method returns the longer one of leftPath and rightPath + 1(edge to current node's parent)
+     * Algo:
+     * 1. Recursive call to get the longest path from left subtree
+     * 2. Recursive call to get the longest path from right subtree
+     * 3. Updates the current longest path of two node with the sum of path of left and right subtree above
+     * 4. Returns the max of the longest path from left subtree and the longest path from right subtree and
+     * plus one (The returned value(path length/edge count) needs to include the edge connecting to current
+     * node's parent when we backtrack to the parent node)
      * <p>
      * Time complexity: O(N)
      * Space complexity: O(N). The space complexity depends on the size of our implicit call stack during our DFS,
      * which relates to the height of the tree. In the worst case, the tree is skewed so the height of the tree
      * is O(N). If the tree is balanced, it'd be O(log N).
      */
-    int findLongestPathFromNode(TreeNode node, AtomicInteger diameter) {
-        if (node == null)
-            return 0;
-        int leftPath = findLongestPathFromNode(node.left, diameter);
-        int rightPath = findLongestPathFromNode(node.right, diameter);
-        // Update the diameter, cuz both left and right branches of the current node may form the longest path.
-        diameter.set(Math.max(leftPath + rightPath, diameter.intValue()));
-        // Return the longest one between left and right. Plus 1 cuz we need to include the edge connecting to current
-        // node's parent when we backtrack to the previous level.
-        // This is the case that ONLY one of the current node's branches may be just part of the longest path. In other words,
-        // current node may not be the "turning point" where the path turns from left subtree to right subtree in the final
-        // longest path. However, this will be determined after visiting all nodes.
-        return Math.max(leftPath, rightPath) + 1;
-    }
-
     int diameterOfBinaryTree(TreeNode root) {
         AtomicInteger diameter = new AtomicInteger();
         findLongestPathFromNode(root, diameter);
         return diameter.intValue();
+    }
+
+    /**
+     * @param node                  The current visiting node
+     * @param longestPathOfTwoNodes The max length of path between two nodes in the tree
+     * @return The max length of path(edge count) to a leaf node when traversal/extending from this node
+     */
+    int findLongestPathFromNode(TreeNode node, AtomicInteger longestPathOfTwoNodes) {
+        if (node == null)
+            return 0; // return 0 cuz we came from leaf node. No edge
+        // Get max edge count from the left subtree
+        int longestPathToLeafFromLeft = findLongestPathFromNode(node.left, longestPathOfTwoNodes);
+        // Get max edge count from the right subtree
+        int longestPathToLeafFromRight = findLongestPathFromNode(node.right, longestPathOfTwoNodes);
+        // Update the longestPathOfTwoNodes so far. The two nodes from left and right subtree may form the longest path
+        // in the tree. We need to keep track of it.
+        longestPathOfTwoNodes.set(Math.max(longestPathToLeafFromLeft + longestPathToLeafFromRight, longestPathOfTwoNodes.intValue()));
+        // Return the longest one between left and right. Plus 1 cuz the returned value(path length/edge count) needs to
+        // include the edge connecting to current node's parent when we backtrack to the parent node.
+        // This is the case that ONLY one of the current node's branches may be just part of the longest path. In other words,
+        // current node may not be the "turning point" where the path turns from left subtree to right subtree in the final
+        // longest path. However, this will be determined after visiting all nodes.
+        // When the path goes thru the current node, it can only branch to left or right side.
+        return Math.max(longestPathToLeafFromLeft, longestPathToLeafFromRight) + 1;
     }
 
 
@@ -1727,6 +1825,7 @@ public class TreeQuestion {
         return diameter.intValue();
     }
 
+    // The list of nodes from the leftmost to the rightmost
     List<Integer> longestPathNodes = new ArrayList<>();
 
     /**
@@ -1735,8 +1834,9 @@ public class TreeQuestion {
     Pair<Integer, List<Integer>> findLongestPathFromNodeWithPath(TreeNode node, AtomicInteger diameter) {
         if (node == null)
             return new Pair<>(0, new ArrayList<>());
-
+        // Pair[Longest path length to leaf from left, List of nodes from the leaf]
         Pair<Integer, List<Integer>> leftPath = findLongestPathFromNodeWithPath(node.left, diameter);
+        // Pair[Longest path length to leaf from right, List of nodes from the leaf]
         Pair<Integer, List<Integer>> rightPath = findLongestPathFromNodeWithPath(node.right, diameter);
 
         if (leftPath.getKey() > 0)
@@ -1751,6 +1851,8 @@ public class TreeQuestion {
             longestPathNodes = new ArrayList<>(leftPath.getValue());
             longestPathNodes.add(node.val);
             List<Integer> reversedRightPath = new ArrayList<>(rightPath.getValue());
+            // The order of the rightPath is from the leaf to the current node, so we want to reverse it before add
+            // them to the left path (or we can just iterate it in reverse order)
             Collections.reverse(reversedRightPath);
             longestPathNodes.addAll(reversedRightPath);
         }
@@ -1798,39 +1900,52 @@ public class TreeQuestion {
         TreeNode root = new TreeNode(-10, secondLvlLeft, secondLvlRight);
 
         Assertions.assertThat(maxPathSum(root)).isEqualTo(42);
+        TreeNode tree = createBinaryTree(9, 6, -3, null, null, -6, 2, null, null, 2, null, -6, -6, -6);
+        Assertions.assertThat(maxPathSum(tree)).isEqualTo(16); // [6 9 -3 2 2]
     }
 
+
     /**
-     * Use post-order DFS traversal to the leaves first, and then start computing the path sum of left and right subtree,
-     * only include their path sum if they are positive, and update the current max path sum if possible, and return
-     * the path sum including current node and the bigger path sum of left or right subtree.
+     * Recursively get the max path sum from the left node and the right node (DFS). Set any negative returned
+     * path sum to zero so it will be ignored when calculating the total path sum. Then sum up the current node
+     * value and left & right path sum and update the the max path sum if possible. Finally returns the current
+     * node value + the bigger path sum of the left/right node
+     * <p>
+     * Note: This problem uses the same pattern as "Diameter of Binary Tree"
      * <p>
      * Observation:
-     * Assuming that the maximum path sum passes through the root of the subtree, we consider all three possibilities
+     * The maximum path sum can be form in three different use cases.
      * <p>
-     * 1. The path starts at the root and goes down through the root's left/right child. We don't know how long the
-     * path is, but it could extend to the bottom of the left/right subtree.
+     * 1. The path is consist of a path from a node's left subtree through it and to its right subtree.
+     * This node can be ANY node in the tree.
+     * Ex: [1,2,3] --> 6
      * <p>
-     * 2. The path involves both the left and the right child, i.e. The path sum of three nodes produces the max path sum.
+     * 2. The path is a segment cross one or more nodes on a node's left or right subtree. In other words,
+     * one of the subtrees is ignored cuz it doesn't increase the total path sum.
+     * Ex: [1, 2, -5] --> 3 (path: 2 - 1)
      * <p>
-     * 3. The path doesn't involve any child. The root itself is the only element of the path with maximum sum.
+     * 3. The path doesn't involve any child. The node itself is the only element of the path with maximum sum.
+     * Ex: [-10, 5, -2] --> 5
      * <p>
      * We can see that we need to process the children before we process a node. This indicates that we need to
      * perform a post-order DFS traversal of the tree because, in post-order, children are processed before the parent.
      * <p>
      * In each recursive DFS call, we need to take care of the above 3 cases.
-     * 1. The path sum gain contributed by the subtree can be derived from a path that includes at most one child
-     * of the root. Beside, a path sum contributed by a subtree only if it is positive. If not, we can safely ignore it.
-     * This is the value returned from the recursive method when DFS backtrack, so the parent node can use it as
-     * leftPathSum/rightPathSum to compute the maxPathSume and may update the current maxPathSum if possible.
      * <p>
-     * 2. We compute the path sum of current node and left and right subtree, then compare it with the current maximum
-     * path sum and update it if necessary.
+     * 1. Recursively call on the current node's left child to get the max path sum from the left subtree.
      * <p>
-     * 3. Before we compute the above path sum, we include the path sum of the left and right subtree ONLY if they are
-     * positive. We do this by setting its value to 0 if it is negative, so it will have no effect in the path sum computation.
+     * 2. Recursively call on the current node's right child to get the max path sum from the right subtree
      * <p>
-     * Note: This problem uses the same pattern as "Diameter of Binary Tree"
+     * 3. If any one of the returned path sum is negative, set it to zero first so it will have no effect when
+     * computing the path sum later. Cuz negative path sum will only decrease the total path sum, we want to
+     * ignore it (Use case #2 & #3)
+     * <p>
+     * 4. Compute sum of path formed from left subtree path sum + current node value + right subtree path
+     * sum. (Use case #1) We keep track of the max path sum and update it accordingly.
+     * <p>
+     * 5. Return the max path sum when traversal through this node. This means the current node value +
+     * the larger path sum from left subtree or the right subtree. The path can only branch out to one
+     * side, so we take the one w/ bigger path sum(They can be 0 at this point cuz we do at step 3)
      * <p>
      * Time complexity: O(N)
      * <p>
@@ -1859,6 +1974,7 @@ public class TreeQuestion {
 
         // Return path sum of current node and larger child's path sum from either left or right side
         // This is the case that the current node and either left or right child may be part of the final max path sum
+        // When the path goes thru the current node, it can only branch to left or right side.
         return node.val + Math.max(leftPathSum, rightPathSum);
     }
 
@@ -2084,7 +2200,8 @@ public class TreeQuestion {
     }
 
     /**
-     * Use BFS traversal and swap the left and right child of all nodes in the tree.
+     * Use BFS traversal w/ queue. Iteratively remove the node from the queue, and then swap
+     * the right and left child node. Then add the right and left node to the queue if not null.
      * <p>
      * Time complexity: O(N)
      * <p>
@@ -2109,6 +2226,197 @@ public class TreeQuestion {
                 queue.offer(node.right);
         }
         return root;
+    }
+
+    /**
+     * Binary Tree Vertical Order Traversal
+     * Given the root of a binary tree, return the vertical order traversal of its nodes'
+     * values. (First from column by column, then for each column go from top to bottom).
+     * <p>
+     * If two nodes are in the same row and column, the order should be from left to right.
+     * <p>
+     * Note: A node with two child means it span cross 3 columns, which means a left node
+     * is at the left column of the root's column, and right node is at the right column
+     * of the root's column
+     * <p>
+     * Input: root = [3,9,20,null,null,15,7]
+     * Output: [[9],[3,15],[20],[7]]
+     * <p>
+     * Input: root = [3,9,8,4,0,1,7]
+     * Output: [[4],[9],[3,0,1],[8],[7]]
+     * <p>
+     * https://leetcode.com/problems/binary-tree-vertical-order-traversal/description/
+     */
+    @Test
+    void testVerticalOrder() {
+        TreeNode root = createBinaryTree(3, 9, 20, null, null, 15, 7);
+        Assertions.assertThat(verticalOrder(root)).containsExactly(List.of(9), List.of(3, 15), List.of(20), List.of(7));
+        root = createBinaryTree(1);
+        Assertions.assertThat(verticalOrder(root)).containsExactly(List.of(1));
+    }
+
+    /**
+     * Use BFS level traversal and assign each node a column index and use the map(colIdxToNodeValList)
+     * to group the node w/ the same column at traversal. The left child node has parent colIdx-1,
+     * and right hcild has parent colIdx+1. Also need to track the minColIdx and maxColIdx so the
+     * result can be built from left to right column order.
+     * <p>
+     * Observation:
+     * 1. Need a systematic way to determine what column a node is at. We can assign column index
+     * to each node. The root node starts at 0, right child column index is parent's + 1, and left
+     * child column index is parent's - 1. So we will be able to group the nodes at the same column
+     * <p>
+     * 2. Using BFS can let us scan from top to bottom and and group the nodes with the same column
+     * 3. We also need to keep track of the leftmost(min) and the rightmost(max) column index
+     * <p>
+     * Algo:
+     * 1. Add the root node w/ column idx(0) to the queue
+     * 2. Perform BFS level traversal, for each node at the same level
+     * - Add the node removed from the queue to the colIdxToNodeValList map
+     * - Add the left node w/ parent node column idx - 1
+     * - Update the minColIdx
+     * - Add the right node w/ parent node column idx + 1
+     * - Update the maxColIdx
+     * 3. Iterate from minColIdx to maxColIdx and add the list from colIdxToNodeValList map
+     * to the result list.
+     * <p>
+     * Time complexity: O(n)
+     * Space complexity: O(n)
+     */
+    List<List<Integer>> verticalOrder(TreeNode root) {
+        if (root == null)
+            return new ArrayList<>();
+        List<List<Integer>> results = new ArrayList<>();
+        // Each entry is the column index to the list of node values that has the same column index, i.e. at the same column
+        Map<Integer, List<Integer>> colIdxToNodeValList = new HashMap<>();
+        // Need to keep track of the leftmost and rightmost column index, so we construct the result list from left
+        // column to right from the map
+        int maxColIdx = 0, minColIdx = 0;
+        Queue<Pair<TreeNode, Integer>> queue = new ArrayDeque<>();
+        // Perform BFS traversal by level
+        queue.offer(new Pair<>(root, 0)); // root node has column index 0
+        while (!queue.isEmpty()) {
+            int qSize = queue.size();
+            for (int i = 0; i < qSize; i++) {
+                Pair<TreeNode, Integer> node = queue.poll();
+                // The top node is at the head of the list cuz the BFS
+                colIdxToNodeValList.computeIfAbsent(node.getValue(), k -> new ArrayList<>()).add(node.getKey().val);
+                if (node.getKey().left != null) {
+                    int lColIdx = node.getValue() - 1; // Left node has parent node column index - 1
+                    minColIdx = Math.min(minColIdx, lColIdx);
+                    queue.offer(new Pair<>(node.getKey().left, lColIdx));
+                }
+                if (node.getKey().right != null) {
+                    int rColIdx = node.getValue() + 1; // Right node has parent node column index + 1
+                    maxColIdx = Math.max(maxColIdx, rColIdx);
+                    queue.offer(new Pair<>(node.getKey().right, rColIdx));
+                }
+            }
+        }
+        // Iterate from the min column idx to the max, so it is added to the result from left to right column direction
+        for (int i = minColIdx; i <= maxColIdx; i++) {
+            if (colIdxToNodeValList.containsKey(minColIdx))
+                results.add(colIdxToNodeValList.get(i));
+        }
+        return results;
+    }
+
+    /**
+     * Vertical Order Traversal of a Binary Tree
+     * Given the root of a binary tree, calculate the vertical order traversal of the binary tree.
+     * <p>
+     * For each node at position (row, col), its left and right children will be at positions
+     * (row + 1, col - 1) and (row + 1, col + 1) respectively. The root of the tree is at (0, 0).
+     * <p>
+     * The vertical order traversal of a binary tree is a list of top-to-bottom orderings for each column
+     * index starting from the leftmost column and ending on the rightmost column. There may be multiple
+     * nodes in the same row and same column. In such a case, sort these nodes by their values.
+     * <p>
+     * Return the vertical order traversal of the binary tree.
+     * <p>
+     * Input: root = [3,9,20,null,null,15,7]
+     * Output: [[9],[3,15],[20],[7]]
+     * Explanation:
+     * Column -1: Only node 9 is in this column.
+     * Column 0: Nodes 3 and 15 are in this column in that order from top to bottom.
+     * Column 1: Only node 20 is in this column.
+     * Column 2: Only node 7 is in this column.
+     * <p>
+     * Input: root = [1,2,3,4,6,5,7]
+     * Output: [[4],[2],[1,5,6],[3],[7]]
+     * Explanation:
+     * This case is the exact same as example 2, but with nodes 5 and 6 swapped.
+     * Note that the solution remains the same since 5 and 6 are in the same location and should be
+     * ordered by their values.
+     * <p>
+     * https://leetcode.com/problems/vertical-order-traversal-of-a-binary-tree/description/
+     */
+    @Test
+    void testVerticalTraversal() {
+        TreeNode root = createBinaryTree(3, 9, 20, null, null, 15, 7);
+        Assertions.assertThat(verticalTraversal(root)).containsExactly(List.of(9), List.of(3, 15), List.of(20), List.of(7));
+        root = createBinaryTree(1);
+        Assertions.assertThat(verticalTraversal(root)).containsExactly(List.of(1));
+        root = createBinaryTree(1, 2, 3, 4, 6, 5, 7);
+        Assertions.assertThat(verticalTraversal(root)).containsExactly(List.of(4), List.of(2), List.of(1, 5, 6), List.of(3), List.of(7));
+    }
+
+    /**
+     * This problem is almost the same as "Binary Tree Vertical Order Traversal" besides an additional
+     * requirement, " There may be multiple nodes in the same row and same column. In such a case,
+     * sort these nodes by their values."
+     * <p>
+     * Use the same approach as previous problem, but we need to keep separate colIdxToNodeValListLvl map.
+     * The nodes at the same level removed from the queue are put into this map first, after iteration
+     * of one level is over, sort every list in the map and add to the colIdxToNodeValList map.
+     * <p>
+     * Time complexity: O(n⋅log n ⋅ log n/k)
+     * The sorting part is dominated the time complexity. In average case, given k is
+     * the width of the tree, which means there are k columns.
+     * Tree height x sorting each list in the map:
+     * O(log n) x O(k⋅n/k⋅log n/k) = O(log n) x O(n⋅log n/k)
+     * <p>
+     * Space complexity: O(n)
+     */
+    List<List<Integer>> verticalTraversal(TreeNode root) {
+        if (root == null)
+            return new ArrayList<>();
+        List<List<Integer>> results = new ArrayList<>();
+        Map<Integer, List<Integer>> colIdxToNodeValList = new HashMap<>();
+        int maxColIdx = 0, minColIdx = 0;
+        Queue<Pair<TreeNode, Integer>> queue = new ArrayDeque<>();
+        queue.offer(new Pair<>(root, 0));
+        while (!queue.isEmpty()) {
+            int qSize = queue.size();
+            // Use separate map for node grouped by column index at the same level, so we can sort the node list at the
+            // same column later
+            Map<Integer, List<Integer>> colIdxToNodeValListLvl = new HashMap<>();
+            for (int i = 0; i < qSize; i++) {
+                Pair<TreeNode, Integer> node = queue.poll();
+                colIdxToNodeValListLvl.computeIfAbsent(node.getValue(), k -> new ArrayList<>()).add(node.getKey().val);
+                if (node.getKey().left != null) {
+                    int lColIdx = node.getValue() - 1;
+                    minColIdx = Math.min(minColIdx, lColIdx);
+                    queue.offer(new Pair<>(node.getKey().left, lColIdx));
+                }
+                if (node.getKey().right != null) {
+                    int rColIdx = node.getValue() + 1;
+                    maxColIdx = Math.max(maxColIdx, rColIdx);
+                    queue.offer(new Pair<>(node.getKey().right, rColIdx));
+                }
+            }
+            colIdxToNodeValListLvl.forEach((k, v) -> {
+                // sort the node value list before adding to the colIdxToNodeValList map
+                v.sort(null);
+                colIdxToNodeValList.computeIfAbsent(k, x -> new ArrayList<>()).addAll(v);
+            });
+
+        }
+        for (int i = minColIdx; i <= maxColIdx; i++) {
+            if (colIdxToNodeValList.containsKey(minColIdx))
+                results.add(colIdxToNodeValList.get(i));
+        }
+        return results;
     }
 }
 

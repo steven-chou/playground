@@ -154,52 +154,19 @@ public class BinarySearchTree {
         if (root == null) {
             return;
         }
+        Queue<Node> queue = new ArrayDeque<>();
+        queue.offer(root);
 
-        Queue<Node> nodes = new ArrayDeque<>();
-        nodes.add(root);
-
-        while (!nodes.isEmpty()) {
-
-            Node node = nodes.remove();
-
+        while (!queue.isEmpty()) {
+            Node node = queue.poll();
             // Can be any OPS when visiting the node
             System.out.print(" " + node.value);
-
+            // Now put left and right nodes to the queue, so we can visit them at the next iteration
             if (node.left != null) {
-                nodes.add(node.left);
+                queue.offer(node.left);
             }
-
             if (node.left != null) {
-                nodes.add(node.right);
-            }
-        }
-    }
-
-    /**
-     * READ the traverseInOrderIterative method instead
-     * Push root node to stack
-     * While stack is not empty
-     * Keep pushing left child onto stack, till we reach current node's left-most child
-     * Visit current node
-     * Push right child onto stack
-     */
-    @Deprecated
-    public void traverseInOrderWithoutRecursion() {
-        Deque<Node> stack = new ArrayDeque<>();
-        Node current = root;
-        stack.push(root);
-        while (!stack.isEmpty()) {
-            while (current.left != null) {
-                current = current.left;
-                stack.push(current);
-            }
-            current = stack.pop();
-            visit(current.value);
-            if (current.right != null) {
-                // We reach here cuz we just visit the parent node, so we want to check its left child tree
-                // at next iteration
-                current = current.right;
-                stack.push(current);
+                queue.offer(node.right);
             }
         }
     }
@@ -213,7 +180,7 @@ public class BinarySearchTree {
      * - Set current to the right child of the popped node
      * Note:
      * The left child nodes push earlier will be popped first, and they are basically the "root" of subtrees,
-     * so will be visited before we push their right child to the stack
+     * so will be visited before we pop its right child from the stack
      * Time Complexity: O(N). Space Complexity: O(N)
      */
     public void traverseInOrderIterative() {
@@ -223,13 +190,15 @@ public class BinarySearchTree {
         while (!stack.isEmpty() || current != null) {
             while (current != null) {
                 stack.push(current);
+                // Keep pushing the left child to the stack, so they will be visited first later
                 current = current.left;
             }
             current = stack.pop();
             visit(current.value);
             current = current.right;
-            // This right child node will be push to the stack at next iteration. But it will be pop from the stack
-            // ONLY if it doesn't have any left child, cuz the inner while loop first push all left child nodes to the stack
+            // This right child node will be pushed to the stack at the next iteration. However, the inner
+            // while loop will iteratively push its left childs to the stack. Therefore, the right child
+            // will only be pop out after the left and parent nodes are pop and visited
         }
     }
 
