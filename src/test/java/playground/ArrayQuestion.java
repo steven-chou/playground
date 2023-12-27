@@ -891,7 +891,7 @@ public class ArrayQuestion {
         }
         return true;
     }
-    
+
 
     /**
      * Rotate Image/Matrix
@@ -1066,10 +1066,41 @@ public class ArrayQuestion {
         String[] strs = new String[]{"eat", "tea", "tan", "ate", "nat", "bat"};
         List<List<String>> result = groupAnagrams(strs);
         assertThat(result).containsOnly(List.of("bat"), List.of("tan", "nat"), List.of("eat", "tea", "ate"));
+        result = groupAnagramsWithoutSorting(strs);
+        assertThat(result).containsOnly(List.of("bat"), List.of("tan", "nat"), List.of("eat", "tea", "ate"));
     }
 
     /**
-     * Use Map(count of each char -> str list) for grouping
+     * Iterate the str array, for each str, get its char[] and sort it and use it as key and add the
+     * sortedStr to associated list in the Map. Therefore, all anagram string will grouped under the
+     * same sortedStr. Finally, iterate the map and add list to the result.
+     * <p>
+     * Time Complexity: O(NK⋅logK),
+     * where N is the length of strs, and K is the maximum length of a string in strs
+     * <p>
+     * Space Complexity: O(N⋅K)
+     * For array of strings, we store N strings of size K at most. So Space Complexity is O(K⋅N).
+     */
+    List<List<String>> groupAnagrams(String[] strs) {
+        Map<String, List<String>> strValToStrs = new HashMap<>();
+        if (strs == null || strs.length == 0) {
+            return new ArrayList<>();
+        }
+        for (String str : strs) {
+            char[] chars = str.toCharArray();
+            Arrays.sort(chars);
+            strValToStrs.computeIfAbsent(new String(chars), k -> new ArrayList<>()).add(str);
+        }
+        return new ArrayList<>(strValToStrs.values());
+    }
+
+    /**
+     * Maintain charCount array(int[26]). Iterate strs, for each str, fill charCount array w/ 0 first,
+     * iterate each char at str and increment the corresponding slot at charCount array. Then iterate
+     * charCount and use StringBuilder to concatenate each count w/ delimiter '#'. Then use this
+     * concatenated str as the key for the charCountToStrs map and add the str to the list.
+     * <p>
+     * Use Map(count of each chars -> str list) for grouping
      * Similar to the concept used in the Anagram problem. Two strings are anagrams if and only if their
      * character counts (respective number of occurrences of each character) are the same.
      * <p>
@@ -1080,17 +1111,13 @@ public class ArrayQuestion {
      * #1#2#3#0#0#0...#0 where there are 26 entries total. Without the delimiter, in some edge case,
      * For example, aaab and abbb wil yield the same key as 111100...00
      * <p>
-     * Note, another implementation is to sort each string and use it as the key of the map(sortedStr -> list)
-     * theoretically this should have worse time complexity but on Leetcode it runs faster
-     * and uses less memory.
-     * <p>
      * Time Complexity: O(NK), where N is the length of strs, and K is the maximum length of
      * a string in strs. Counting each string is linear in the size of the string, and we
      * count every string.
      * <p>
      * Space Complexity: O(NK), the total information content stored in ans.
      */
-    List<List<String>> groupAnagrams(String[] strs) {
+    List<List<String>> groupAnagramsWithoutSorting(String[] strs) {
         if (strs.length == 0) return new ArrayList<>();
         Map<String, List<String>> charCountToStrs = new HashMap<>();
         int[] lowercaseCharCount = new int[26];
@@ -1105,60 +1132,6 @@ public class ArrayQuestion {
             charCountToStrs.get(stb.toString()).add(str);
         }
         return new ArrayList<>(charCountToStrs.values());
-    }
-
-    /**
-     * Longest Substring Without Repeating Characters
-     * Given a string s, find the length of the longest substring without repeating characters.
-     * <p>
-     * Input: s = "abcabcbb"
-     * Output: 3
-     * Explanation: The answer is "abc", with the length of 3.
-     * <p>
-     * Input: s = "bbbbb"
-     * Output: 1
-     * Explanation: The answer is "b", with the length of 1.
-     * <p>
-     * https://leetcode.com/problems/longest-substring-without-repeating-characters/description/
-     */
-    @Test
-    void testLengthOfLongestSubstring() {
-        assertThat(lengthOfLongestSubstring("abba")).isEqualTo(2);
-        assertThat(lengthOfLongestSubstring("abcabcbb")).isEqualTo(3);
-    }
-
-    /**
-     * Sliding Window and Map to track the last seen char and index
-     * Use two ptrs to iterate the array and maintain a sliding window.
-     * We use a Map to track the char we have seen and its last-seen index
-     * Algo:
-     * 1. Start iterating/expanding the right side of the window
-     * 2. If this char is seen before(in the Map) and also within the current window range(idx >= left ptr)
-     * 3. 	 Shrink the window ==> Move the left ptr to the last seen index + 1
-     * 4. Compute the current max length
-     * 5. Update the char and its index in the Map
-     * <p>
-     * Time complexity : O(n)
-     * Space complexity : O(n), for the map
-     */
-    int lengthOfLongestSubstring(String s) {
-        Map<Character, Integer> charToIndex = new HashMap<>();// Value is the index of the char we saw last time
-        int maxLength = 0;
-        int length = s.toCharArray().length;
-        for (int i = 0, j = 0; j < length; j++) { // i and j represent the left and right side of the sliding window
-            char currChar = s.charAt(j);
-            if (charToIndex.containsKey(currChar) && charToIndex.get(currChar) >= i)
-                // Shrink the current window, i.e. move i ptr forward, ONLY when
-                // 1. We saw the same char before
-                // 2. Its last-seen index is inside the current window range, i.e. index >= i. ---> IMPORTANT!!
-                //    We only move the i forward inside the current window range, any index val outside of if is useless.
-                //    Ex. input: abba
-                //        When the window is at "ba", i=2, j=3, the map still has a->0, so we should ignore it.
-                i = charToIndex.get(currChar) + 1; // Move the i ptr. We need to move it one more position to skip this duplicate char
-            maxLength = Math.max(maxLength, j - i + 1);
-            charToIndex.put(currChar, j); // Update the last seen index for this char
-        }
-        return maxLength;
     }
 
 
@@ -2335,7 +2308,7 @@ public class ArrayQuestion {
      * the very left of the array to the very right. You can only see the k numbers in the window. Each
      * time the sliding window moves right by one position.
      * <p>
-     * Return the max sliding window.
+     * Return the maximum element from each sliding window.
      * <p>
      * Input: nums = [1,3,-1,-3,5,3,6,7], k = 3
      * Output: [3,3,5,5,6,7]
@@ -2360,8 +2333,10 @@ public class ArrayQuestion {
     }
 
     /**
-     * Maintaining a Monotonic Decreasing Queue(Deque) to keep the first element the index of the max element of current window
-     * by removing the smaller elements from the end before adding new element to the deque.
+     * Maintaining a Monotonic Decreasing Queue(Deque) to keep the first element being the index of the
+     * max element of every window. When adding new element to the deque, first remove the elements
+     * smaller than it from the end of deque. Whenever the window size reaches k, put the head of deque
+     * int the result list.
      * <p>
      * Observation:
      * 1. In a window, the elements that come before the largest element will never be selected as the largest element of
@@ -2423,11 +2398,137 @@ public class ArrayQuestion {
                 ++left;
             }
         }
+        // result list to array
         int[] r = new int[ans.size()];
         for (int i = 0; i < ans.size(); i++)
             r[i] = ans.get(i);
         return r;
         //return ans.stream().mapToInt(i->i).toArray();
+    }
+
+    /**
+     * Frequency of the Most Frequent Element
+     * The frequency of an element is the number of times it occurs in an array.
+     * <p>
+     * You are given an integer array nums and an integer k. In one operation, you can choose
+     * an index of nums and increment the element at that index by 1.
+     * <p>
+     * Return the maximum possible frequency of an element after performing at most k operations.
+     * <p>
+     * Input: nums = [1,2,4], k = 5
+     * Output: 3
+     * Explanation: Increment the first element three times and the second element two times to
+     * make nums = [4,4,4]. 4 has a frequency of 3.
+     * <p>
+     * Input: nums = [1,4,8,13], k = 5
+     * Output: 2
+     * Explanation: There are multiple optimal solutions:
+     * - Increment the first element three times to make nums = [4,4,8,13]. 4 has a frequency of 2.
+     * - Increment the second element four times to make nums = [1,8,8,13]. 8 has a frequency of 2.
+     * - Increment the third element five times to make nums = [1,4,13,13]. 13 has a frequency of 2.
+     * <p>
+     * Input: nums = [3,9,6], k = 2
+     * Output: 1
+     * <p>
+     * https://leetcode.com/problems/frequency-of-the-most-frequent-element/description/
+     */
+    @Test
+    void testMaxFrequency() {
+        assertThat(maxFrequency(new int[]{1, 2, 4}, 5)).isEqualTo(3);
+        assertThat(maxFrequency(new int[]{1, 4, 8, 13}, 5)).isEqualTo(2);
+    }
+
+    /**
+     * Maintain a left ptr to use sliding window to iterate the array. We maintain the sum of numbers
+     * in current window. When nums[right] * (right - left + 1) - winSum > k, keep shrinking the
+     * window by dropping the left ptr number from the sum and move the left ptr. We update the max
+     * window size after the window is valid. The max window size is the most frequency of the same
+     * number after at most k increments.
+     * <p>
+     * Observation:
+     * 1. We want to choose a target, which can increment other numbers to it using at most K times.
+     * Since we can only do increment, sorting the array is necessary so when pick up the target,
+     * we know what numbers in the array should be considered.
+     * <p>
+     * 2. We can use a sliding window to check the numbers. Once we set one of numbers in the window
+     * as target, can we use no more than K increments to make others the same as target. As we know,
+     * we can only do increment, so the most intuitive way is pick the rightmost number(max number)
+     * in the window as target.
+     * <p>
+     * Algo:
+     * Our goal is to find a window when using the rightmost number as the target, so we can use at
+     * most K increments on the rest of numbers to make them the same as target. While we expand the
+     * window by moving the right ptr, if the current window doesn't satisfy this condition, we need
+     * to first shrink the window from left until it becomes valid. This is becuase the next right
+     * ptr number is either equal or greater than the current one, it won't reduce the increment ops
+     * we need if we move the right ptr further.
+     * <p>
+     * Therefore, the condition to determine if the window is "valid" if
+     * target number * current window size - sum of numbers in window <= K
+     * ==> (right ptr number) * (right - left + 1) - winSum <= k
+     * When this condition is false, we want to move the left ptr to shrink the window.
+     * Also, the left ptr shouldn't exceed right ptr.
+     * <p>
+     * When window is "valid", which means all number(s) in the window can be increment to the
+     * target/max number in the window using no more than k increment ops. In other words, the size
+     * of the window also means the number of occurrences/frequency of the same number after at most
+     * k increments. So we update the max window size, and return it after the loop ends.
+     * <p>
+     * Time complexity: O(n⋅logn)
+     * O(n⋅logn) Sort + O(n) Iterate the array
+     * <p>
+     * Space Complexity: O(n) JDK sort
+     */
+    int maxFrequency(int[] nums, int k) {
+        Arrays.sort(nums);
+        int left = 0;
+        int maxWinSize = -1; // Max win is updated only when all numbers in it can be added
+        long winSum = 0; // Track the sum of numbers in the current window
+        for (int right = 0; right < nums.length; right++) {
+            winSum += nums[right];
+            // Cuz we sorted the array, nums[right] is the max number in the current window. Our alog is to find a
+            // window when using the rightmost number as the target, we can use k increments on the rest of numbers to
+            // make them the same as target. When the current window doesn't satisfy this condition, we need to first
+            // shrink the window from left until it becomes valid. Cuz the next right ptr number is either equal or
+            // greater than the current one, it won't reduce the increment ops we need.
+            while (nums[right] * (right - left + 1) - winSum > k
+                    && left < right) {
+                // nums[right] * (right - left + 1) is the optimal target sum when making all numbers in the window
+                // equal to the "max" number, i.e. the rightmost number.
+                // On LeetCode, we need to use (right - left + 1) > (k + winTotal) / maxNum && left < right as the
+                // condition of while loop to avoid integer overflow
+                winSum -= nums[left];
+                left++;
+            }
+            // Now window is "valid", which means all number(s) in the window can be increment to the target/max number
+            // in the window using no more than k increment ops. In other words, the size of the window also means the
+            // number of occurrences/frequency of the same number after at most k increments.
+            maxWinSize = Math.max(maxWinSize, right - left + 1);
+        }
+        return maxWinSize;
+    }
+
+
+    int maxFrequencyII(int[] nums, int k) {
+        Arrays.sort(nums);
+        int left = 0;
+        int maxWinSize = 0;
+        long winTotal = 0L;
+
+        for (int right = 0; right < nums.length; right++) {
+            int maxNum = nums[right];
+            winTotal += maxNum;
+            //int winSize = right - left + 1;
+//            while ((right - left + 1) * maxNum - winTotal > k && left < right) {
+            while ((right - left + 1) > (k + winTotal) / maxNum && left < right) {
+                winTotal -= nums[left];
+                left++;
+            }
+
+            maxWinSize = Math.max(maxWinSize, right - left + 1);
+        }
+
+        return maxWinSize;
     }
 
     /**

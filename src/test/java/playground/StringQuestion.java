@@ -125,7 +125,10 @@ public class StringQuestion {
     }
 
     /**
-     * Character Frequency Counter - put char count in array of size 26 and compare
+     * Use the Map or Array[26] to keep track of the count of each char. If two string has different length,
+     * return false first. Otherwise, iterate both string at the same time and increment the count of char
+     * of s, and decrement count of char of t in the map/array. Finally, iterate the map/array, return false
+     * if any count is not zero.
      * To examine if t is a rearrangement of sss, we can count occurrences of each letter in the two
      * strings and compare them. We could use a hash table to count the frequency of each letter, however,
      * since both s and t only contain letters from aaa to zzz, a simple array of size 26 will suffice.
@@ -197,12 +200,16 @@ public class StringQuestion {
      */
     @Test
     void testFindAnagrams() {
+        assertThat(findAnagrams("abab", "ab")).containsExactly(0, 1, 2);
         assertThat(findAnagrams("cbaebabacd", "abc")).containsExactly(0, 6);
     }
 
     /**
-     * Use Sliding window w/ HashMap to iterate the string s and dynamically build the charToCount map given the chars in the
-     * window and compare it to the charToCount map built from the string p.
+     * First populate the charToCountP Map for str p. Maintain a ptr j(0) for left side of sliding
+     * window. Iterate str s, for each char at s, update the 2nd map(charToCountS). When the current
+     * sliding window size(i-j+1) == p.length, if two maps are equal, add j to result. Then update the
+     * charToCountS map by dropping the entry or decrement the court for char point by ptr j.
+     * Finally, advance j ptr.
      * <p>
      * This is the extension of the "Valid Anagram" problem
      * <p>
@@ -233,7 +240,7 @@ public class StringQuestion {
                 if (charToCountS.equals(charToCountP))
                     result.add(j);
                 Integer leftCharCount = charToCountS.get(s.charAt(j));
-                // Update/Drop the left-most char before we advance the left ptr
+                // Drop the left-most char from the map before we advance the left ptr
                 if (leftCharCount == 1)
                     charToCountS.remove(s.charAt(j));
                 else
@@ -345,11 +352,22 @@ public class StringQuestion {
     }
 
     /**
-     * Implement strStr() (indexOf)
-     * https://leetcode.com/problems/implement-strstr/solution/
+     * Find the Index of the First Occurrence in a String/Implement strStr()
+     * Given two strings needle and haystack, return the index of the first occurrence of
+     * needle in haystack, or -1 if needle is not part of haystack.
+     * <p>
+     * Constraints:
+     * haystack and needle consist of ONLY lowercase English characters.
+     * <p>
+     * Input: haystack = "sadbutsad", needle = "sad"
+     * Output: 0
+     * Input: haystack = "leetcode", needle = "leeto"
+     * Output: -1
+     * https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/description/
      */
     @Test
     void testStrStr() {
+        assertThat(strStr("abc", "c")).isEqualTo(2);
         Assertions.assertEquals(2, strStr("hello", "ll"));
         Assertions.assertEquals(-1, strStr("aaaaa", "bba"));
 
@@ -358,26 +376,39 @@ public class StringQuestion {
     }
 
     /**
-     * Sliding Window approach
-     * Time Complexity: O(nm), For every window_start, we may have to iterate at most m times.
-     * There are n−m+1 such window_start's. Thus, it is O((n−m+1)⋅m), which is O(nm).
+     * Iterate the haystack str and use two ptr to maintain a sliding window of size of str needle.
+     * Once two ptr are apart from each other as window size, iterate str needle and compare each char
+     * in the current window on str hasystack, if matched, return the left ptr, otherwise, advance
+     * left ptr and continue.
+     * <p>
+     * Time Complexity: O(n⋅m)
+     * n as length of needle, m as length of haystack
+     * For every window, we may have to iterate at most m times.
+     * There are n−m+1 window position. Thus, it is O((n−m+1)⋅m), which is O(n⋅m).
      * Space Complexity: O(1)
      */
     int strStr(String haystack, String needle) {
-        int nLen = needle.length(), hLen = haystack.length();
-
-        for (int windowStart = 0; windowStart <= hLen - nLen; windowStart++) {
-            for (int i = 0; i < nLen; i++) {
-                if (needle.charAt(i) != haystack.charAt(windowStart + i)) {
-                    break;
+        int winSize = needle.length();
+        int l = 0;
+        for (int r = 0; r < haystack.length(); r++) {
+            if (r - l + 1 == winSize) {
+                // When left & right ptr are moved apart as window size
+                boolean matched = true;
+                for (int i = l, j = 0; j < winSize; i++, j++) {
+                    // Compare each char in needle string and str in the window
+                    if (haystack.charAt(i) != needle.charAt(j)) {
+                        matched = false;
+                        break;
+                    }
                 }
-                if (i == nLen - 1) {
-                    return windowStart;
-                }
+                if (matched)
+                    return l;
+                l++; // Move window left ptr for next iteration
             }
         }
         return -1;
     }
+
 
     // This implementation uses built-in substring method so it is less performant
     // Time Complexity: O((N-L)L), where N is a length of haystack and L is a length of needle. We compute a substring of length L in a loop, which is executed (N - L) times.
@@ -984,6 +1015,150 @@ public class StringQuestion {
     }
 
     /**
+     * Longest Substring Without Repeating Characters
+     * Given a string s, find the length of the longest substring without repeating characters.
+     * <p>
+     * Input: s = "abcabcbb"
+     * Output: 3
+     * Explanation: The answer is "abc", with the length of 3.
+     * <p>
+     * Input: s = "bbbbb"
+     * Output: 1
+     * Explanation: The answer is "b", with the length of 1.
+     * <p>
+     * https://leetcode.com/problems/longest-substring-without-repeating-characters/description/
+     */
+    @Test
+    void testLengthOfLongestSubstring() {
+        assertThat(lengthOfLongestSubstring("abba")).isEqualTo(2);
+        assertThat(lengthOfLongestSubstring("abcabcbb")).isEqualTo(3);
+    }
+
+    /**
+     * Use two ptrs(l, r) to iterate the array and maintain a sliding window. Also use a map to track the
+     * char and last seen index. For each char, if it is found at map and its index(i) is bigger than l ptr,
+     * set the l ptr to i+1. Update the max length to the current window size, and put current char and index
+     * to the map.
+     * Algo:
+     * 1. Start iterating/expanding the right side of the window
+     * 2. If this char is seen before(in the Map) and also within the current window range(idx >= left ptr)
+     * 3. 	 Shrink the window ==> Move the left ptr to the last seen index + 1
+     * 4. Compute the current max length
+     * 5. Update the char and its index in the Map
+     * <p>
+     * Time complexity : O(n)
+     * Space complexity : O(n), for the map
+     */
+    int lengthOfLongestSubstring(String s) {
+        Map<Character, Integer> charToIndex = new HashMap<>();// Value is the index of the char we saw last time
+        int maxLength = 0;
+        int length = s.toCharArray().length;
+        for (int i = 0, j = 0; j < length; j++) { // i and j represent the left and right side of the sliding window
+            char currChar = s.charAt(j);
+            if (charToIndex.containsKey(currChar) && charToIndex.get(currChar) >= i)
+                // Shrink the current window, i.e. move i ptr forward, ONLY when
+                // 1. We saw the same char before
+                // 2. Its last-seen index is inside the current window range, i.e. index >= i. ---> IMPORTANT!!
+                //    We only move the i forward inside the current window range, any index val outside of if is useless.
+                //    Ex. input: abba
+                //        When the window is at "ba", i=2, j=3, the map still has a->0, so we should ignore it.
+                i = charToIndex.get(currChar) + 1; // Move the i ptr. We need to move it one more position to skip this duplicate char
+            maxLength = Math.max(maxLength, j - i + 1);
+            charToIndex.put(currChar, j); // Update the last seen index for this char
+        }
+        return maxLength;
+    }
+
+    /**
+     * Longest Repeating Character Replacement
+     * You are given a string s and an integer k. You can choose any character of
+     * the string and change it to any other uppercase English character. You can
+     * perform this operation at most k times.
+     * <p>
+     * Return the length of the longest substring containing the same letter you can
+     * get after performing the above operations.
+     * <p>
+     * Input: s = "ABAB", k = 2
+     * Output: 4
+     * Explanation: Replace the two 'A's with two 'B's or vice versa.
+     * <p>
+     * Input: s = "AABABBA", k = 1
+     * Output: 4
+     * Explanation: Replace the one 'A' in the middle with 'B' and form "AABBBBA".
+     * The substring "BBBB" has the longest repeating letters, which is 4.
+     * There may exists other ways to achieve this answer too.
+     * https://leetcode.com/problems/longest-repeating-character-replacement/description/
+     */
+    @Test
+    void testCharacterReplacement() {
+        assertThat(characterReplacement("ABAB", 2)).isEqualTo(4);
+        assertThat(characterReplacement("AABABBA", 1)).isEqualTo(4);
+        assertThat(characterReplacement("BAAAB", 2)).isEqualTo(5);
+    }
+
+    /**
+     * Maintain a charToCount map and use sliding window to iterate the string. Each time we move
+     * right ptr, check if the current window is valid(winSize - max count in the map <= k). If so,
+     * update the max length, otherwise, move the left ptr and decrement the left char in the map
+     * <p>
+     * Observation:
+     * If we maintain a sliding window over the string s. The substring in the window is valid
+     * if the count of the most occurring char + k = size of the substring. In other words,
+     * the remaining k chars in the substring can be replaced w/ the most occurring char.
+     * Ex: k=2, AABC, AABB, ABAB are all valid substring
+     * <p>
+     * 1. Maintain the left ptr for the sliding window
+     * 2. Maintain a char to count map
+     * 3. Maintain max length of valid window/substring
+     * 4. Iterate the str w/ right ptr
+     * - Increment the char count in the map
+     * - Get the count of the most occurring char from the map(Collections.max(charToCount.values()))
+     * - If the window is valid (window size - maxCount) <= k
+     * --  Update the max length of valid window
+     * - Else
+     * --  Drop/Decrement count of the left ptr char in the map
+     * --  left ptr ++ (The window will move to the right by 1 at next iteration)
+     * <p>
+     * Time complexity : O(n)
+     * Map has max 26 entries, so finding max is O(1)
+     * Space complexity : O(m), m is 26
+     */
+    int characterReplacement(String s, int k) {
+        Map<Character, Integer> charToCount = new HashMap<>();
+        int left = 0;
+        int maxLen = 0;
+        for (int right = 0; right < s.length(); right++) {
+            char c = s.charAt(right);
+            charToCount.put(c, charToCount.getOrDefault(c, 0) + 1);
+            int winSize = right - left + 1;
+            // window is valid if window size - MAX char count in the window <= k
+            // It means there are enough replacement quota to replace reaming chars
+            boolean isWindowValid = winSize - Collections.max(charToCount.values()) <= k;
+            if (!isWindowValid) {
+                // Window is invalid now, so move the left ptr ONCE. Then at the next iteration the window w/ the same
+                // size will technically shift right by one. Although it is possible that the shifted window will
+                // still be invalid, it is ok cuz we search for the max valid window. Making a valid window equal or
+                // smaller than the previous max window we've seen won't be helpful, so we don't keep moving the left
+                // ptr here to get a valid window. We just shift the window a bit and see if it will become valid and
+                // expand further afterward.
+                char leftChar = s.charAt(left);
+                Integer count = charToCount.get(leftChar);
+                // Drop the leftChar count in the map
+                if (count == 1)
+                    charToCount.remove(leftChar);
+                else
+                    charToCount.put(leftChar, count - 1);
+                // Advance left ptr
+                left++;
+            } else {
+                // Window is valid, update the max win size
+                maxLen = Math.max(maxLen, winSize);
+            }
+        }
+        return maxLen;
+    }
+
+    /**
      * Minimum Window Substring
      * Given two strings s and t of lengths m and n respectively, return the minimum window
      * substring of s such that every character in t (including duplicates) is included
@@ -1006,16 +1181,32 @@ public class StringQuestion {
      */
     @Test
     void testMinWindow() {
+        assertThat(minWindow("cabwefgewcwaefgcf", "cae")).isEqualTo("cwae");
         assertThat(minWindow("ADOBECODEBANC", "ABC")).isEqualTo("BANC");
         assertThat(minWindow("a", "a")).isEqualTo("a");
         assertThat(minWindow("aaaaaaaaaaaabbbbbcdd", "abcdd")).isEqualTo("abbbbbcdd");
     }
 
+
     /**
-     * Use Sliding window to iterate the string s. We need to keep two HashMaps(char->count) for the str t and str in the
-     * current window. We keep expanding the window by moving the right ptf. When the window has all the desired characters,
-     * we save the smallest window till now and keep shrinking the window(moving the left ptr) until it doesn't
-     * satisfied the required characters.
+     * Use Sliding window to iterate the string s. We need to keep two Maps(char->count) for the
+     * str t and str in the current window. When iterating the str s, first keep moving the right
+     * ptr to expand the window until the window has all the desired characters from str t, then
+     * we update the min window size and min substring. Then start to shrink the window(move the
+     * left ptr) and update the window map until it doesn't satisfy the required characters.
+     * <p>
+     * Note:
+     * To determine if the charToCountWin map satisfy the charToCount map (from string t),
+     * the naive way is to iterate charToCount and check if charToCountWin has the key and has
+     * equal or greater count. But this is slow.
+     * <p>
+     * More efficient way is to maintain a matchEntryCount(init: 0). After we update the
+     * charToCountWin for the current char, if the count of current char in charToCountWin equals
+     * charToCount, we increment matchEntryCount. When the matchEntryCount equals the size
+     * or charToCount, charToCountWin satisfies charToCount.
+     * When we advance the left ptr, we need to check after updating the charToCountWin, if
+     * the left ptr char count inh charToCountWin becomes less than charToCount, we need to
+     * decrement matchEntryCount.
      * <p>
      * Time Complexity: O(S+T) where S and T represent the lengths of strings S and T.
      * <p>
