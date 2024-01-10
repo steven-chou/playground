@@ -153,22 +153,23 @@ public class SortingSearching {
     //  of iterating backwards instead of forwards through the array. It can completely change the problem, and make it a lot easier.
 
     /**
-     * Three Pointers (Start From the End)*
-     * Maintain 3 ptrs, p1 to point at index m - 1 of nums1, p2 to point at index n - 1 of nums2, and p to point at index m + n - 1 of nums1.
-     * Then move p backwards through the array, each time writing the bigger value pointed at by p1 or p2 to nums1 where p is point at.
+     * Maintain 3 ptrs(2 read, 1 write), r1 to point at index m - 1 of nums1, r2 to point at index n - 1 of nums2,
+     * and w to point at index m + n - 1 of nums1. Then use ptr w to iterate nums1 array backward, for each index
+     * point by w, set it to the bigger value of p1 or p2 and move decrement ptr accordingly. Need to consider
+     * the condition that either p1 or p2 fall out of its array, i.e. p1 or p2 < 0
      * Time Complexity: O(n+m). Space Complexity: O(1)
      */
     void merge(int[] nums1, int m, int[] nums2, int n) {
-        int p1 = m - 1;
-        int p2 = n - 1;
-        for (int p = m + n - 1; p >= 0; p--) {
-            if (p1 >= 0 && p2 >= 0)
+        int r1 = m - 1;
+        int r2 = n - 1;
+        for (int w = m + n - 1; w >= 0; w--) {
+            if (r1 >= 0 && r2 >= 0)
                 // Take the bigger one and write it to nums1
-                nums1[p] = nums1[p1] > nums2[p2] ? nums1[p1--] : nums2[p2--];
-            else if (p1 >= 0) // p2 passed the head
-                nums1[p] = nums1[p1--];
-            else // p1 passed the head
-                nums1[p] = nums2[p2--];
+                nums1[w] = nums1[r1] > nums2[r2] ? nums1[r1--] : nums2[r2--];
+            else if (r1 >= 0) // r2 passed the head
+                nums1[w] = nums1[r1--];
+            else // r1 passed the head
+                nums1[w] = nums2[r2--];
         }
     }
 

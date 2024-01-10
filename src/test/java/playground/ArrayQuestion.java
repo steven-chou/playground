@@ -57,6 +57,68 @@ import static org.assertj.core.api.Assertions.assertThat;
 
  */
 public class ArrayQuestion {
+    /**
+     * Remove Element
+     * Given an integer array nums and an integer val, remove all occurrences of val in nums
+     * in-place. The order of the elements may be changed. Then return the number of elements
+     * in nums which are not equal to val.
+     * <p>
+     * Consider the number of elements in nums which are not equal to val be k, to get
+     * accepted, you need to do the following things:
+     * <p>
+     * Change the array nums such that the first k elements of nums contain the elements
+     * which are not equal to val. The remaining elements of nums are not important as well
+     * as the size of nums.
+     * <p>
+     * Return k.
+     * <p>
+     * Input: nums = [3,2,2,3], val = 3
+     * Output: 2, nums = [2,2,_,_]
+     * Explanation: Your function should return k = 2, with the first two elements of nums
+     * being 2. It does not matter what you leave beyond the returned k (hence they are
+     * underscores).
+     * <p>
+     * Input: nums = [0,1,2,2,3,0,4,2], val = 2
+     * Output: 5, nums = [0,1,4,0,3,_,_,_]
+     * Explanation: Your function should return k = 5, with the first five elements of nums
+     * containing 0, 0, 1, 3, and 4.
+     * Note that the five elements can be returned in any order.
+     * It does not matter what you leave beyond the returned k (hence they are underscores).
+     * <p>
+     * https://leetcode.com/problems/remove-element/description/
+     */
+    @Test
+    void removeRemoveElement() {
+        int[] intArray = new int[]{3, 2, 2, 3};
+        assertThat(removeElement(intArray, 3)).isEqualTo(2);
+        assertThat(removeElement(new int[]{0, 1, 2, 2, 3, 0, 4, 2}, 2)).isEqualTo(5);
+    }
+
+    /**
+     * Maintain two ptr(i:0, j:0) and iterate array w/ ptr i, when its number is NOT
+     * target number, we swap the number of ptr i with j, then advance j. Return j in
+     * the end.
+     * <p>
+     * The idea is we want to push all non-target number to the front. Ptr j serves as the
+     * position that we will write the next non-target number to.
+     * Ptr i should run faster than j unless there are continuous non-target number in front
+     * of array. In that case, i and j just keep swapping the same number at the same
+     * position and advance together.
+     * <p>
+     * Time Complexity: O(N)
+     * Space Complexity: O(1)
+     */
+    int removeElement(int[] nums, int val) {
+        int insertIdx = 0; // track the position where we will put the next non-target number
+        for (int i = 0; i < nums.length; i++) {
+            // Do nothing when the number is equal to target
+            if (nums[i] != val) {
+                nums[insertIdx] = nums[i];
+                insertIdx++;
+            }
+        }
+        return insertIdx; // ptr insertIdx is at the next index of the last placed non-target number
+    }
 
     /**
      * Remove Duplicates from Sorted Array
@@ -94,8 +156,15 @@ public class ArrayQuestion {
     }
 
     /**
-     * Maintain two ptr(k:0, i:1) to iterate the array. If nums[k] != nums[i], advance k ptr and set num[k] to num[i]
-     * Otherwise just continue the loop, i.e. i++.
+     * Maintain two ptr(i:0, insertIdx:0) to iterate the array w ptr i. when its number
+     * is not target number, set the number at insertedIdx to current number, then advance
+     * the insertedIdx. Return the insertedIdx in the end.
+     * <p>
+     * The idea is we want to push all non-target number to the front of array.
+     * insertIdx is the ptr to track where we will put the next non-target number.
+     * Ptr i should run faster than insertIdx unless there are continuous non-target number
+     * in front of array. In that case, ptr i and insertIdx will at the same index and
+     * we just set the number at its original index then advance both ptr together.
      * <p>
      * Time Complexity: O(N).
      * Space Complexity: O(1)
@@ -103,18 +172,19 @@ public class ArrayQuestion {
     int removeDuplicates(int[] nums) {
         if (nums.length == 0 || nums.length == 1)
             return nums.length;
-        int k = 0; // ptr to track the last unique number from the head
+        int insertIdx = 1; // Idx where we will place the next unique number. Starts at 1
         for (int i = 1; i < nums.length; i++) {
             // i starts at the 2nd element
-            if (nums[k] != nums[i]) {
-                // advance k ptr and set its value to nums[i] if ptr i is on the element w/ different value
-                k++;
-                nums[k] = nums[i];
+            if (nums[i - 1] != nums[i]) {
+                // nums[i] is different from the previous number. Cuz the array is sorted, it means
+                // this is first time we see it. So we want to push this number in the front of array,
+                // insertedIdx.
+                nums[insertIdx] = nums[i];
+                insertIdx++;
             }
         }
-        return k + 1; // k is the index of the last unique element, so we need to increment by 1
+        return insertIdx; // insertIdx is at the next index of the last unique element
     }
-
 
     /**
      * Best Time to Buy and Sell Stock I
@@ -642,11 +712,11 @@ public class ArrayQuestion {
     @Test
     void testTwoSum() {
         int[] nums = new int[]{2, 7, 11, 15};
-        Assertions.assertArrayEquals(new int[]{0, 1}, twoSum(nums, 9));
+        assertThat(twoSum(nums, 9)).containsExactly(0, 1);
         nums = new int[]{3, 3};
-        Assertions.assertArrayEquals(new int[]{0, 1}, twoSum(nums, 6));
+        assertThat(twoSum(nums, 6)).containsExactly(0, 1);
         nums = new int[]{3, 2, 4};
-        Assertions.assertArrayEquals(new int[]{1, 2}, twoSum(nums, 6));
+        assertThat(twoSum(nums, 6)).containsExactly(1, 2);
     }
 
     /**
@@ -791,265 +861,6 @@ public class ArrayQuestion {
 
 
     /**
-     * Valid Sudoku
-     * Determine if a 9 x 9 Sudoku board is valid. Only the filled cells need to be validated
-     * according to the following rules:
-     * <p>
-     * Each row must contain the digits 1-9 without repetition.
-     * Each column must contain the digits 1-9 without repetition.
-     * Each of the nine 3 x 3 sub-boxes of the grid must contain the digits 1-9 without repetition.
-     * <p>
-     * Note:
-     * <p>
-     * A Sudoku board (partially filled) could be valid but is not necessarily solvable.
-     * Only the filled cells need to be validated according to the mentioned rules.
-     * https://leetcode.com/problems/valid-sudoku/solution/
-     * EPI 5.17
-     */
-    @Test
-    void testSudoku() {
-        char[][] board = {
-                {'5', '3', '.', '.', '7', '.', '.', '.', '.'},
-                {'6', '.', '.', '1', '9', '5', '.', '.', '.'},
-                {'.', '9', '8', '.', '.', '.', '.', '6', '.'},
-                {'8', '.', '.', '.', '6', '.', '.', '.', '3'},
-                {'4', '.', '.', '8', '.', '3', '.', '.', '1'},
-                {'7', '.', '.', '.', '2', '.', '.', '.', '6'},
-                {'.', '6', '.', '.', '.', '.', '2', '8', '.'},
-                {'.', '.', '.', '4', '1', '9', '.', '.', '5'},
-                {'.', '.', '.', '.', '8', '.', '.', '7', '9'}
-        };
-
-        Assertions.assertTrue(isValidSudoku(board));
-        char[][] boardTwo = {
-                {'8', '3', '.', '.', '7', '.', '.', '.', '.'},
-                {'6', '.', '.', '1', '9', '5', '.', '.', '.'},
-                {'.', '9', '8', '.', '.', '.', '.', '6', '.'},
-                {'8', '.', '.', '.', '6', '.', '.', '.', '3'},
-                {'4', '.', '.', '8', '.', '3', '.', '.', '1'},
-                {'7', '.', '.', '.', '2', '.', '.', '.', '6'},
-                {'.', '6', '.', '.', '.', '.', '2', '8', '.'},
-                {'.', '.', '.', '4', '1', '9', '.', '.', '5'},
-                {'.', '.', '.', '.', '8', '.', '.', '7', '9'}
-        };
-        Assertions.assertFalse(isValidSudoku(boardTwo));
-    }
-
-    /**
-     * Iterate 2D board array and use 3 Map with Set, rowIdxToCharSet, colIdxToCharSet and boxIdxToCharSet
-     * to record visited number and check if the current cell value is duplicate.
-     * <p>
-     * Observation:
-     * 1. A valid sudoku board should satisfy three conditions: (1) each row, (2) each column, and (3)
-     * each box has no duplicate numbers.
-     * <p>
-     * 2. We can use three sets to check duplicate char for each row, column and 3x3 boxes.
-     * <p>
-     * Algo:
-     * 1. Create 3 maps. rowIdxToCharSet, colIdxToCharSet, and boxIdxToCharSet
-     * For each 3x3 box. Each cell in the board is assigned a box ID, which is Pair(rowIndex/3, columnIndex/3)
-     * So all cell in the same 3x3 box have the same box ID
-     * <p>
-     * 2. Iterate the 2D board array,
-     * -  Check if the cell value exists in these 3 sets. If so, the board is invalid, return false.
-     * -  Add the cell value to all 3 sets.
-     * <p>
-     * Time Complexity: O(n^2)
-     * Space Complexity: O(n^2): 3 x n (max entries of Map) x n (max size of each set)
-     */
-    boolean isValidSudoku(char[][] board) {
-        Map<Integer, Set<Character>> rowIdxToCharSet = new HashMap<>(); // Set for each row
-        Map<Integer, Set<Character>> colIdxToCharSet = new HashMap<>(); // Set for each column
-        // Set for each 3x3 box. Each cell in the board is assigned a box ID, which is Pair(rowIndex/3, columnIndex/3).
-        // So all cell in the same 3x3 box have the same box ID
-        Map<Pair<Integer, Integer>, Set<Character>> boxIdxToCharSet = new HashMap<>();
-        // Init the Set in the map
-        for (int i = 0; i < 9; i++) {
-            rowIdxToCharSet.put(i, new HashSet<>());
-            colIdxToCharSet.put(i, new HashSet<>());
-        }
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++)
-                boxIdxToCharSet.put(new Pair<>(i, j), new HashSet<>());
-        }
-        // Iterate over the board
-        for (int r = 0; r < board.length; r++) {
-            for (int c = 0; c < board[0].length; c++) {
-                char val = board[r][c];
-                if (val == '.') // Skip empty cell, i.e. '.'
-                    continue;
-                if (rowIdxToCharSet.get(r).contains(val)
-                        || colIdxToCharSet.get(c).contains(val)
-                        || boxIdxToCharSet.get(new Pair<>(r / 3, c / 3)).contains(val))
-                    // board is invalid if the cell value is found in any one of the three sets
-                    return false;
-                // add current cell value to three sets
-                rowIdxToCharSet.get(r).add(val);
-                colIdxToCharSet.get(c).add(val);
-                boxIdxToCharSet.get(new Pair<>(r / 3, c / 3)).add(val);
-            }
-        }
-        return true;
-    }
-
-
-    /**
-     * Rotate Image/Matrix
-     * https://leetcode.com/problems/rotate-image/solution/
-     * EPI 5.19
-     */
-    @Test
-    void testRotateMatrix() {
-        int[][] matrix = {
-                {1, 2, 3},
-                {4, 5, 6},
-                {7, 8, 9}
-        };
-        int[][] answer = {
-                {7, 4, 1},
-                {8, 5, 2},
-                {9, 6, 3}
-        };
-        rotate(matrix);
-
-        Assertions.assertTrue(Arrays.deepEquals(answer, matrix));
-    }
-
-    /**
-     * The most elegant solution for rotating the matrix is to firstly reverse the matrix around the main diagonal,
-     * and then reverse it from left to right. These operations are called transpose and reflect in linear algebra.
-     * Time Complexity: O(N). Space Complexity: O(1)
-     */
-    void rotate(int[][] matrix) {
-        transpose(matrix);
-        reflect(matrix);
-    }
-
-    // Reverse the matrix around the main diagonal
-    void transpose(int[][] matrix) {
-        for (int i = 0; i < matrix.length; i++) {
-            for (int j = i; j < matrix.length; j++) { //TODO: Caution! j=i cuz we want to begin w/ diagonal
-                var tmp = matrix[i][j];
-                matrix[i][j] = matrix[j][i];
-                matrix[j][i] = tmp;
-            }
-        }
-    }
-
-    // Reverse each row in the matrix from left to right
-    // TODO: MEMORIZE! Reverse array
-    void reflect(int[][] matrix) {
-        for (int i = 0; i < matrix.length; i++) {
-            for (int j = 0; j < matrix.length / 2; j++) {
-                var tmp = matrix[i][j];
-                matrix[i][j] = matrix[i][matrix.length - 1 - j];
-                matrix[i][matrix.length - 1 - j] = tmp;
-            }
-        }
-    }
-
-    /**
-     * Set Matrix Zeroes
-     * Given an m x n integer matrix matrix, if an element is 0, set its entire row and column to 0's.
-     * You must do it in place.
-     * <p>
-     * Input: matrix = [[1,1,1],[1,0,1],[1,1,1]]
-     * Output: [[1,0,1],[0,0,0],[1,0,1]]
-     * <p>
-     * Input: matrix = [[0,1,2,0],[3,4,5,2],[1,3,1,5]]
-     * Output: [[0,0,0,0],[0,4,5,0],[0,3,1,0]]
-     * <p>
-     * https://leetcode.com/problems/set-matrix-zeroes/description/
-     */
-    @Test
-    void testSetZeroes() {
-        int[][] matrix = {
-                {1, 1, 1},
-                {1, 0, 1},
-                {1, 1, 1}
-        };
-        int[][] answer = {
-                {1, 0, 1},
-                {0, 0, 0},
-                {1, 0, 1}
-        };
-        setZeroes(matrix);
-        assertThat(matrix).isEqualTo(answer);
-    }
-
-    /**
-     * Use the first cell of every row and column to track the rows and columns that should be set to zero and update the matrix later
-     * <p>
-     * We don't want to use any additional memory so  we can use the first cell of every row and column as a flag.
-     * This flag would determine whether a row or column has been set to zero.
-     * if cell[i][j] == 0 {
-     * cell[i][0] = 0
-     * cell[0][j] = 0
-     * }
-     * These flags are used later to update the matrix. If the first cell of a row is set to zero this means the row
-     * should be marked zero. If the first cell of a column is set to zero this means the column should be marked zero.
-     * <p>
-     * Algorithm
-     * <p>
-     * 1. We iterate over the matrix and we mark the first cell of a row i and first cell of a column j, if the condition
-     * in the pseudo code above is satisfied. i.e. if cell[i][j] == 0.
-     * <p>
-     * 2. The first cell of row and column for the first row and first column is the same i.e. cell[0][0]. Hence,
-     * we use an additional variable to tell us if the first column had been marked or not and the cell[0][0] would be
-     * used to tell the same for the first row.
-     * <p>
-     * 3. Now, we iterate over the original matrix starting from second row and second column i.e. matrix[1][1] onwards.
-     * For every cell we check if the row r or column c had been marked earlier by checking the respective first row cell
-     * or first column cell. If any of them was marked, we set the value in the cell to 0. Note the first row and first
-     * column serve as the row_set and column_set that we used in the first approach.
-     * <p>
-     * 4.We then check if cell[0][0] == 0, if this is the case, we mark the first row as zero.
-     * <p>
-     * 5.And finally, we check if the first column was marked, we make all entries in it as zeros.
-     * <p>
-     * Time Complexity : O(M×N)
-     * Space Complexity : O(1)
-     */
-    void setZeroes(int[][] matrix) {
-        boolean setFirstColZero = false;
-        int rowNum = matrix.length, colNum = matrix[0].length;
-        for (int i = 0; i < rowNum; i++) {
-            // Since the first cell, i.e. matrix[0][0], for both first row and first column is the same
-            // We need an additional variable for either the first row/column.
-            // Here we are use setFirstColZero for the first column and matrix[0][0] for the first row.
-            for (int j = 0; j < colNum; j++) {
-                if (matrix[i][j] == 0) {
-                    matrix[i][0] = 0; // Set the first cell of the same row to zero
-                    if (j == 0) // If we see zero at any cell in the 1st column, set the flag
-                        setFirstColZero = true;
-                    else
-                        matrix[0][j] = 0; // Set the first cell of the same column to zero
-                }
-            }
-        }
-        // Iterate over the array once again(except for the first row and column) and use the info from the
-        // first row and first column to update the elements.
-        for (int i = 1; i < rowNum; i++) {
-            for (int j = 1; j < colNum; j++) {
-                if (matrix[i][0] == 0 || matrix[0][j] == 0) {
-                    matrix[i][j] = 0;
-                }
-            }
-        }
-        // See if the first row needs to be set to zero as well
-        if (matrix[0][0] == 0) {
-            // First row should be set to zero
-            for (int i = 0; i < colNum; i++)
-                matrix[0][i] = 0;
-        }
-        // See if the first column needs to be set to zero as well
-        if (setFirstColZero) {
-            for (int i = 0; i < rowNum; i++)
-                matrix[i][0] = 0;
-        }
-    }
-
-    /**
      * Group Anagrams
      * Given an array of strings strs, group the anagrams together. You can return the answer in any order.
      * <p>
@@ -1108,8 +919,9 @@ public class ArrayQuestion {
      * representing the number of a's, b's, c's, etc. We use these counts as the key for our hash map.
      * <p>
      * The count will be a string delimited with '#' characters. For example, abbccc will be
-     * #1#2#3#0#0#0...#0 where there are 26 entries total. Without the delimiter, in some edge case,
-     * For example, aaab and abbb wil yield the same key as 111100...00
+     * #1#2#3#0#0#0...#0 where there are 26 entries total.
+     * Without the delimiter, in some edge case, such as aaaaaaaaaaab(11'a', 1'b') and abbbbbbbbbbb(1'a', 11'b')
+     * will yield the same key as 111000...00
      * <p>
      * Time Complexity: O(NK), where N is the length of strs, and K is the maximum length of
      * a string in strs. Counting each string is linear in the size of the string, and we
@@ -1331,7 +1143,8 @@ public class ArrayQuestion {
      * Majority Element
      * Given an array nums of size n, return the majority element.
      * <p>
-     * The majority element is the element that appears more than ⌊n / 2⌋ times. You may assume that the majority element always exists in the array.
+     * The majority element is the element that appears more than ⌊n / 2⌋ times. You may assume that the majority element
+     * always exists in the array.
      * <p>
      * Input: nums = [3,2,3]
      * Output: 3
@@ -1351,13 +1164,23 @@ public class ArrayQuestion {
     }
 
     /**
-     * 1. Maintain two int vars, count and num, both init to 0.
-     * 2. Iterate the array
-     * -  Set the current element to num when count is 0
-     * -  Increment the count when the cuurent element is the same as num, otherwise decrement it
-     * 3. Return num after loop terminates
+     * Naive approach: (Not O(1) space complexity)
+     * - Iterate array and build the numberToCount HashMap, then return the number w/ max count
+     * - Sort the array and return the nums[nums.length/2] element. No matter odd or even-length
+     * array, the majority must be overlap at the floor(n/2) element.
      * <p>
-     * Whenever count equals 0, we effectively forget about everything in nums up to the current
+     * Ad hoc approach - Boyer-Moore Voting Algorithm
+     * 1. Maintain two int vars, count and num, both init to 0.
+     * 2. For each number x in the array
+     * -    If x = num, increment the count
+     * -    Else if count = 0, set num to x and increment count.
+     * -    Else decrement the count
+     * 3. Return num
+     * <p>
+     * (The condition check is changed a little bit, so it can be reused for problem "Majority Element II"
+     * in the same way)
+     * <p>
+     * * Whenever count equals 0, we effectively forget about everything in nums up to the current
      * index and consider the current number. This alog is Boyer-Moore Voting Algorithm
      * <p>
      * This algo is hard to understand, check NeetCode video
@@ -1367,13 +1190,15 @@ public class ArrayQuestion {
      * Space complexity : O(1)
      */
     int majorityElement(int[] nums) {
-        int count = 0, majorityNum = 0;
+        int count = 0;
+        Integer majorityNum = null;
         for (int num : nums) {
-            if (count == 0)
-                majorityNum = num;
-            if (num == majorityNum)
+            if (majorityNum != null && num == majorityNum)
                 ++count;
-            else
+            else if (count == 0) {
+                majorityNum = num;
+                ++count;
+            } else
                 --count;
         }
         return majorityNum;
@@ -1402,6 +1227,124 @@ public class ArrayQuestion {
             }
         }
         return maxNum;
+    }
+
+    @Test
+    void testMajorityElementII() {
+        assertThat(majorityElementII(new int[]{3, 2, 3})).containsOnly(3);
+        assertThat(majorityElementII(new int[]{1})).containsOnly(1);
+        assertThat(majorityElementII(new int[]{1, 2})).containsOnly(1, 2);
+        assertThat(majorityElementII(new int[]{2, 1, 1, 3, 1, 4, 5, 6})).containsOnly(1);
+    }
+
+    /**
+     * This is the extension of the "Majority Element" problem.
+     * The problem can still be solved using the numberToCount HashMap.
+     * But we need to use Boyer-Moore Voting Algorithm to achieve O(1) space complexity.
+     * <p>
+     * First, given any array, there can be at most 2 elements that each of them has more than
+     * floor(n/3) occurrences. Therefore, we can just use extra count and candidate variables
+     * and apply the same algo.
+     * <p>
+     * 1. Maintain four int vars, count1 and count2, candidate1 and candidate2.
+     * 2. For each number x in the array
+     * -    If x = candidate1, increment the count1
+     * -    Else if x = candidate2, increment the count2
+     * -    Else if count1 = 0, set candidate1 to x and increment count1.
+     * -    Else if count2 = 0, set candidate2 to x and increment count2.
+     * -    Else decrement the count1 and count2
+     * 3. Iterate the array again to compute the actual counts of candidate1 and candidate2.
+     * -  (Cuz there can be at most two numbers having more than n/3 occurrences, it is possible only
+     * -   one of the candidates is valid or some edge case. So we need to check them again.)
+     * 4. Add the candidate1 and candidate2 to result ONLY if its actual count is greater than n/3
+     * 5. Return result
+     * <p>
+     * Time complexity : O(n)
+     * Space complexity : O(1)
+     */
+    List<Integer> majorityElementII(int[] nums) {
+        // Given any array, there can be at most 2 elements that each of them has more than floor(n/3) occurrences.
+        Integer candidate1 = null;
+        Integer candidate2 = null;
+        int count1 = 0;
+        int count2 = 0;
+        for (int num : nums) {
+            if (candidate1 != null && num == candidate1) {
+                count1++;
+            } else if (candidate2 != null && num == candidate2) {
+                count2++;
+            } else if (count1 == 0) {
+                candidate1 = num;
+                count1++;
+            } else if (count2 == 0) {
+                candidate2 = num;
+                count2++;
+            } else {
+                count1--;
+                count2--;
+            }
+        }
+        // Iterate the array again to compute the actual counts of candidate1 and candidate2.
+        // Cuz there can be at most two numbers having more than n/3 occurrences, it is possible only one of
+        // the candidate variables is valid. So we need to check them again.
+        int realCount1 = 0;
+        int realCount2 = 0;
+        for (int num : nums) {
+            if (num == candidate1)
+                realCount1++;
+            else if (candidate2 != null && num == candidate2)
+                realCount2++;
+        }
+        List<Integer> result = new ArrayList<>();
+        if (realCount1 > nums.length / 3)
+            result.add(candidate1);
+        if (realCount2 > nums.length / 3)
+            result.add(candidate2);
+        return result;
+    }
+
+    public List<Integer> majorityElementLC(int[] nums) {
+
+        // 1st pass
+        int count1 = 0;
+        int count2 = 0;
+
+        Integer candidate1 = null;
+        Integer candidate2 = null;
+
+        for (int n : nums) {
+            if (candidate1 != null && candidate1 == n) {
+                count1++;
+            } else if (candidate2 != null && candidate2 == n) {
+                count2++;
+            } else if (count1 == 0) {
+                candidate1 = n;
+                count1++;
+            } else if (count2 == 0) {
+                candidate2 = n;
+                count2++;
+            } else {
+                count1--;
+                count2--;
+            }
+        }
+
+        // 2nd pass
+        List result = new ArrayList<>();
+
+        count1 = 0;
+        count2 = 0;
+
+        for (int n : nums) {
+            if (candidate1 != null && n == candidate1) count1++;
+            if (candidate2 != null && n == candidate2) count2++;
+        }
+
+        int n = nums.length;
+        if (count1 > n / 3) result.add(candidate1);
+        if (count2 > n / 3) result.add(candidate2);
+
+        return result;
     }
 
     /**
@@ -2508,28 +2451,6 @@ public class ArrayQuestion {
         return maxWinSize;
     }
 
-
-    int maxFrequencyII(int[] nums, int k) {
-        Arrays.sort(nums);
-        int left = 0;
-        int maxWinSize = 0;
-        long winTotal = 0L;
-
-        for (int right = 0; right < nums.length; right++) {
-            int maxNum = nums[right];
-            winTotal += maxNum;
-            //int winSize = right - left + 1;
-//            while ((right - left + 1) * maxNum - winTotal > k && left < right) {
-            while ((right - left + 1) > (k + winTotal) / maxNum && left < right) {
-                winTotal -= nums[left];
-                left++;
-            }
-
-            maxWinSize = Math.max(maxWinSize, right - left + 1);
-        }
-
-        return maxWinSize;
-    }
 
     /**
      * Container With Most Water

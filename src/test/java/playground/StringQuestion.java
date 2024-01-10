@@ -25,9 +25,14 @@ import static org.assertj.core.api.Assertions.assertThat;
     - Check char is digit or letter
         Character.isLetter('c')
         Character.isDigit('1')
+        Character.isLetterOrDigit('x')
     - substring tips:
       return empty string when beginIndex == endIndex
       return empty string when calling str.sbustring(str.length)
+    - Sort a String by character
+        char tempArray[] = inputString.toCharArray();
+        Arrays.sort(tempArray)
+        return new String(tempArray);
 -
 
  */
@@ -81,6 +86,17 @@ public class StringQuestion {
 
     /**
      * First Unique Character in a String
+     * Given a string s, find the first non-repeating character in it and return its index.
+     * If it does not exist, return -1.
+     * <p>
+     * Input: s = "leetcode"
+     * Output: 0
+     * <p>
+     * Input: s = "loveleetcode"
+     * Output: 2
+     * <p>
+     * Input: s = "aabb"
+     * Output: -1
      * https://leetcode.com/problems/first-unique-character-in-a-string/solution/
      */
     @Test
@@ -253,8 +269,19 @@ public class StringQuestion {
 
     /**
      * Valid Palindrome
-     * A palindrome is a word, phrase, or sequence that reads the same backwards as forwards. e.g. madam
-     * A palindrome, and its reverse, are identical to each other.)
+     * A phrase is a palindrome if, after converting all uppercase letters into lowercase letters
+     * and removing all non-alphanumeric characters, it reads the same forward and backward.
+     * Alphanumeric characters include letters and numbers.
+     * <p>
+     * Given a string s, return true if it is a palindrome, or false otherwise.
+     * <p>
+     * Input: s = "A man, a plan, a canal: Panama"
+     * Output: true
+     * Explanation: "amanaplanacanalpanama" is a palindrome.
+     * <p>
+     * Input: s = "race a car"
+     * Output: false
+     * Explanation: "raceacar" is not a palindrome.
      * https://leetcode.com/problems/valid-palindrome/solution/
      */
     @Test
@@ -271,49 +298,154 @@ public class StringQuestion {
     Continue traversing inwards until the pointers meet in the middle.
     Time Complexity: O(N). Space Complexity: O(1)
      */
+
+    /**
+     * Use two ptr(i:0, j:tail) to iterate the str from two ends. First iteratively move i and j to the
+     * first letter or digit char while maintaining i < j. Then compare lowercase char both ptrs at.
+     * Return false if they are not equal, otherwise move i and j until i cross j.
+     * Time Complexity: O(N)
+     * Space Complexity: O(1)
+     */
     boolean isPalindrome(String s) {
-        for (int i = 0, j = s.length() - 1; i < j; i++, j--) {
+        int i = 0, j = s.length() - 1;
+        while (i < j) {
             while (i < j && !Character.isLetterOrDigit(s.charAt(i))) {
-                // keep going forward until it is alpha char, or it passes the tail ptr
                 i++;
             }
-            while (j > i && !Character.isLetterOrDigit(s.charAt(j))) {
-                // keep going backward until it is alpha char, or it passes the head ptr
+            while (i < j && !Character.isLetterOrDigit(s.charAt(j))) {
                 j--;
             }
+
             if (Character.toLowerCase(s.charAt(i)) != Character.toLowerCase(s.charAt(j))) {
                 return false;
             }
+            i++;
+            j--;
+        }
+        return true;
+    }
+
+    /**
+     * Valid Palindrome II
+     * Given a string s, return true if the s can be palindrome after deleting at
+     * most one character from it.
+     * <p>
+     * Input: s = "aba"
+     * Output: true
+     * <p>
+     * Input: s = "abca"
+     * Output: true
+     * Explanation: You could delete the character 'c'.
+     * <p>
+     * Input: s = "abc"
+     * Output: false
+     * <p>
+     * https://leetcode.com/problems/valid-palindrome-ii/description/
+     */
+    @Test
+    void testValidPalindrome() {
+        assertThat(validPalindrome("aguokepatgbnvfqmgmlcupuufxoohdfpgjdmysgvhmvffcnqxjjxqncffvmhvgsymdjgpfdhooxfuupuculmgmqfvnbgtapekouga")).isTrue();
+        assertThat(validPalindrome("aba")).isTrue();
+        assertThat(validPalindrome("abca")).isTrue();
+    }
+
+    /**
+     * Use two ptr(i:0, j:tail) to iterate the str from two ends. If two char are different, then try
+     * check if the substring of [i+1, j] is palindrome, if not, check the substring of [i, j-1].
+     * <p>
+     * Note: Need a helper method taking start and end index to check if given range of substring
+     * is palindrome
+     * <p>
+     * Time Complexity: O(N)
+     * Space Complexity: O(1)
+     */
+    boolean validPalindrome(String s) {
+        int i = 0, j = s.length() - 1;
+        while (i < j) {
+            if (s.charAt(i) != s.charAt(j)) {
+                return (checkPalindrome(i + 1, j, s)) || checkPalindrome(i, j - 1, s);
+            }
+            i++;
+            j--;
+        }
+        return true;
+    }
+
+    boolean checkPalindrome(int start, int end, String s) {
+        while (start < end) {
+            if (s.charAt(start) != s.charAt(end))
+                return false;
+            start++;
+            end--;
         }
         return true;
     }
 
     /**
      * String to Integer (atoi)
+     * Implement the myAtoi(string s) function, which converts a string to a 32-bit signed integer
+     * (similar to C/C++'s atoi function).
+     * <p>
+     * The algorithm for myAtoi(string s) is as follows:
+     * <p>
+     * 1. Read in and ignore any leading whitespace.
+     * <p>
+     * 2. Check if the next character (if not already at the end of the string) is '-' or '+'. Read
+     * this character in if it is either. This determines if the final result is negative or positive
+     * respectively. Assume the result is positive if neither is present.
+     * <p>
+     * 3. Read in next the characters until the next non-digit character or the end of the input is
+     * reached. The rest of the string is ignored.
+     * <p>
+     * 4. Convert these digits into an integer (i.e. "123" -> 123, "0032" -> 32). If no digits were
+     * read, then the integer is 0. Change the sign as necessary (from step 2).
+     * <p>
+     * 5. If the integer is out of the 32-bit signed integer range [-231, 231 - 1], then clamp the
+     * integer so that it remains in the range. Specifically, integers less than -231 should be
+     * clamped to -231, and integers greater than 231 - 1 should be clamped to 231 - 1.
+     * <p>
+     * 6. Return the integer as the final result.
+     * <p>
+     * Note:
+     * Only the space character ' ' is considered a whitespace character.
+     * Do not ignore any characters other than the leading whitespace or the rest of the string
+     * after the digits.
+     * <p>
+     * Example:
+     * <p>
+     * Input: s = "42"
+     * Output: 42
+     * <p>
+     * Input: s = "   -42"
+     * Output: -42
+     * <p>
+     * Input: s = "4193 with words"
+     * Output: 4193
      * https://leetcode.com/problems/string-to-integer-atoi/solution/
      */
     @Test
     void testAtoi() {
-        Assertions.assertEquals(42, atoi("0042"));
-        Assertions.assertEquals(42, atoi("42"));
-        Assertions.assertEquals(-42, atoi("-42"));
-        Assertions.assertEquals(4193, atoi("4193 with words"));
-        Assertions.assertEquals(0, atoi("words and 987"));
+        assertThat(atoi("0042")).isEqualTo(42);
+        assertThat(atoi("42")).isEqualTo(42);
+        assertThat(atoi("-42")).isEqualTo(-42);
+        assertThat(atoi("4193 with words")).isEqualTo(4193);
+        assertThat(atoi("words and 987")).isEqualTo(0);
+        assertThat(atoi("   +0 123")).isEqualTo(0);
     }
 
-
-    //Time Complexity: O(N). Space Complexity: O(1)
-    /*
-    Discard all the whitespaces at the beginning of the string.
-    There could be an optional sign of a numerical value +/-+/−. It should be noted that the integer is positive by
-    default if there is no sign present and there could be at most one sign character. Build the result using
-    the above algorithm until there exists a non-whitespace character that is a number (0 to 9).
-    Simultaneously, check for overflow/underflow conditions at each step.
+    /**
+     * Discard all the whitespaces at the beginning of the string.
+     * There could be an optional sign of a numerical value +/-+/−. It should be noted that the integer is positive by
+     * default if there is no sign present and there could be at most one sign character. Build the result using
+     * the above algorithm until there exists a non-whitespace character that is a number (0 to 9).
+     * Simultaneously, check for overflow/underflow conditions at each step.
+     * Time Complexity: O(N)
+     * Space Complexity: O(1)
      */
     int atoi(String str) {
         int i = 0;
         int sign = 1;
-        if (str.length() == 0)
+        if (str.isEmpty())
             return 0;
 
         // Discard whitespaces in the beginning
@@ -336,7 +468,7 @@ public class StringQuestion {
                 /*
                 overflow/underflow will happen after appending the digit that meet any one of following conditions
                 1. The current number is greater than Integer.MAX_VALUE / 10, i.e. 214748364
-                2. The current number is equal to Integer.MAX_VALUE / 10, and the appending digit is greater than7,
+                2. The current number is equal to Integer.MAX_VALUE / 10, and the appending digit is greater than 7,
                    i.e. Integer.MAX_VALUE % 10. When appending 8 and the current number is -214748364, it will become
                    -2147483648 and not underflow, but the code still returns Integer.MIN_VALUE as expected
 
@@ -368,11 +500,10 @@ public class StringQuestion {
     @Test
     void testStrStr() {
         assertThat(strStr("abc", "c")).isEqualTo(2);
-        Assertions.assertEquals(2, strStr("hello", "ll"));
-        Assertions.assertEquals(-1, strStr("aaaaa", "bba"));
-
-        Assertions.assertEquals(2, rabinKarpStrStr("hello", "ll"));
-        Assertions.assertEquals(0, rabinKarpStrStr("", ""));
+        assertThat(strStr("hello", "ll")).isEqualTo(2);
+        assertThat(strStr("aaaaa", "bba")).isEqualTo(-1);
+        assertThat(strStr("hello", "ll")).isEqualTo(2);
+        assertThat(strStr("", "")).isEqualTo(-1);
     }
 
     /**
@@ -507,14 +638,26 @@ public class StringQuestion {
 
     /**
      * Longest Common Prefix
+     * Write a function to find the longest common prefix string amongst an array
+     * of strings. If there is no common prefix, return an empty string "".
+     * strs[i] consists of only lowercase English letters.
+     * <p>
+     * Input: strs = ["flower","flow","flight"]
+     * Output: "fl"
+     * <p>
+     * <p>
+     * Input: strs = ["dog","racecar","car"]
+     * Output: ""
+     * Explanation: There is no common prefix among the input strings.
      * https://leetcode.com/problems/longest-common-prefix/solution/
      */
     @Test
     void testLongestCommonPrefix() {
-        Assertions.assertEquals("d", longestCommonPrefixVerticalScan(new String[]{"d", "d", "dcd"}));
-        Assertions.assertEquals("fl", longestCommonPrefixHorizontalScan(new String[]{"flower", "flow", "flight"}));
-        Assertions.assertEquals("", longestCommonPrefixVerticalScan(new String[]{"dog", "racecar", "car"}));
-        Assertions.assertEquals("fl", longestCommonPrefixVerticalScan(new String[]{"flo", "flower", "fl"}));
+        assertThat(longestCommonPrefixVerticalScan(new String[]{"d", "d", "dcd"})).isEqualTo("d");
+        assertThat(longestCommonPrefixVerticalScan(new String[]{"flower", "flow", "flight"})).isEqualTo("fl");
+        assertThat(longestCommonPrefixVerticalScan(new String[]{"dog", "racecar", "car"})).isEqualTo("");
+        assertThat(longestCommonPrefixVerticalScan(new String[]{"flo", "flower", "fl"})).isEqualTo("fl");
+
     }
 
     // Compare characters from top to bottom on the same column (same character index of the strings) before moving on to the next column.
@@ -522,6 +665,29 @@ public class StringQuestion {
     // Even though the worst case is still the same as HorizontalScan, in the best case there are at most n*minLen comparisons
     // where minLen is the length of the shortest string in the array.
     // Space Complexity: O(1). We only used constant extra space.
+
+    /**
+     * For each char(c) in the first string in array, iterate the remaining strings in the array. For each
+     * string if its char at the same index is not equal to c, return the substring of the first string
+     * from 0 to current index - 1 (Note: can also use StringBuilder then append to it at end of inner loop)
+     * <p>
+     * Algo:
+     * Compare characters from top to bottom on the same column (same character index of the strings)
+     * before moving on to the next column.
+     * 1. Use the first string item as the starting point to start to scan and check its char one by one.
+     * 2. Iterate from the 2nd string in the list
+     * -   Check the char at the same index of other strings. Break the loop and return the current prefix when
+     * -   1. The index is equal to the length of the string, which means this string is the shortest
+     * -      one in the array, and we can't check the next prefix char candidate here otherwise index will be
+     * -      out of bound
+     * -   2. The char at this index of the string is not equal to the current prefix char
+     * -   In either one of above condition, use the substring method to return the prefix
+     * <p>
+     * Time Complexity: O(S), where S is the sum of all characters in all strings.
+     * Even though the worst case is still the same as HorizontalScan, in the best case there are at most n*minLen comparisons
+     * where minLen is the length of the shortest string in the array.
+     * Space Complexity: O(1). We only used constant extra space.
+     */
     String longestCommonPrefixVerticalScan(String[] strs) { // ---> Better
         if (strs == null || strs.length == 0)
             return "";
@@ -1275,8 +1441,13 @@ public class StringQuestion {
     }
 
     /**
-     * For each char in the string, use it as center and expand on both sides to find max length of palindrome
-     * The idea is to check for palindrome, we use two index, right and left, to move toward two ends of the string at the same time.
+     * For each char in the string, first use it as center and two pointers at that index to expand toward
+     * both sides to find the max length of palindrome. We need to do the similar thing to cover the
+     * even-sized palindrome, so this time we have two pointers starting at two adjacent index. Finally,
+     * the max palindrome is the greater of two.
+     * <p>
+     * The idea is to check for palindrome, we use two ptr, right and left, to move toward two ends of the
+     * string at the same time.
      * For example,
      * Say if we look for an odd-length palindrome, bacab, while we are checking the char 'c' in the string,
      * we set both right and left at index of 'c', and start to move them one index at a time but different direction.
@@ -1346,16 +1517,22 @@ public class StringQuestion {
     }
 
     /**
-     * Iterate the str and build the char->count array/HashMap then sum up the number of "pair" in the count.
-     * Increment by 1 if the sum is less than str length to account for the center unique char.
+     * Iterate the str and build the char->count HashMap/array[128], then sum up the count number that
+     * can be paired in the map. If the sum is less than str length, which means not all chars in str are
+     * completely paired, we add one to the sum to account for the center unique char in the palindrome str.
      * <p>
-     * The key is the formual to compute (the number of pair) X 2 for a given char, say a letter occurs x times, we will have
-     * x / 2 * 2
+     * After we make the charToCount Map, the first thing we need to know is the total number of pairs of
+     * the same char. This will first give us an even-length palindrome string. When we iterate the map,
+     * one trick we can use is to use the formula: count / 2 * 2.
+     * Cuz we do the integer division, for the odd count, this is the same as count-1. For the even count,
+     * it has no effect. Alternative way is to use mod operation to check if it is odd or even.
+     * <p>
      * Ex: if we have 'aaaaa', then we could have 'aaaa' partnered, which is 5 / 2 * 2 = 4 letters partnered
      * <p>
-     * This will include all pair count for both odd or even number count. To maximize the palindrome lenght, if there is char
-     * occurring odd number times, it needs to be included in the center. Comparing the running sum w/ the length of input
-     * str tells us if there is still any single char left, if so, just add one to the sum.
+     * However, to maximize the palindrome length, if there is char occurring odd number times, we can include
+     * it in the center of the palindrome. We can simply compare the total we just came up w/ the length
+     * of str. If they are not equal, it means the chars in str are not completely paired, and there must
+     * be odd number char count. So we can just add one to the sum.(We don't care what char is)
      * <p>
      * Time Complexity: O(N), where N is the length of s. We need to count each letter.
      * <p>
@@ -1368,7 +1545,7 @@ public class StringQuestion {
         int ans = 0;
         for (int count : charCount) {
             // This formula computes the number of "pair" X 2
-            // Even count: take the count. Odd: take count - 1
+            // For Even number count: no effect, Odd number count: take count - 1
             ans += count / 2 * 2;
         }
         if (ans < s.length())

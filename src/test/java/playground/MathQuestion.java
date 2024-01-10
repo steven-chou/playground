@@ -8,19 +8,28 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /* TODO- Useful Tips:
-     - Take digits of one-by-one from an integer from the last digit
-        <1> Use mod
+     - Take each digit of an integer from the last digit one-by-one
+        (1) Use mod
         int num = 9876;
-        while (num > 0) {
+        while (num != 0) {
             int lastDigit = num % 10; // mod gives us last digit
             num = num / 10; // divide by 10 drops the last digit
             // Loop will end when num < 10 and divide by 10 --> num = 0
         }
-        If we want the same order as the original integer, we can push the lastDigit to a stack first, and pop it out after the while loop
-        <2> Use built-in API
+        If we want the same order as the original integer, we can push the lastDigit to a stack first, and pop it out
+        after the while loop
+        (2) Use built-in API
         int[] array = String.valueOf(num).chars().map(Character::getNumericValue).toArray();
         List<Integer> list = String.valueOf(num).chars().map(Character::getNumericValue).boxed().collect(Collectors.toList());
- *
+     - Append an int digit to the end of an integer, e.g. Append 2 to 1 --> 12
+       int myInt = 1, digit = 2;
+       myInt = myInt * 10 + digit; // myInt: 12
+     - Checking if adding a digit to an integer will cause overflow/underflow
+       When myInt is positive:
+       myInt > Integer.MAX_VALUE / 10 || (myInt == Integer.MAX_VALUE / 10 && lastDigit > Integer.MAX_VALUE % 10)
+       When myInt is negative:
+       myInt < Integer.MIN_VALUE / 10 || (myInt == Integer.MIN_VALUE / 10 && lastDigit < Integer.MIN_VALUE % 10)
+       This technique is used in the problem "String to Integer (atoi)" and "Reverse Integer"
  *
  */
 public class MathQuestion {
@@ -36,61 +45,101 @@ public class MathQuestion {
     }
 
     /**
-     * Another fancy solution is to use String concatenation. Starting w/ empty string, then check every condition to append
-     * the correspond string to it.
+     * Iterate i from 1 to n, init str to "",
+     * if i is divisible by 3 (i%3 == 0), append Fizz
+     * if i is divisible by 5 (i%5 == 0), append Buzz
+     * if str is still empty, append i
+     * Add str to the answer list.
      * Time Complexity: O(n). Space Complexity: O(1)
      */
     List<String> fizzBuzz(int n) {
         List<String> ans = new ArrayList<>();
-        for (int i = 1; i <= n; i++) {
-            boolean divisibleBy3 = (i % 3 == 0);
-            boolean divisibleBy5 = (i % 5 == 0);
-            if (divisibleBy3 && divisibleBy5)
-                ans.add("FizzBuzz");
-            else if (divisibleBy3)
-                ans.add("Fizz");
-            else if (divisibleBy5)
-                ans.add("Buzz");
-            else
-                ans.add(Integer.toString(i));
+        for (int num = 1; num <= n; num++) {
+            boolean divisibleBy3 = (num % 3 == 0);
+            boolean divisibleBy5 = (num % 5 == 0);
+
+            String numAnsStr = "";
+            if (divisibleBy3) {
+                // Divides by 3, add Fizz
+                numAnsStr += "Fizz";
+            }
+            if (divisibleBy5) {
+                // Divides by 5, add Buzz
+                numAnsStr += "Buzz";
+            }
+            if (numAnsStr.isEmpty()) {
+                // Not divisible by 3 or 5, add the number
+                numAnsStr += Integer.toString(num);
+            }
+
+            // Append the current answer str to the ans list
+            ans.add(numAnsStr);
         }
         return ans;
     }
 
     /**
      * Reverse Integer
+     * Given a signed 32-bit integer x, return x with its digits reversed. If reversing x causes
+     * the value to go outside the signed 32-bit integer range [-2^31, 2^31 - 1], then return 0.
+     * Assume the environment does not allow you to store 64-bit integers (signed or unsigned).
+     * <p>
+     * Input: x = 123
+     * Output: 321
+     * <p>
+     * Input: x = -123
+     * Output: -321
+     * <p>
+     * Input: x = 120
+     * Output: 21
      * https://leetcode.com/problems/reverse-integer/solution/
      * EPI 4.8
      */
     @Test
     void testReverseInt() {
-        int num = 123;
-        org.junit.jupiter.api.Assertions.assertEquals(321, reverseInt(num));
-        num = -123;
-        org.junit.jupiter.api.Assertions.assertEquals(-321, reverseInt(num));
-        num = 120;
-        org.junit.jupiter.api.Assertions.assertEquals(21, reverseInt(num));
+        assertThat(reverseInt(123)).isEqualTo(321);
+        assertThat(reverseInt(-123)).isEqualTo(-321);
+        assertThat(reverseInt(120)).isEqualTo(21);
     }
 
-    //Time Complexity: O(log(x)). There are roughly log10(x) digits in x. Space Complexity: O(1)
+    /**
+     * While x is not equal 0,
+     * - do x % 10 to get the last digit from x
+     * - x = x/10 to drop the right most digit
+     * - If adding the last digit to current answer will cause overflow, return 0
+     * -- ans > Integer.MAX_VALUE / 10
+     * --	or (ans == Integer.MAX_VALUE / 10 && lastDigit > Integer.MAX_VALUE % 10)
+     * - If adding the last digit to current answer will cause underflow, return 0
+     * -- ans < Integer.MIN_VALUE / 10
+     * --  or (ans == Integer.MIN_VALUE / 10 && lastDigit < Integer.MIN_VALUE % 10)
+     * - ans = ans * 10 + last digit
+     * <p>
+     * In summary, we repeatedly "pop" the last digit off of X and "push" it to the back
+     * of the ans. In the end, ans will be the reverse of the X.
+     * <p>
+     * Time Complexity: O(log(x)). There are roughly log10(x) digits in x.
+     * Space Complexity: O(1)
+     */
     int reverseInt(int x) {
         int ans = 0;
         while (x != 0) {
-            int pop = x % 10; // mod operation gives us the right most digit
+            int lastDigit = x % 10; // mod operation gives us the right most digit
             x /= 10; // int div drops the right most digit, and the loop continues until it becomes zero
             /*
             MAX_VALUE = 2147483647, MIN_VALUE = -2147483648
             To explain the following check, lets assume that ans is positive.
-                1. If temp = ans⋅10 + pop causes overflow, then it must be that ans ≥ INT_MAX/10
-                2. If ans > INT_MAX/10, then temp = ans⋅10 + pop is guaranteed to overflow.
-                3. If ans == INT_MAX/10, then temp = ans⋅10 + pop will overflow if and only if pop > 7
+                1. If temp = ans⋅10 + lastDigit causes overflow, then it must be that ans ≥ INT_MAX/10
+                2. If ans > INT_MAX/10, then temp = ans⋅10 + lastDigit is guaranteed to overflow.
+                3. If ans == INT_MAX/10, then temp = ans⋅10 + lastDigit will overflow if and only if lastDigit > 7
             Similar logic can be applied when ans is negative.
              */
-            if (ans > Integer.MAX_VALUE / 10 || (ans == Integer.MAX_VALUE / 10 && pop > 7))
+            // Check overflow
+            if (ans > Integer.MAX_VALUE / 10 || (ans == Integer.MAX_VALUE / 10 && lastDigit > Integer.MAX_VALUE % 10))
                 return 0;
-            if (ans < Integer.MIN_VALUE / 10 || (ans == Integer.MIN_VALUE / 10 && pop < -8))
+            // Check underflow
+            if (ans < Integer.MIN_VALUE / 10 || (ans == Integer.MIN_VALUE / 10 && lastDigit < Integer.MIN_VALUE % 10))
                 return 0;
-            ans = ans * 10 + pop; // This can cause an overflow, so we need above check
+            ans = ans * 10 + lastDigit; // This can cause an overflow, so we need above check
         }
         return ans;
     }
