@@ -428,7 +428,6 @@ public class DynamicProgramming {
 
     /**
      * Longest Increasing Subsequence
-     * https://leetcode.com/problems/longest-increasing-subsequence/description/
      * Given an integer array nums, return the length of the longest strictly increasing subsequence.
      * <p>
      * Input: nums = [10,9,2,5,3,7,101,18]
@@ -437,6 +436,7 @@ public class DynamicProgramming {
      * <p>
      * Input: nums = [0,1,0,3,2,3]
      * Output: 4
+     * https://leetcode.com/problems/longest-increasing-subsequence/description/
      */
     @Test
     void testLengthOfLIS() {
@@ -467,7 +467,7 @@ public class DynamicProgramming {
             }
             maxLength = Math.max(dp[i], maxLength);
         }
-        Arrays.binarySearch(dp, 1);
+        
         return maxLength;
     }
 

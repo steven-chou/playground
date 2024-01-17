@@ -10,20 +10,25 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /*  TODO: Useful tips:
-      - List ---> PRIMITIVE TYPE array, e.g. List<Integer> --> int[]
+     - List ---> PRIMITIVE type array, e.g. List<Integer> --> int[]
         1. Iterate the List and add them to the array
              int[] array = new int[list.size()];
              for(int i = 0; i < list.size(); i++) array[i] = list.get(i);
-        2. int[] array = myIntList.stream().mapToInt(Integer::intValue).toArray() ==> more memory
+        2. int[] array = myIntList.stream().mapToInt(i -> i).toArray() ==> more memory, but considering doing this to
+           convert List to array cuz there will less code to type at the interview
+     - List of List ---> PRIMITIVE type 2D array, e.g. List<List<Integer>> --> int[][]
+         int[][] grid = list.stream().map(u -> u.stream().mapToInt(i -> i).toArray()).toArray(int[][]::new);
+     - List of List ---> REFERENCE type 2D array, e.g. List<List<String>> --> String[][]
+         String[][] grid = list.stream().map(u -> u.toArray(String[]::new)).toArray(String[][]::new);
      - List ---> REFERENCE type array, e.g. List<Foo> --> Foo[]
-       Foo[] array = list.toArray(new Foo[0]); ==> new Foo[0] just means an empty array. More efficient in newer JVM
+         Foo[] array = list.toArray(new Foo[0]); ==> new Foo[0] just means an empty array. More efficient in newer JVM
      - REFERENCE type array ---> List, e.g. String[] --> List<String>
        List<T> myList = Arrays.asList(T... a)
        Ex:
          String[] array = {"foo", "bar"};
          List<String> list = Arrays.asList(array);
          or list = Arrays.asList("foo", "bar");
-     - PRIMITIVE TYPE array ---> List, e.g. int[] --> List<Integer>
+     - PRIMITIVE type array ---> List, e.g. int[] --> List<Integer>
         1. Iterate the array and add them to the List
 	        List<Integer> output = new ArrayList<>();
             for (int value : intArray) output.add(value);
@@ -967,25 +972,30 @@ public class ArrayQuestion {
         assertThat(increasingTriplet(new int[]{1, 2, 3, 4, 5})).isTrue();
         // In this test case, when we are at 13, first is 5 and second is 12. Although this is not the triplet, the answer doesn't change.
         assertThat(increasingTriplet(new int[]{20, 100, 10, 12, 5, 13})).isTrue();
+        assertThat(increasingTriplet(new int[]{1, 2, 2, 1})).isFalse();
+        assertThat(increasingKLongSequence(new int[]{20, 100, 10, 12, 5, 13})).isTrue();
     }
 
     /**
-     * Iterate array while updating the min and second min variables in if-else-if-else
-     * The idea is to keep track of the first two numbers in increasing order and find the last number
-     * which will be bigger than the first two numbers. Here, the first and second smallest numbers can
-     * be updated with conditional checks while scanning nums.
+     * Maintain two vars(first & second, init to INT_MAX), and for each number in the array, if it is
+     * less than or equal to first, set first to it. Else if less than or equal to second, set second
+     * to it, otherwise we get a triplet, so return true
      * Algo:
      * first_num = second_num = some very big number
      * for n in nums:
-     * -     if n is the smallest number:
+     * -     if n <= first_num:
      * -         first_num = n
-     * -     else if n is second smallest number:
+     * -     else if n <= second_num:
      * -         second_num = n
-     * -     else n is bigger than both first_num and second_num:
+     * -     else
+     * -         # n > second > first
      * -         # We have found our triplet, return True
      * # After loop has terminated
      * # If we have reached this point, there is no increasing triplet, return False
-     * <p>
+     * Note: In some test case, you may see first_num is updated to the number whose index is bigger
+     * than second_num after the loop ends. This is possible but doesn't affect the result, cuz our
+     * logic guarantee that as long as we have set the second_num, it means the first_num must be
+     * set to a number before it.
      * Time complexity : O(N)
      * Space complexity : O(1)
      */
@@ -993,13 +1003,34 @@ public class ArrayQuestion {
         if (nums.length < 3)
             return false;
         int first = Integer.MAX_VALUE, second = Integer.MAX_VALUE;
-        for (int i = 0; i < nums.length; i++) {
-            if (nums[i] <= first) // Need to include equal
-                first = nums[i];
-            else if (nums[i] <= second)
-                second = nums[i];
+        for (int num : nums) {
+            // We must include equal when doing the comparison, cuz we need 3 ascending numbers. So we can only set the
+            // second number only if the current number is greater than the first. Same thing also applies to the last
+            // condition when the current number is greater than second. Ex, [1,1,1] and [1, 2, 2, 1]
+            if (num <= first)
+                first = num;
+            else if (num <= second)
+                second = num;
             else
+                // num > second > first, so we get a triplet
                 return true;
+        }
+        return false;
+    }
+
+    boolean increasingKLongSequence(int[] nums) {
+        int[] mins = new int[3];
+        Arrays.fill(mins, Integer.MAX_VALUE);
+        for (int num : nums) {
+            int idx = Arrays.binarySearch(mins, num);
+            if (idx < 0) {
+                idx = -idx - 1;
+            }
+
+            mins[idx] = num;
+            if (idx == mins.length - 1) {
+                return true;
+            }
         }
         return false;
     }
@@ -1099,6 +1130,48 @@ public class ArrayQuestion {
     }
 
     /**
+     * Init the result str to "1". Starts the outer loop from 2 to n, for each iteration, init a StringBuilder,
+     * currentUniqueChar to the first char of result str and count=0. Starts inner loop to iterate chars at
+     * result str, if it is the last char, append count+1 and currentUniqueChar to stb, else if next char is
+     * not equal to currentUniqueChar, do the same thing and also update currentUniqueChar to next char and
+     * reset the count, otherwise, just increment the count. Update the result to stb string after the inner
+     * loop ends(finish one round of sequence generation)
+     * <p>
+     * Time Complexity: O(4^(n/3)
+     * Each 3 iterations a single digit becomes 4 digits. If we treat every three iterations as a
+     * recursion, since we have n iterations, we then have n/3 such recursions. During each recursion
+     * a digit becomes fourfold, then after (n/3) recursions we have 4^(n/3) digits.
+     * *Note: LeetCode has more detailed(complex) explanation
+     * <p>
+     * Space Complexity: O(4^(n/3)
+     */
+    String countAndSay(int n) {
+        String result = "1";
+        for (int i = 2; i <= n; i++) {
+            StringBuilder stb = new StringBuilder();
+            int count = 0;
+            char currentUniqueChar = result.charAt(0);
+            for (int j = 0; j < result.length(); j++) {
+                char c = result.charAt(j);
+                if (j == result.length() - 1) {
+                    // At the last element. Construct the substring and append to stb
+                    stb.append(++count).append(currentUniqueChar);
+                } else if (c != result.charAt(j + 1)) {
+                    // Next char is different. Construct the substring and append to stb
+                    stb.append(++count).append(currentUniqueChar);
+                    // Reset the currentUniqueChar and counter
+                    currentUniqueChar = result.charAt(j + 1);
+                    count = 0;
+                } else {
+                    count++;
+                }
+            }
+            result = stb.toString();
+        }
+        return result;
+    }
+
+    /**
      * Use an outer for loop as countAndSay(i) call, the inner for loop uses two ptrs to scan every section
      * of the same char and generate and concatenate "count"+"char" substrings
      * <p>
@@ -1116,7 +1189,7 @@ public class ArrayQuestion {
      * <p>
      * Space Complexity: O(4^(n/3)
      */
-    String countAndSay(int n) {
+    String countAndSayV2(int n) {
         String currentString = "1";
         for (int i = 2; i <= n; i++) {
             // Each iteration in the outer loop means a "countAndSay(i)" sequence generation process. We start from TWO!
@@ -1138,6 +1211,7 @@ public class ArrayQuestion {
         }
         return currentString;
     }
+
 
     /**
      * Majority Element

@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /* TODO: Useful tips
-    - Convert char to int
+    - char --> int
         1. Use Character.getNumericValue(c) --> -1 if the c has no numeric value, -2 if the c is negative integer
         2. If c is any char of 0-9, we can just do: int idx = c - '0';
             See https://stackoverflow.com/questions/46343616/how-can-i-convert-a-char-to-int-in-java
@@ -20,8 +20,13 @@ import static org.assertj.core.api.Assertions.assertThat;
            we can can map a-z to the index of array of size 26, we can just do myChar - 'a'. To get the above mapped char
            from the index of array, do char myChar = (char) (idx + 'a')
            Java char arithmetic: http://www.java2s.com/Tutorials/Java/Java_Language/2040__Java_char.htm
-    - Convert char[] to String
-        1.  String.valueOf(char data[])
+    - char[] --> String
+        String str = String.valueOf(char data[])
+    - int --> String
+        String intStr = String.valueOf(i)
+    - String --> int
+        int y = Integer.parseInt(str);
+        Integer x = Integer.valueOf(str);
     - Check char is digit or letter
         Character.isLetter('c')
         Character.isDigit('1')
@@ -653,23 +658,18 @@ public class StringQuestion {
      */
     @Test
     void testLongestCommonPrefix() {
-        assertThat(longestCommonPrefixVerticalScan(new String[]{"d", "d", "dcd"})).isEqualTo("d");
-        assertThat(longestCommonPrefixVerticalScan(new String[]{"flower", "flow", "flight"})).isEqualTo("fl");
-        assertThat(longestCommonPrefixVerticalScan(new String[]{"dog", "racecar", "car"})).isEqualTo("");
-        assertThat(longestCommonPrefixVerticalScan(new String[]{"flo", "flower", "fl"})).isEqualTo("fl");
+        assertThat(longestCommonPrefix(new String[]{"d", "d", "dcd"})).isEqualTo("d");
+        assertThat(longestCommonPrefix(new String[]{"flower", "flow", "flight"})).isEqualTo("fl");
+        assertThat(longestCommonPrefix(new String[]{"dog", "racecar", "car"})).isEqualTo("");
+        assertThat(longestCommonPrefix(new String[]{"flo", "flower", "fl"})).isEqualTo("fl");
 
     }
 
-    // Compare characters from top to bottom on the same column (same character index of the strings) before moving on to the next column.
-    // Time Complexity: O(S), where S is the sum of all characters in all strings.
-    // Even though the worst case is still the same as HorizontalScan, in the best case there are at most n*minLen comparisons
-    // where minLen is the length of the shortest string in the array.
-    // Space Complexity: O(1). We only used constant extra space.
-
     /**
-     * For each char(c) in the first string in array, iterate the remaining strings in the array. For each
-     * string if its char at the same index is not equal to c, return the substring of the first string
-     * from 0 to current index - 1 (Note: can also use StringBuilder then append to it at end of inner loop)
+     * For each char, c, in the first string in array, iterate the remaining strings in the array. For each
+     * string if its char at the same index is not equal to c or the ptr on the outer loop is out of bound
+     * of the current string, return the string of the StringBuilder. Append the current checking char to
+     * the StringBuilder after inner loop ends, which means every other string has the same char
      * <p>
      * Algo:
      * Compare characters from top to bottom on the same column (same character index of the strings)
@@ -681,31 +681,36 @@ public class StringQuestion {
      * -      one in the array, and we can't check the next prefix char candidate here otherwise index will be
      * -      out of bound
      * -   2. The char at this index of the string is not equal to the current prefix char
-     * -   In either one of above condition, use the substring method to return the prefix
+     * -   In either one of above condition, this is the longest prefix
+     * 3. Append the current char from the 1st string to the string builder
      * <p>
      * Time Complexity: O(S), where S is the sum of all characters in all strings.
      * Even though the worst case is still the same as HorizontalScan, in the best case there are at most n*minLen comparisons
      * where minLen is the length of the shortest string in the array.
      * Space Complexity: O(1). We only used constant extra space.
      */
-    String longestCommonPrefixVerticalScan(String[] strs) { // ---> Better
-        if (strs == null || strs.length == 0)
+    public String longestCommonPrefix(String[] strs) {
+        if (strs == null || strs.length == 0) {
             return "";
-        for (int i = 0; i < strs[0].length(); i++) {
-            // Use the first string item as the starting point to start to scan and check its char one by one
-            char c = strs[0].charAt(i);
-            for (int j = 1; j < strs.length; j++) {
-                // Check the char at the same index of other strings. Break the loop and return the current prefix when
-                //  1. The index is equal to the length of the string, which means this string is the shortest one in the
-                //  array, and we can't check the next prefix char candidate here otherwise index will be out of bound
-                //  2. The char at this index of the string is not equal to the current prefix char
-                // In either one of above condition, use the substring method to return the prefix
-                if (i == strs[j].length() || strs[j].charAt(i) != c)
-                    return strs[0].substring(0, i); // substring exclude the val of index i, substring w/ 0 to 0 returns ""
-            }
         }
-        // We are here cuz the first string is the shortest and is also the common prefix(otherwise it would return in the above loop)
-        return strs[0];
+        StringBuilder stb = new StringBuilder();
+        String firstStr = strs[0];
+        for (int i = 0; i < firstStr.length(); i++) {
+            // Use the first string item as the starting point then start to scan and check its char one by one
+            char c = firstStr.charAt(i);
+            for (int j = 1; j < strs.length; j++) {
+                // Check the char at the same index of other strings. Break the loop and return the current stb when
+                //  1. The i ptr on the first string is equal to the length of the current comparing string, which means
+                //  the current string is the shortest one in the array, so we can't compare its char anymore
+                //  2. The char at this index of the string is not equal to the current prefix char
+                // In either one of above condition, this is the longest prefix
+                if (i == strs[j].length() || strs[j].charAt(i) != c) {
+                    return stb.toString();
+                }
+            }
+            stb.append(c);
+        }
+        return stb.toString();
     }
 
     // Time Complexity: O(S), where S is the sum of all characters in all strings.
@@ -1219,18 +1224,18 @@ public class StringQuestion {
         Map<Character, Integer> charToIndex = new HashMap<>();// Value is the index of the char we saw last time
         int maxLength = 0;
         int length = s.toCharArray().length;
-        for (int i = 0, j = 0; j < length; j++) { // i and j represent the left and right side of the sliding window
-            char currChar = s.charAt(j);
-            if (charToIndex.containsKey(currChar) && charToIndex.get(currChar) >= i)
-                // Shrink the current window, i.e. move i ptr forward, ONLY when
+        for (int left = 0, right = 0; right < length; right++) { // left and right represent the left and right side of the sliding window
+            char currChar = s.charAt(right);
+            if (charToIndex.containsKey(currChar) && charToIndex.get(currChar) >= left)
+                // Shrink the current window, left.e. move left ptr forward, ONLY when
                 // 1. We saw the same char before
-                // 2. Its last-seen index is inside the current window range, i.e. index >= i. ---> IMPORTANT!!
-                //    We only move the i forward inside the current window range, any index val outside of if is useless.
+                // 2. Its last-seen index is inside the current window range, left.e. index >= left. ---> IMPORTANT!!
+                //    We only move the left forward inside the current window range, any index val outside of if is useless.
                 //    Ex. input: abba
-                //        When the window is at "ba", i=2, j=3, the map still has a->0, so we should ignore it.
-                i = charToIndex.get(currChar) + 1; // Move the i ptr. We need to move it one more position to skip this duplicate char
-            maxLength = Math.max(maxLength, j - i + 1);
-            charToIndex.put(currChar, j); // Update the last seen index for this char
+                //        When the window is at "ba", left=2, right=3, the map still has a->0, so we should ignore it.
+                left = charToIndex.get(currChar) + 1; // Move the left ptr. We need to move it one more position to skip this duplicate char
+            maxLength = Math.max(maxLength, right - left + 1);
+            charToIndex.put(currChar, right); // Update the last seen index for this char
         }
         return maxLength;
     }
