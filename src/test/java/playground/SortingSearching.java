@@ -37,6 +37,7 @@ import static org.assertj.core.data.Index.atIndex;
  *      https://www.baeldung.com/java-generating-random-numbers-in-range
  */
 public class SortingSearching {
+
     @Test
     void testBinarySearch() {
         int[] nums = new int[]{-1, 0, 3, 5, 9, 12};
@@ -636,6 +637,7 @@ public class SortingSearching {
         return -1;
     }
 
+
     /**
      * Use the "Find First True" template. There are three cases
      * Say we want to map the element to T after the peak, false if it increases than previous one
@@ -651,7 +653,7 @@ public class SortingSearching {
         int right = nums.length - 1;
         while (left + 1 < right) {
             int mid = left + (right - left) / 2;
-            if (nums[mid] > nums[mid + 1] || mid == nums.length - 1)
+            if (mid == nums.length - 1 || nums[mid] > nums[mid + 1])
                 // For the edge case, [F,F,F,F,T], when mid falls on the last item, it is considered peak as well, so
                 // the condition holds true
                 right = mid;
@@ -661,21 +663,24 @@ public class SortingSearching {
         return right;
     }
 
-// This one uses the OLD template, which can be problematic
-//    int findPeakElementUseTemplate(int[] nums) {
-//        int left = 0;
-//        int right = nums.length - 1;
-//        while (left < right) {
-//            int mid = left + (right - left) / 2;
-//            if (nums[mid] > nums[mid + 1])
-//                // We want to find the "first" one satisfied this condition, even tho this one is good, we still need to
-//                // continue search the left part.
-//                right = mid; // mid still can be the valid candidate, so include it.
-//            else
-//                left = mid + 1; // Search the right part
-//        }
-//        return left;
-//    }
+    /**
+     * Unfortunately, the std binary search template doesn't quite work here. If will fail at the edge case
+     * such as one element array
+     */
+    int findPeakElementSTD(int[] nums) {
+        int left = 0, right = nums.length - 1;
+        int ans = -1;
+        while (left <= right) {
+            int mid = (left + right) >>> 1;
+            if (mid < nums.length - 1 && (nums[mid] > nums[mid + 1] || mid == nums.length - 1)) {
+                ans = mid;
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+        return ans;
+    }
 
 
     /**
@@ -701,6 +706,7 @@ public class SortingSearching {
         input = new int[]{5, 7, 7, 8, 8, 10};
         Assertions.assertThat(searchRange(input, 6)).containsOnly(-1, -1);
         Assertions.assertThat(searchRangeWithTemplate(input, 6)).containsOnly(-1, -1);
+        Assertions.assertThat(searchRangeWithTemplate(new int[]{1}, 1)).containsOnly(0, 0);
     }
 
     /**
@@ -889,6 +895,9 @@ public class SortingSearching {
      * Case 2(array is NOT rotated): For [1,2,3,4], the mapped boolean is [T, T, T, T]
      * Therefore, to satisfy both cases, the condition will be nums[i] < nums[nums.length - 1], and we want to find the first
      * element satisfying it.
+     * Cuz regardless how many the array is rotated, the min must be on an ascending section
+     * extending to the last element in the array. All elements in this section must satisfy this
+     * condition.
      */
     int findMinWithTemplate(int[] nums) {
         // range: left -> invalid (-1), right -> valid (0 - nums.length - 1)
@@ -902,18 +911,6 @@ public class SortingSearching {
         }
         return nums[right];
     }
-// OLD template code
-//    int findMinWithTemplate(int[] nums) {
-//        int left = 0, right = nums.length - 1;
-//        while (left < right) {
-//            int mid = left + (right - left) / 2;
-//            if (nums[mid] < nums[nums.length - 1])
-//                right = mid;
-//            else
-//                left = mid + 1;
-//        }
-//        return nums[left];
-//    }
 
     /**
      * Search in Rotated Sorted Array
@@ -971,6 +968,11 @@ public class SortingSearching {
             return binarySearchWithBoundary(nums, 0, right - 1, target);
     }
 
+    /**
+     * Use the standard binary search template to search for the target value
+     * The special "Find First True" template can also be used, and the condition will be nums[mid] >= target
+     * and we also need to check if the nums[right] is equal to target before returning it.
+     */
     int binarySearchWithBoundary(int[] nums, int leftBound, int rightBound, int target) {
         int left = leftBound, right = rightBound;
         while (left <= right) {
@@ -984,27 +986,6 @@ public class SortingSearching {
         }
         return -1;
     }
-
-// This uses the OLD template
-//    int searchUseTemplate(int[] nums, int target) {
-//        int left = 0, right = nums.length - 1;
-//        while (left < right) {
-//            int mid = left + (right - left) / 2;
-//            if (nums[mid] < nums[nums.length - 1])
-//                right = mid;
-//            else
-//                left = mid + 1;
-//        }
-//        // left is the index of pivot/min element index
-//        if (target <= nums[nums.length - 1])
-//            // target is inside the range [pivot, tail]
-//            // Binary search over elements on the pivot element's right
-//            return binarySearchWithBoundary(nums, left, nums.length - 1, target);
-//        else
-//            // target is inside the range [head, pivot]
-//            // Binary search over elements on the pivot element's left
-//            return binarySearchWithBoundary(nums, 0, left - 1, target);
-//    }
 
     /**
      * Find Pivot Index w/ modified binary search + Binary Search on two separate parts
@@ -1134,9 +1115,9 @@ public class SortingSearching {
     }
 
     /**
-     * Search Space Reduction
-     * - Start from bottom-left cell and move the pointer up or right by comparing the value to target.
-     * (Taking advantage of sorted row/col, so we can prune unneeded elements)
+     * Start from bottom-left cell and move the pointer up if it is greater than the target,
+     * move right if it is less than target. Return true if target is found, otherwise, keep
+     * searching as long as the pointer is not out of bound of the grid.
      * <p>
      * First, we initialize a (row, col) pointer to the bottom-left of the matrix.
      * (top-right also work, but moving direction will be different).
@@ -1179,6 +1160,117 @@ public class SortingSearching {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Kth Smallest Element in a Sorted Matrix
+     * Given an n x n matrix where each of the rows and columns is sorted in ascending order, return
+     * the kth smallest element in the matrix.
+     * <p>
+     * Note that it is the kth smallest element in the sorted order, not the kth distinct element.
+     * <p>
+     * You must find a solution with a memory complexity better than O(n^2).
+     * <p>
+     * Input: matrix = [[1,5,9],[10,11,13],[12,13,15]], k = 8
+     * Output: 13
+     * Explanation: The elements in the matrix are [1,5,9,10,11,12,13,13,15], and the 8th smallest
+     * number is 13
+     * <p>
+     * Input: matrix = [[-5]], k = 1
+     * Output: -5
+     */
+    @Test
+    void testKthSmallest() {
+        int[][] input = new int[][]{{1, 5, 9}, {10, 11, 13}, {12, 13, 15}};
+        Assertions.assertThat(kthSmallest(input, 8)).isEqualTo(13);
+        Assertions.assertThat(kthSmallest(input, 5)).isEqualTo(11);
+        Assertions.assertThat(kthSmallest(new int[][]{{-5, -4}, {-5, -4}}, 2)).isEqualTo(-5);
+        Assertions.assertThat(kthSmallest(new int[][]{{-5}}, 1)).isEqualTo(-5);
+    }
+
+    /**
+     * Use the "Find First True" binary search template. The monotonic function is the count of
+     * numbers less than or equal to K in the matrix. We use the fact that column and row are
+     * sorted to navigate from the lower left cell to compute the count.
+     * <p>
+     * Observation:
+     * 1. We don't have a straightforward sorted array, and we can't use the same trick from the
+     * problem "Search a 2D Matrix", cuz the matrix is not sorted in the same way.
+     * <p>
+     * 2. An alternate could be to apply the Binary Search on the number range instead of the index
+     * range. As we know that the smallest number of our matrix is at the top left corner and the
+     * biggest number is at the bottom lower corner. These two number can represent the range of
+     * our search space.
+     * <p>
+     * 3. The hard part is to come up with a monotonic function that returns true for all values
+     * greater than or equal to the kth element.
+     * <p>
+     * For kth element, we know that there will be exactly k elements in the matrix which will be
+     * lower than or equal to the kth element. This should give us a hint on the monotonic function.
+     * Given a number x in the range - what is the count of numbers in the matrix which are lower
+     * than or equal to x?
+     * <p>
+     * f(x) = countOfNumbersLessEqual(matrix, x) >= k
+     * <p>
+     * For the search range of all numbers between lo and hi, this would give a pattern of FFF..TTT.
+     * We want to find the first T. So this is a Find First True type problem.
+     * <p>
+     * 4. How to count the number less than or equal to a given number in the matrix?
+     * Because the matrix is sorted in both row and column, we start at the lower left corner of the
+     * matrix. If the current number is less than or equal to x, we add all the numbers in the
+     * current column to our count (count += rowIndex + 1), and move to the next column.
+     * If the current number is greater than x, we move to the previous row (the number directly
+     * above). Continue the same process.
+     * <p>
+     * Time Complexity: O(N⋅log(Max−Min))
+     * The binary search range is bound by max number and min number in the matrix
+     * And for each iteration, we iterate the matrix to compute count in O(n)
+     * Thus, O(N⋅log(Max−Min))
+     * <p>
+     * Space Complexity: O(1)
+     */
+    int kthSmallest(int[][] matrix, int k) {
+        int left = matrix[0][0] - 1, right = matrix[matrix.length - 1][matrix[0].length - 1];
+        while (left + 1 < right) {
+//            int mid = left + right >>> 1; Doesn't work when the input has negative number
+            int mid = left + (right - left) / 2;
+            if (countOfNumbersLessEqual(matrix, mid) >= k) {
+                // This is mystery(?) why the calculated mid can still fall on the number in the matrix in the end.
+                // LeetCode solution tracks the min and max number in the countOfNumbersLessEqual method and uses them
+                // to update right or left. So the right or left is always set to a value in the matrix
+                right = mid;
+            } else {
+                left = mid;
+            }
+        }
+        return right;
+    }
+
+    /**
+     * Count all the numbers smaller than or equal to the target in the matrix
+     * We start from the lower left corner of the matrix and then move towards as far as columns are concerned
+     * and upwards as far as the rows are concerned. The algo takes advantage of the fact that rows and columns
+     * are sorted respectively.
+     * This operation has O(n) time complexity
+     */
+    private int countOfNumbersLessEqual(int[][] matrix, int target) {
+        int r = matrix.length - 1;
+        int c = 0;
+        int count = 0;
+        while (r >= 0 && c < matrix[0].length) {
+            if (matrix[r][c] <= target) {
+                // current number is equal or less than the target. Cuz the column is sorted, it means all numbers
+                // above it at the same column are smaller than target. Thus add them to the count.
+                count += r + 1;
+                // Move to the next column
+                c += 1;
+            } else {
+                // number > target, next number on the same column will be greater, so need to move upward.
+                // Move to the row above
+                r -= 1;
+            }
+        }
+        return count;
     }
 
     /**
@@ -1590,6 +1682,157 @@ public class SortingSearching {
     }
 
     /**
+     * Single Element in a Sorted Array
+     * You are given a sorted array consisting of only integers where every element
+     * appears exactly twice, except for one element which appears exactly once.
+     * <p>
+     * Return the single element that appears only once.
+     * <p>
+     * Your solution must run in O(log n) time and O(1) space.
+     * <p>
+     * Input: nums = [1,1,2,3,3,4,4,8,8]
+     * Output: 2
+     * <p>
+     * Input: nums = [3,3,7,7,10,11,11]
+     * Output: 10
+     * <p>
+     * https://leetcode.com/problems/single-element-in-a-sorted-array/description/
+     */
+    @Test
+    void testSingleNonDuplicate() {
+        Assertions.assertThat(singleNonDuplicate(new int[]{1, 1, 2, 3, 3, 4, 4, 8, 8})).isEqualTo(2);
+        Assertions.assertThat(singleNonDuplicate(new int[]{3, 3, 7, 7, 10, 11, 11})).isEqualTo(10);
+    }
+
+    /**
+     * Use the Find First True binary search template. The monotonic condition is when the number is
+     * at even index, the next number is different number. If at odd index, the previous number is
+     * different number.
+     * <p>
+     * Observation:
+     * If all the elements had duplicates, what property would they have?
+     * Example: [1, 1, 3, 3, 5, 5, 7, 7, 9, 9];
+     * Elements at the index [0, 2, 4, ..., n - 2] would all have a duplicate element on the right.
+     * Elements at the index [1, 3, 5, ..., n - 1] would all have a duplicate element on the left.
+     * <p>
+     * Now if we insert 6 in the array in sorted order. This is going to disturb the property above.
+     * After insertion: [1, 1, 3, 3, 5, 5, 6, 7, 7, 9, 9];
+     * Because 6 is inserted at index 6, the above property still holds true until the index 5;
+     * <p>
+     * Now we can use the inverse of the above property to derive the monotonic condition and apply
+     * the "Find first true" template
+     * For all the numbers starting from the index 6, the following holds true:
+     * <p>
+     * if index is even, there is no duplicate element on the right
+     * if index is odd, there is no duplicate element on the left
+     * <p>
+     * We want to find the minimum index for which the above property holds true.
+     * <p>
+     * Time complexity: O(log n)
+     * Space complexity: O(1)
+     */
+    int singleNonDuplicate(int[] nums) {
+        int left = -1, right = nums.length - 1;
+        while (left + 1 < right) {
+            int mid = left + right >>> 1;
+            if (differentNumberOnOneSide(nums, mid))
+                right = mid;
+            else
+                left = mid;
+        }
+        return nums[right];
+    }
+
+    boolean differentNumberOnOneSide(int[] nums, int idx) {
+        if (idx % 2 == 0)
+            // even index element should have different next element
+            // The unique number must be at even index
+            return nums[idx] != nums[idx + 1];
+        else
+            // odd index should have different previous element
+            return nums[idx] != nums[idx - 1];
+    }
+
+    /**
+     * Missing Element in Sorted Array
+     * Given an integer array nums which is sorted in ascending order, and all the elements are
+     * unique and all of its elements are unique, and given also an integer k, return the kth
+     * missing number starting from the leftmost number of the array.
+     * <p>
+     * Input: nums = [4,7,9,10], k = 1
+     * Output: 5
+     * Explanation: The first missing number is 5.
+     * <p>
+     * Input: nums = [4,7,9,10], k = 3
+     * Output: 8
+     * Explanation: The missing numbers are [5,6,8,...], hence the third missing number is 8.
+     * <p>
+     * Input: nums = [1,2,4], k = 3
+     * Output: 6
+     * Explanation: The missing numbers are [3,5,6,7,...], hence the third missing number is 6.
+     * <p>
+     * https://leetcode.com/problems/missing-element-in-sorted-array/description/
+     */
+    @Test
+    void testMissingElement() {
+        Assertions.assertThat(missingElement(new int[]{4, 7, 9, 10}, 1)).isEqualTo(5);
+        Assertions.assertThat(missingElement(new int[]{4, 7, 9, 10}, 3)).isEqualTo(8);
+        Assertions.assertThat(missingElement(new int[]{1, 2, 4}, 3)).isEqualTo(6);
+    }
+
+    /**
+     * Use the Find Last True binary search template. The monotonic condition is the number of
+     * missing elements at a given index < k. Once we find the index(left), the answer is
+     * nums[left] + (k - countOfMissingElementsAt(left))
+     * <p>
+     * Observation:
+     * 1. The naive solution is to iterate the array and if there is a gap between current
+     * and the next element, count the numbers in the missing range until count == k.
+     * <p>
+     * 2. For each of the array indexes we can find the number of missing elements in the
+     * array in O(1). The number of missing elements at each index could either be less
+     * than k, or greater than or equal to k. It is easier for us to use the former one.
+     * Cuz if we find the first index having greater than or equal to k, it is hard to
+     * find out how many number we should move backward to the k position.
+     * <p>
+     * 3. So the monotonic function is "Find Last True" type TTTTTFFF. If we can find the
+     * last index lo where the number of missing elements is less k, then we can find the
+     * kth missing element using the following formula:
+     * <p>
+     * kthMissing = nums[lo] + (k - countOfMissingElementsAt(lo))
+     * <p>
+     * countOfMissingElementsAt is the monotonic function. It is defined as
+     * The number of missing element within the range [0, idx]
+     * ---> The number of elements that should have been there - the number of existing number
+     * ---> (nums[idx] - nums[0] + 1) - (idx + 1) = nums[idx] - nums[0] - idx
+     * <p>
+     * Time complexity: O(log n)
+     * Space complexity: O(1)
+     */
+    int missingElement(int[] nums, int k) {
+        int left = 0, right = nums.length;
+        while (left + 1 < right) {
+            int mid = left + right >>> 1;
+            if (countOfMissingElementAt(nums, mid) < k) {
+                left = mid;
+            } else {
+                right = mid;
+            }
+        }
+        // left is the last idx of the element that the number of missing elements is less than k
+        return nums[left] + k - countOfMissingElementAt(nums, left);
+    }
+
+    /**
+     * The number of missing element within the range [0, idx] is
+     * The number of elements that should have been there - the number of existing number
+     * (nums[idx] - nums[0] + 1) - (idx + 1) = nums[idx] - nums[0] - idx
+     */
+    private int countOfMissingElementAt(int[] nums, int idx) {
+        return nums[idx] - nums[0] - idx;
+    }
+
+    /**
      * Find K Closest Elements
      * Given a sorted integer array arr, two integers k and x, return the k closest integers
      * to x in the array. The result should also be sorted in ascending order.
@@ -1753,7 +1996,6 @@ public class SortingSearching {
             // bound number to roughly estimate the distance to the X from K elements in the window. The algo is to make
             // a window so the midVal can be close to the x as possible as we can. So if x <= midVal, we shift the left
             // bound to left, otherwise, shift to the right
-            // assume
             double midVal = ((double) arr[mid + k] + arr[mid]) / 2;
             if (x <= midVal) {
                 leftBound = mid;

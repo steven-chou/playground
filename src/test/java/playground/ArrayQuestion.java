@@ -62,6 +62,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
  */
 public class ArrayQuestion {
+    void reverseInPlace(int[] array) {
+        int left = 0, right = array.length - 1;
+        while (left < right) {
+            int temp = array[left];
+            array[left] = array[right];
+            array[right] = temp;
+            left++;
+            right--;
+        }
+    }
+
     /**
      * Remove Element
      * Given an integer array nums and an integer val, remove all occurrences of val in nums
@@ -1449,8 +1460,83 @@ public class ArrayQuestion {
      */
     @Test
     void testLeastInterval() {
+        assertThat(leastIntervalOpt(new char[]{'A', 'A', 'A', 'B', 'B', 'B'}, 2)).isEqualTo(8);
         assertThat(leastInterval(new char[]{'A', 'A', 'A', 'B', 'B', 'B'}, 2)).isEqualTo(8);
     }
+
+    /**
+     * First use the map to build Task objects(count, nextRunnableTime). Add all the tasks to a MaxHeap
+     * (Task.count). We also maintain a queue for the task just processed. While MaxHeap and queue is
+     * not empty, first increment the time. If MaxHeap is empty, fast-forward the current time to the
+     * top task's next runnable time in the queue. Then we pull all tasks in the queue whose next
+     * runnable time is equal or less than current time, and add them to the MaxHeap. Then poll the
+     * MaxHeap and decrement the task's count and update its next runnable time to current time
+     * + cooling time + 1. If the task count is not 0, add it to the queue.
+     * <p>
+     * The idea here is to greedily select the most repeated task available to schedule every time.
+     * In order to find the most repeated task, we use a priority queue to get the max repeated task
+     * efficiently. We have to make sure only tasks available for schedule are in the priority queue.
+     * For this, we add any scheduled task to a separate cool down queue. When top of this queue is
+     * available to schedule, i.e. the current time is equal or pass its next runnable time,  we add
+     * it back to priority queue.
+     * <p>
+     * Time complexity is O(nlog(m)) with n being the number of tasks given to schedule and m being
+     * the number of unique tasks. The polling step in PriorityQueue is O(log(m)).
+     * <p>
+     * Space complexity is O(m) since the priority queue and cool down queue can at max have m items.
+     */
+    int leastInterval(char[] tasks, int n) {
+        class Task {
+            int count, nextRunnableTime;
+
+            Task(int count) {
+                this.count = count;
+            }
+        }
+
+        // if n == 0 there will be no idle periods, so return length of tasks
+        if (n == 0)
+            return tasks.length;
+
+        Map<Character, Task> idToTask = new HashMap<>();
+        for (char c : tasks) {
+            idToTask.putIfAbsent(c, new Task(0));
+            idToTask.get(c).count++;
+        }
+
+        PriorityQueue<Task> pendingTaskMaxHeap = new PriorityQueue<>(Comparator.<Task>comparingInt(t -> t.count).reversed()); // Max Heap
+
+        // Contains the tasks that were processed and wait to be selected when their next runnable time <= current time
+        Queue<Task> coolingTaskQueue = new ArrayDeque<>();
+        // In the beginning, add all the task to the max heap
+        pendingTaskMaxHeap.addAll(idToTask.values());
+        int time = 0;
+
+        while (!pendingTaskMaxHeap.isEmpty() || !coolingTaskQueue.isEmpty()) {
+            time++;
+
+            // if no pending tasks, fast-forwarding the time to the next runnable time of the top task of coolingTaskQueue.
+            // This basically implies we extend the time to idle until the first cooling task becomes available
+            if (pendingTaskMaxHeap.isEmpty())
+                time = coolingTaskQueue.peek().nextRunnableTime;
+
+            // Add any tasks in cooling that just became available for scheduling
+            while (!coolingTaskQueue.isEmpty() && coolingTaskQueue.peek().nextRunnableTime <= time) {
+                pendingTaskMaxHeap.add(coolingTaskQueue.poll());
+            }
+
+            // Process the task w/ the most count from the max heap.
+            Task t = pendingTaskMaxHeap.poll();
+            t.nextRunnableTime = time + n + 1;
+            t.count--;
+
+            // Add the task back into cooling if there are more instances of it to schedule.
+            if (t.count != 0)
+                coolingTaskQueue.offer(t);
+        }
+        return time;
+    }
+
 
     /**
      * The solution is based on Math to generalize a formula.
@@ -1493,7 +1579,7 @@ public class ArrayQuestion {
      * Space Complexity: O(1), to keep the array frequencies
      * of 26 elements.
      */
-    int leastInterval(char[] tasks, int n) {
+    int leastIntervalOpt(char[] tasks, int n) {
         int[] countByTaskType = new int[26];
         // There are only 26 kinds of task [A-Z], we iterate the tasks and store the count of each
         // task in the array
