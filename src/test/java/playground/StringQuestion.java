@@ -1061,9 +1061,10 @@ public class StringQuestion {
     }
 
     /**
-     * Build the map of char to index of its last occurrence in the str. Iterate the str and push the char to the
-     * stack, but popping any char in the stack if it is larger than the current char and will occur later.
-     * Finally build the answer from char on the stack in reverse order.
+     * Build the map of char to index of its last occurrence in the str. Use a set to track the char in the
+     * stack. Iterate the str if the current char is not in the set, first pop out char(s) in the stack if it is
+     * larger than the current char and will occur later. Push the current char to the stack and update
+     * the set. Finally build the answer from char on the stack in reverse order.
      * <p>
      * Observation:
      * 1. Which string is greater depends on the comparison between the first unequal corresponding character
@@ -1087,10 +1088,10 @@ public class StringQuestion {
      * <p>
      * Algo:
      * 1. Build the map of char to index of its last occurrence in the string
-     * 2. Use the Stack to store the building string, and a Set to store the char added to the set.
+     * 2. Use the Stack to store the building string, and a Set to store the char added to the stack.
      * 3. Iterate the string char
      * - If current char is in the set, skip it.
-     * - If current char is smaller than top char on the stack and we will encounter the same char at later iteration
+     * - If current char is smaller than top char on the stack, and we will encounter the same char at later iteration
      * (checking the charToLastIdx map), keep popping such char from the stack. Also update the Set.
      * - Push the current char to the stack and update the stack.
      * 4 Build the final answer by iterating the stack in reverse order.
@@ -1099,8 +1100,10 @@ public class StringQuestion {
      * Space complexity : O(N)
      */
     String removeDuplicateLetters(String s) {
-        Set<Character> charOnStack = new HashSet<>(); // Keep track of what char is already added to the stack
-        // This help us know if the given char will be seen again while iterating the array
+        // Keep track of what char is already added to the stack, so we can know this in O(1) to avoid duplicate char
+        // inserted to the stack.
+        Set<Character> charOnStack = new HashSet<>();
+        // This helps us know if the given char will be seen again while iterating the array
         Map<Character, Integer> charToLastIdx = new HashMap<>();
         for (int i = 0; i < s.length(); i++) {
             charToLastIdx.put(s.charAt(i), i);
@@ -1586,5 +1589,153 @@ public class StringQuestion {
             }
         }
         return result + maxOddCharCount;
+    }
+
+    /**
+     * Check Whether Two Strings are Almost Equivalent
+     * Two strings word1 and word2 are considered almost equivalent if the differences between
+     * the frequencies of each letter from 'a' to 'z' between word1 and word2 is at most 3.
+     * <p>
+     * Given two strings word1 and word2, each of length n, return true if word1 and word2 are
+     * almost equivalent, or false otherwise.
+     * <p>
+     * The frequency of a letter x is the number of times it occurs in the string.
+     * <p>
+     * Input: word1 = "aaaa", word2 = "bccb"
+     * Output: false
+     * Explanation: There are 4 'a's in "aaaa" but 0 'a's in "bccb".
+     * The difference is 4, which is more than the allowed 3.
+     * <p>
+     * Input: word1 = "abcdeef", word2 = "abaaacc"
+     * Output: true
+     * Explanation: The differences between the frequencies of each letter in word1 and word2
+     * are at most 3:
+     * - 'a' appears 1 time in word1 and 4 times in word2. The difference is 3.
+     * - 'b' appears 1 time in word1 and 1 time in word2. The difference is 0.
+     * - 'c' appears 1 time in word1 and 2 times in word2. The difference is 1.
+     * - 'd' appears 1 time in word1 and 0 times in word2. The difference is 1.
+     * - 'e' appears 2 times in word1 and 0 times in word2. The difference is 2.
+     * - 'f' appears 1 time in word1 and 0 times in word2. The difference is 1.
+     * https://leetcode.com/problems/check-whether-two-strings-are-almost-equivalent/description/
+     */
+    @Test
+    void testCheckAlmostEquivalent() {
+        assertThat(checkAlmostEquivalent("aaaa", "bccb")).isFalse();
+        assertThat(checkAlmostEquivalent("abcdeef", "abaaacc")).isTrue();
+    }
+
+    /**
+     * Iterate the both strings and store the char count at an 26-sized array or charToCount Map,
+     * For the char of the word1, increment the count, while for word2, decrement the count.
+     * Finally, iterate the array or map and if the absolute value of count > 3, return false,
+     * otherwise, return true in the end.
+     * Time Complexity: O(N), where N is the length of w1/w2. We need to count each letter.
+     * Space Complexity: O(1), the space for our count, as the alphabet size of s is fixed.
+     */
+    boolean checkAlmostEquivalent(String word1, String word2) {
+        int[] charCount = new int[26];
+        for (int i = 0; i < word1.length(); i++) {
+            charCount[word1.charAt(i) - 'a'] += 1;
+            charCount[word2.charAt(i) - 'a'] -= 1;
+        }
+        for (int count : charCount) {
+            if (Math.abs(count) > 3) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Remove Colored Pieces if Both Neighbors are the Same Color
+     * There are n pieces arranged in a line, and each piece is colored either by 'A' or by 'B'.
+     * You are given a string colors of length n where colors[i] is the color of the ith piece.
+     * <p>
+     * Alice and Bob are playing a game where they take alternating turns removing pieces from
+     * the line. In this game, Alice moves first.
+     * <p>
+     * Alice is only allowed to remove a piece colored 'A' if both its neighbors are also
+     * colored 'A'. She is not allowed to remove pieces that are colored 'B'.
+     * Bob is only allowed to remove a piece colored 'B' if both its neighbors are also colored
+     * 'B'. He is not allowed to remove pieces that are colored 'A'.
+     * <p>
+     * Alice and Bob cannot remove pieces from the edge of the line.
+     * If a player cannot make a move on their turn, that player loses and the other player wins.
+     * Assuming Alice and Bob play optimally, return true if Alice wins, or return false if
+     * Bob wins.
+     * <p>
+     * Input: colors = "AAABABB"
+     * Output: true
+     * Explanation:
+     * AAABABB -> AABABB
+     * Alice moves first.
+     * She removes the second 'A' from the left since that is the only 'A' whose neighbors are both 'A'.
+     * <p>
+     * Now it's Bob's turn.
+     * Bob cannot make a move on his turn since there are no 'B's whose neighbors are both 'B'.
+     * Thus, Alice wins, so return true.
+     * <p>
+     * Input: colors = "AA"
+     * Output: false
+     * Explanation:
+     * Alice has her turn first.
+     * There are only two 'A's and both are on the edge of the line, so she cannot move on her turn.
+     * Thus, Bob wins, so return false.
+     * <p>
+     * Input: colors = "ABBBBBBBAAA"
+     * Output: false
+     * Explanation:
+     * ABBBBBBBAAA -> ABBBBBBBAA
+     * Alice moves first.
+     * Her only option is to remove the second to last 'A' from the right.
+     * <p>
+     * ABBBBBBBAA -> ABBBBBBAA
+     * Next is Bob's turn.
+     * He has many options for which 'B' piece to remove. He can pick any.
+     * <p>
+     * On Alice's second turn, she has no more pieces that she can remove.
+     * Thus, Bob wins, so return false.
+     */
+    @Test
+    void testWinnerOfGame() {
+        assertThat(winnerOfGame("AAABABB")).isTrue();
+        assertThat(winnerOfGame("AA")).isFalse();
+    }
+
+    /**
+     * Iterate the string from index 1, and for each char, check if colors[i - 1] == colors[i]
+     * == colors[i + 1]. If so, then increment either Alice or Bob's available moves depend on
+     * the char. Alice wins if her move is greater than Bob's.
+     * <p>
+     * Observation:
+     * 1. When one player removes a letter, it will never create a new removal opportunity for
+     * the other player. Cuz the rule says only the middle char in a sequence of three same char
+     * can be removed, so it won't create new removable possibility for the other char after it
+     * is removed. For example, "BA[A]AB". This means at the start of the game, all moves are
+     * already available to both players.
+     * <p>
+     * 2. The order in which the removals happen is irrelevant. Given the first observation,
+     * we know each player's move is independent and won't affect the other. However, we know
+     * Alice must go first, so she must need to be able to make one more move than Bob to win.
+     * <p>
+     * Time complexity: O(n)
+     * Space complexity: O(1)
+     */
+    boolean winnerOfGame(String colors) {
+        int aliceMove = 0;
+        int bobMove = 0;
+        for (int i = 1; i < colors.length() - 1; i++) {
+            if (colors.charAt(i - 1) == colors.charAt(i)
+                    && colors.charAt(i) == colors.charAt(i + 1)) {
+                if (colors.charAt(i) == 'A') {
+                    aliceMove++;
+                } else {
+                    bobMove++;
+                }
+            }
+        }
+        // Alice goes first, so she needs to have at least one more move available to win. If both have the same
+        // number of moves, Bob wins.
+        return aliceMove > bobMove;
     }
 }

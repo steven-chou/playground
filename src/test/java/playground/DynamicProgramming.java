@@ -99,6 +99,7 @@ public class DynamicProgramming {
     void testFib() {
         Assertions.assertThat(fib(2)).isEqualTo(1);
         Assertions.assertThat(fib(3)).isEqualTo(2);
+        Assertions.assertThat(fib(5)).isEqualTo(5);
     }
 
     /**
@@ -109,16 +110,20 @@ public class DynamicProgramming {
     int fib(int n) {
         if (n == 0 || n == 1)
             return n;
-        int current = 0;
-        int prevPrev = 0;
-        int prev = 1;
+        int first = 0;
+        int second = 1;
+        int sum = 0;
+        // The input n is 0-based, and we start from the third number, so i = 2
         for (int i = 2; i <= n; i++) {
-            current = prevPrev + prev;
-            prevPrev = prev;
-            prev = current;
+            // calculate next value as the sum of previous two values
+            sum = first + second;
+            // switch all values to the next value in the series
+            first = second;
+            second = sum;
         }
-        return current;
+        return sum;
     }
+
 
     /**
      * Climbing Stairs
@@ -467,7 +472,7 @@ public class DynamicProgramming {
             }
             maxLength = Math.max(dp[i], maxLength);
         }
-        
+
         return maxLength;
     }
 

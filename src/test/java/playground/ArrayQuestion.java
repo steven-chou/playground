@@ -1907,6 +1907,7 @@ public class ArrayQuestion {
     void testFind132pattern() {
         assertThat(find132pattern(new int[]{1, 2, 3, 4})).isFalse();
         assertThat(find132pattern(new int[]{3, 1, 4, 2})).isTrue();
+        assertThat(find132pattern(new int[]{3, 5, 0, 3, 4})).isTrue();
     }
 
     /**
@@ -1920,17 +1921,19 @@ public class ArrayQuestion {
      * (2) If J is found, we want to find the previous minimum element for J, say I(idx: i)
      * Finally we can check if these 3 numbers satisfies I < K < J
      * <p>
-     * 2. We can use the monotonic decreasing stack to find the previous greater number. For the previous
+     * 2. We can use strict monotonic decreasing stack to find the previous greater number. For the previous
      * minimum element, we can maintain another var for each number to keep track of its previous minimum
      * value.
      * <p>
      * Algo:
-     * 1. We maintain a monotonic decreasing stack. Each entry is a pair of number and the previous minimum
-     * number.
+     * 1. We maintain a strict monotonic decreasing stack. Each entry is a pair of number and the previous
+     * minimum number.
      * 2. Iterate the array and popping the elements smaller or equal to the current number from the stack.
      * 3. If the stack is not empty, the top element, say T, is the previous greater number for the current
-     * num, so pop it out and check its previous minimum number to see if we find the pattern,
-     * previous mini num of T < current num < T. If so, return true.
+     * num, check its previous minimum number to see if we find the pattern, previous mini num of T <
+     * current num < T. If so, return true.
+     * (We keep previous greater num in the stack cuz it can still be the previous greater for the remaining
+     * numbers we will visit later, e.g. 5, 3...4)
      * <p>
      * Time complexity : O(n)
      * We push and pop the N elements on the stack.
@@ -2002,10 +2005,11 @@ public class ArrayQuestion {
      * In other words, we want to find which of the buildings do NOT have next greater or equal element.
      * <p>
      * Algo:
-     * Iterate the array and maintain a monotonic strictly decreasing stack. We pop out the buildings
-     * which have another building with equal or greater height in view. Then push the current building
-     * to the stack. After the loop ends, the elements left in the stack will be the ones which don't
-     * have any greater elements after them
+     * Iterate the array and maintain a monotonic strictly decreasing stack to find the next greater
+     * height. We pop out the buildings which have another building with equal or greater height
+     * in view. Then push the current building to the stack. After the loop ends, the elements left in
+     * the stack will be the ones which don't have any greater elements after them. Then pop each
+     * item and insert to array in reverse order.
      * <p>
      * Time complexity: O(N)
      * Space complexity: O(N)
@@ -2079,6 +2083,9 @@ public class ArrayQuestion {
     void testTrap() {
         assertThat(trapWater(new int[]{0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1})).isEqualTo(6);
         assertThat(trapWater(new int[]{4, 2, 0, 3, 2, 5})).isEqualTo(9);
+        assertThat(trapWaterUseStack(new int[]{0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1})).isEqualTo(6);
+        assertThat(trapWaterUseStack(new int[]{3, 2, 0, 3, 2, 5})).isEqualTo(5);
+        assertThat(trapWaterUseStack(new int[]{1, 1, 1})).isEqualTo(0);
         assertThat(trapWaterUseStack(new int[]{4, 2, 0, 3, 2, 5})).isEqualTo(9);
     }
 
@@ -2141,7 +2148,7 @@ public class ArrayQuestion {
 
     /**
      * Iterate the array and maintain the non-decreasing monotonic stack to look for all "valley bar", which has next
-     * greater bar and a previous bar, and compute the water volume for each of them.
+     * greater bar and a previous greater bar, and compute the water volume for each of them.
      * <p>
      * Observation:
      * 1. To be able to trap the water, we need two nonadjacent bars to save water, and there must be at least one
@@ -2152,7 +2159,7 @@ public class ArrayQuestion {
      * We can trap water at i. And we just need to find all valley bars and calculate the water volume.
      * <p>
      * Algo:
-     * Iterate the array and maintain a non-decreasing monotonic stack(store index).
+     * Iterate the array and maintain a non-decreasing monotonic stack(store index). (Equal element is allowed in the stack)
      * - Continuously pop out the element from the stack if it is less than the current bar height
      * -- Now the popped-out bar is the valley bar, and the current bar is the right bar of the valley.
      * -- Next we check if the stack still has element, if so, this is the left bar of the valley(The stack is
@@ -2165,20 +2172,25 @@ public class ArrayQuestion {
         int ans = 0;
         for (int i = 0; i < height.length; i++) {
             int currentBarHeight = height[i];
-            // maintain non-decreasing monotonic stack
+            // We want to find the next greater bar, so it can form a valley then it can trap the water. A plateau doesn't
+            // trap any water, so we don't pop equal bar from the stack. This maintains non-decreasing monotonic stack.
             while (!stack.isEmpty() && height[stack.peek()] < currentBarHeight) {
-                // The current bar is the next greater element of the one at the stack top, which means current
-                // bar can be the right bar of a valley
-                int prevHeight = height[stack.pop()]; // This is the bottom of a valley
-                // At each iteration, we use the current bar as valley right bar and compute the water volume for the
-                // one previous bar on the left if its previous greater bar exists. We repeat this until currentBarHeight
+                // The current bar is the next greater element to the one at the stack top, which means current
+                // bar will be the right bar of a valley
+                int valleyHeight = height[stack.pop()]; // This is the bottom of a valley
+                // At each iteration, we use the current bar as valley right bar and compute the water volume of this valley
+                // if the previous greater bar of the bottom valley bar exists, i.e. left bar. We repeat this until currentBarHeight
                 // is NOT greater than the top bar on the stack, which means no valley and can't trap the water
                 if (!stack.isEmpty()) {
-                    // If the stack is not empty, cuz we maintain decreasing monotonic stack, the top element at the stack
-                    // is the previous greater element to the prevHeight. So now we can use it as the left bar of a valley
-
-                    // h (height) is the minimum of the previous greater(left bar) and the next greater(right bar) elements
-                    int h = Math.min(height[stack.peek()], currentBarHeight) - prevHeight;
+                    // If nothing left in the stack, that means this valley bar is one of the ascending bars in the beginning,
+                    // so all of its previous smaller bars are already pop.
+                    // To calculate the water trapped in this valley, we need to find out the taller bar on the left.
+                    // When the stack is not empty, cuz we maintain non-decreasing monotonic stack, the top element at the stack
+                    // is either greater or equal to the valleyHeight, we can use it as the left bar of a valley (If equal,
+                    // the height will become zero, so it won't trap any water)
+                    int leftBarHeight = height[stack.peek()];
+                    // h (height) is the minimum of the previous greater(left bar) and the next greater(right bar) elements - valley bar height
+                    int h = Math.min(leftBarHeight, currentBarHeight) - valleyHeight;
                     // w (width) is the space between next greater and previous greater element
                     int w = i - (stack.peek() + 1);
                     ans += h * w;
@@ -2639,7 +2651,8 @@ public class ArrayQuestion {
     }
 
     /**
-     * Use two pointers at the beginning and end and keep track of the max area while moving the ptr on the shorter line.
+     * Use two pointers (0, end idx) to iterate array and compute the area and keep track of the max area.
+     * Move the pointer on the shorter heigh until two ptr cross each other.
      * <p>
      * Observation:
      * 1. The problem can be rephrased as finding the max area that can be formed between the vertical lines using the
