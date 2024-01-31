@@ -94,6 +94,58 @@ public class SortingSearching {
     }
 
     /**
+     * Squares of a Sorted Array
+     * Given an integer array nums sorted in non-decreasing order, return an
+     * array of the squares of each number sorted in non-decreasing order.
+     * <p>
+     * Input: nums = [-4,-1,0,3,10]
+     * Output: [0,1,9,16,100]
+     * Explanation: After squaring, the array becomes [16,1,0,9,100].
+     * After sorting, it becomes [0,1,9,16,100].
+     * <p>
+     * Input: nums = [-7,-3,2,3,11]
+     * Output: [4,9,9,49,121]
+     */
+    @Test
+    void testSortedSquares() {
+        Assertions.assertThat(sortedSquares(new int[]{-4, -1, 0, 3, 10})).containsExactly(0, 1, 9, 16, 100);
+        Assertions.assertThat(sortedSquares(new int[]{-7, -3, 2, 3, 11})).containsExactly(4, 9, 9, 49, 121);
+    }
+
+    /**
+     * Iterate the array and maintain two ptr, left(0) and right(endIdx). If the absolute value
+     * of left is greater than right, put the square value of left in ans array and increment
+     * left ptr, otherwise, put the square value of right and decrement right ptr.
+     * <p>
+     * Observation:
+     * 1. When the array has positive and negative numbers, if we take the square on every
+     * number, we will see descending sequence from both ends.
+     * 2. So we just need to use two ptrs, one from beginning, the other from the end, then
+     * take the greater one and put it in the ans array in reverse order.
+     * <p>
+     * Time Complexity: O(N)
+     * Space Complexity: O(N) for output
+     */
+    int[] sortedSquares(int[] nums) {
+        int[] result = new int[nums.length];
+        int left = 0, right = nums.length - 1;
+        for (int i = result.length - 1; i >= 0; i--) {
+            int lVal = nums[left];
+            int rVal = nums[right];
+            int square;
+            if (Math.abs(lVal) > Math.abs(rVal)) {
+                square = lVal * lVal;
+                left++;
+            } else {
+                square = rVal * rVal;
+                right--;
+            }
+            result[i] = square;
+        }
+        return result;
+    }
+
+    /**
      * First Bad Version
      * You are a product manager and currently leading a team to develop a new product. Unfortunately, the latest
      * version of your product fails the quality check. Since each version is developed based on the previous version,

@@ -36,7 +36,9 @@ public class GraphQuestion {
      * <p>
      * Input: graph = [[1,1,0],[0,1,0],[1,1,1]]
      * Output: 1
-     * Explanation: There are three persons labeled with 0, 1 and 2. graph[i][j] = 1 means person i knows person j, otherwise graph[i][j] = 0 means person i does not know person j. The celebrity is the person labeled as 1 because both 0 and 2 know him but 1 does not know anybody.
+     * Explanation: There are three persons labeled with 0, 1 and 2. graph[i][j] = 1 means person i knows person j,
+     * otherwise graph[i][j] = 0 means person i does not know person j. The celebrity is the person labeled as 1
+     * because both 0 and 2 know him but 1 does not know anybody.
      * <p>
      * This input can be represented as 2D array/grid below
      * <p>
@@ -56,38 +58,38 @@ public class GraphQuestion {
      * https://leetcode.com/problems/find-the-celebrity/description/
      */
     @Test
-    void testEvalRPN() {
+    void testFindCelebrity() {
         Assertions.assertThat(findCelebrity(3)).isEqualTo(1);
     }
 
-    /*
+    /**
      * The brute force approach iterates every person and call the knows API iteratively on the rest of ppl
      * to determine if he is celebrity. Thus will take O(n^2).
      * To improve the alog, the idea is with each call to knows(...), we can conclusively determine that
      * exactly 1 of the people is not a celebrity!
      * Ex, A knows B? True -> A can't be a celebrity. False -> B can't be a celebrity.
-     *
+     * <p>
      * Therefore, we can have the following algo to rule out n - 1 of the people in O(n) time.
      * We start by guessing that 0 might be a celebrityCandidate, and then we check if 0 knows 1
      * (within the loop). If true, then we know 0 isn't a celebrity (they know somebody), but 1 might be.
      * We update the celebrityCandidate variable to 1 to reflect this. Otherwise, we know 1 is not a
      * celebrity (somebody doesn't know them), but we haven't ruled out 0, yet, so keep them as the
      * celebrityCandidate. Whoever we kept is then asked if they know 2, and so forth.
-     *
+     * <p>
      * celebrity_candidate = 0
      * for i in range(1, n):
-     *     if knows(celebrity_candidate, i):
-     *         celebrity_candidate = i
-     *
+     * -    if knows(celebrity_candidate, i):
+     * -        celebrity_candidate = i
+     * <p>
      * At the end, the only person we haven't ruled out is in the celebrityCandidate variable.
      * However, cuz it is possible that there is NO celebrity at all, we still need to use isCelebrity(...)
      * function on this person to check whether he is a celebrity.
-     *
+     * <p>
      * Time Complexity : O(n).
      * The first part finds a celebrity candidate. This requires doing n−1 calls to knows(...) API, and so is O(n).
      * The second part is the same as before—checking whether a given person is a celebrity. We determined that this is O(n).
      * Therefore, we have a total time complexity of O(n+n) = O(n).
-     *
+     * <p>
      * Space Complexity : O(1).
      */
     int findCelebrity(int n) {
@@ -124,7 +126,8 @@ public class GraphQuestion {
 
     /**
      * Number of Islands
-     * Given an m x n 2D binary grid grid which represents a map of '1's (land) and '0's (water), return the number of islands.
+     * Given an m x n 2D binary grid which represents a map of '1's (land) and '0's (water), return the
+     * number of islands.
      * <p>
      * An island is surrounded by water and is formed by connecting adjacent lands horizontally or vertically.
      * You may assume all four edges of the grid are all surrounded by water.
@@ -149,8 +152,19 @@ public class GraphQuestion {
         Assertions.assertThat(numIslandsBFS(grid)).isEqualTo(1);
         Assertions.assertThat(numIslandsDFS(grid)).isEqualTo(1);
     }
-
-
+    
+    /**
+     * BFS
+     * Here we use a separate 2D array to keep track of the visited cell.
+     * Linear scan the 2D grid map, if a node contains a '1', then it is a root node that triggers a Breadth First Search.
+     * Put it into a queue(int[] type, which stores the row and column index) and mark the corresponding cell in the visited cells.
+     * Iteratively search the neighbors of enqueued nodes until the queue becomes empty.
+     * Time Complexity: O(M⋅N) where M is the number of rows and N is the number of columns.
+     * Space Complexity: When we use the separate 2D array for keeping track of the visiting nodes, it will be O(M⋅N).
+     * However, if we use the same approach as DFS, i.e. marking the viisted cell directly in the source grid,
+     * it will be O(min(M,N)) because in worst case where the grid is filled with lands,
+     * the size of queue can grow up to min(M,NM,NM,N). in case that the grid map is filled with lands where DFS goes by M⋅N deep.
+     */
     int numIslandsBFS(char[][] grid) {
         if (grid == null || grid.length == 0)
             return 0;
@@ -168,18 +182,6 @@ public class GraphQuestion {
         return count;
     }
 
-    /**
-     * BFS
-     * Here we use a separate 2D array to keep track of the visited cell.
-     * Linear scan the 2D grid map, if a node contains a '1', then it is a root node that triggers a Breadth First Search.
-     * Put it into a queue(int[] type, which stores the row and column index) and mark the corresponding cell in the visited cells.
-     * Iteratively search the neighbors of enqueued nodes until the queue becomes empty.
-     * Time Complexity: O(M⋅N) where M is the number of rows and N is the number of columns.
-     * Space Complexity: When we use the separate 2D array for keeping track of the visiting nodes, it will be O(M⋅N).
-     * However, if we use the same approach as DFS, i.e. marking the viisted cell directly in the source grid,
-     * it will be O(min(M,N)) because in worst case where the grid is filled with lands,
-     * the size of queue can grow up to min(M,NM,NM,N). in case that the grid map is filled with lands where DFS goes by M⋅N deep.
-     */
     void markIslandBFS(int row, int col, char[][] grid, boolean[][] visited) {
         int[][] directions = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}};
         Queue<int[]> cellQueue = new ArrayDeque<>(); // stores the index/coordinate(x,y) of the cell

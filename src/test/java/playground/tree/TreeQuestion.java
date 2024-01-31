@@ -531,6 +531,203 @@ public class TreeQuestion {
     }
 
     /**
+     * Same Tree
+     * Given the roots of two binary trees p and q, write a function to check if they
+     * are the same or not.
+     * <p>
+     * Two binary trees are considered the same if they are structurally identical, and
+     * the nodes have the same value.
+     * <p>
+     * Input: p = [1,2,3], q = [1,2,3]
+     * Output: true
+     * <p>
+     * Input: p = [1,2], q = [1,null,2]
+     * Output: false
+     */
+    @Test
+    void testIsSameTree() {
+        /**
+         * input:
+         *       1
+         *     /  \
+         *    2    3
+         */
+        TreeNode tree1 = createBinaryTree(1, 2, 3);
+        TreeNode tree2 = createBinaryTree(1, 2, 3);
+        Assertions.assertThat(isSameTreeRecursive(tree1, tree2)).isTrue();
+        Assertions.assertThat(isSameTreeBFS(tree1, tree2)).isTrue();
+        /**
+         * input:
+         *       1
+         *     /
+         *    2
+         *
+         * input:
+         *       1
+         *     /  \
+         *         2
+         */
+        tree1 = createBinaryTree(1, 2);
+        tree2 = createBinaryTree(1, null, 3);
+        Assertions.assertThat(isSameTreeRecursive(tree1, tree2)).isFalse();
+        Assertions.assertThat(isSameTreeBFS(tree1, tree2)).isFalse();
+        Assertions.assertThat(isSameTreeBFS(null, null)).isTrue();
+    }
+
+    /**
+     * Bottom-up recursion to compare the current node and the left node
+     * and right node recursively on both tree
+     */
+    boolean isSameTreeRecursive(TreeNode p, TreeNode q) {
+        if (p == null && q == null) {
+            return true;
+        } else if (p == null || q == null) {
+            return false;
+        } else {
+            return (p.val == q.val) && isSameTreeRecursive(p.left, q.left) && isSameTreeRecursive(p.right, q.right);
+        }
+    }
+
+    private boolean check(TreeNode p, TreeNode q) {
+        if (p == null && q == null) {
+            return true;
+        } else if (p == null) {
+            return false;
+        } else if (q == null) {
+            return false;
+        } else
+            return p.val == q.val;
+    }
+
+    /**
+     * BFS traversal using two queues to traversal and compare the node on each tree at one time
+     */
+    boolean isSameTreeBFS(TreeNode p, TreeNode q) {
+        if (p == null && q == null) {
+            return true;
+        }
+        if (!check(p, q))
+            return false;
+        Queue<TreeNode> queueP = new ArrayDeque<>();
+        queueP.offer(p);
+        Queue<TreeNode> queueQ = new ArrayDeque<>();
+        queueQ.offer(q);
+        while (!queueP.isEmpty()) {
+            TreeNode nodeP = queueP.poll();
+            TreeNode nodeQ = queueQ.poll();
+            if (!check(nodeP, nodeQ))
+                return false;
+            if (!check(nodeP.left, nodeQ.left))
+                return false;
+            // both left child nodes are equal
+            if (nodeP.left != null) {
+                queueP.offer(nodeP.left);
+                queueQ.offer(nodeQ.left);
+            }
+
+            if (!check(nodeP.right, nodeQ.right))
+                return false;
+            // both right child nodes are equal
+            if (nodeP.right != null) {
+                queueP.offer(nodeP.right);
+                queueQ.offer(nodeQ.right);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Subtree of Another Tree
+     * Given the roots of two binary trees root and subRoot, return true if there is a subtree
+     * of root with the same structure and node values of subRoot and false otherwise.
+     * <p>
+     * A subtree of a binary tree  is a tree that consists of a node in tree and ALL of
+     * this node's descendants. The tree could also be considered as a subtree of itself.
+     * <p>
+     * Input: root = [3,4,5,1,2], subRoot = [4,1,2]
+     * Output: true
+     * <p>
+     * Input: root = [3,4,5,1,2,null,null,null,null,0], subRoot = [4,1,2]
+     * Output: false
+     */
+    @Test
+    void testIsSubtree() {
+        /**
+         * input:
+         *       3
+         *     /  \
+         *    4    5
+         *  / \
+         * 1   2
+         *    /
+         *   0
+         *
+         *   subRoot
+         *       4
+         *     /  \
+         *    1    2
+         */
+        TreeNode tree1 = createBinaryTree(3, 4, 5, 1, 2, null, null, null, null, 0);
+        TreeNode tree2 = createBinaryTree(4, 1, 2);
+        Assertions.assertThat(isSubtree(tree1, tree2)).isFalse();
+        /**
+         * input:
+         *       3
+         *     /  \
+         *    4    5
+         *  / \
+         * 1   2
+         *
+         *   subRoot
+         *       4
+         *     /  \
+         *    1    2
+         */
+        tree1 = createBinaryTree(3, 4, 5, 1, 2);
+        tree2 = createBinaryTree(4, 1, 2);
+        Assertions.assertThat(isSubtree(tree1, tree2)).isTrue();
+    }
+
+    /**
+     * Bottom-up recursion to first check if using the current node as the root of the 1st tree
+     * is the same tree as the root node of 2nd tree. Then recursively call itself using the
+     * left and the right child node as the root of 1st tree. Returns true if any branch is true.
+     * <p>
+     * Observation:
+     * 1. This is the extension of the "Same Tree" problem. The difference is the checking logic
+     * will be applied on each node in the 1st tree.
+     * 2. Hence, we need to traverse the 1st tree, and when the node is not null, call the
+     * logic of checking if two tree are the same from current visiting node in 1st tree and
+     * the root node of 2nd tree. If not, recursively call itself using left and right child
+     * as root of first tree respectively.
+     * <p>
+     * <p>
+     * Time complexity: O(MN). For every N node in the first tree, we check if the tree rooted
+     * at node is identical to subRoot. This check takes O(M) time, where M is the number of
+     * nodes in 2nd tree, i.e. target subtree. Hence, the overall time complexity is O(MN).
+     * <p>
+     * Space complexity: O(M+N).
+     * There will be at most N recursive call to isSubtree(). Now, each of these calls will
+     * have M recursive calls to isSameTreeRecursive. Before calling isSameTreeRecursive,
+     * our call stack has at most O(N) elements and might increase to O(N+M) during the call.
+     * After calling isSameTreeRecursive, it will be back to at most O(N) since all elements
+     * made by isSameTreeRecursive are popped out. Hence, the maximum number of elements in
+     * the call stack will be M+N.
+     */
+    boolean isSubtree(TreeNode root, TreeNode subRoot) {
+        // If current visiting node in the first tree is null, returns false cuz no need to compare an
+        // empty subtree w/ the 2nd tree
+        if (root == null) {
+            return false;
+        }
+        // Check if using the current root node as the root of the 1st tree, two trees are the same
+        if (isSameTreeRecursive(root, subRoot))
+            return true;
+        // Recursively try the left and right as the new root of the 1st tree. Return true if any branch returns true.
+        return isSubtree(root.left, subRoot) || isSubtree(root.right, subRoot);
+    }
+
+    /**
      * Symmetric Tree
      * Given the root of a binary tree, check whether it is a mirror of
      * itself (i.e., symmetric around its center).
