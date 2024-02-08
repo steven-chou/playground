@@ -713,7 +713,7 @@ public class LinkedListQuestion {
      * The idea is we want to keep only one node from each LinkedList in the heap at one time, and take advantage of
      * sorting and retrieving the min value at constant time from the heap.
      * <p>
-     * Time Complexity: O(Nlogk) where k is the number of linked lists, n be the total number of nodes
+     * Time Complexity: O(N⋅log k) where k is the number of linked lists, n be the total number of nodes
      * Space complexity: O(k)
      */
     ListNode mergeKLists(ListNode[] lists) {
@@ -741,9 +741,9 @@ public class LinkedListQuestion {
      * Leverage the solution of "Merge Two Sorted Lists" problem, and we take one pair of lists and call that helper method
      * to merge into one list. At each iteration, we can have k lists reduce to k/2 merged list, then k/4 until single list.
      * <p>
-     * Time Complexity: O(Nlogk) where k is the number of linked lists, n be the total number of nodes
+     * Time Complexity: O(N⋅log k) where k is the number of linked lists, n be the total number of nodes
      * We can merge two sorted linked list in O(n) time where n is the total number of nodes in two lists.
-     * Sum up the merge process and we can get O(Nlogk)
+     * Sum up the merge process and we can get O(N⋅log k)
      * Space complexity: O(1)
      */
     ListNode mergeKListsDivideConquer(ListNode[] lists) {
@@ -1128,4 +1128,243 @@ public class LinkedListQuestion {
         }
         return dummy.next;
     }
+
+    /**
+     * Sort List
+     * Given the head of a linked list, return the list after sorting it in
+     * ascending order.
+     * <p>
+     * Input: head = [4,2,1,3]
+     * Output: [1,2,3,4]
+     * <p>
+     * Input: head = [-1,5,3,4,0]
+     * Output: [-1,0,3,4,5]
+     */
+    @Test
+    void testSortList() {
+        ListNode headNode1 = createListNode(4);
+        headNode1.val = 4;
+        headNode1.next.val = 2;
+        headNode1.next.next.val = 1;
+        headNode1.next.next.next.val = 3;
+        headNode1 = sortList(headNode1);
+        Assertions.assertThat(headNode1.val).isEqualTo(1);
+        Assertions.assertThat(headNode1.next.val).isEqualTo(2);
+        Assertions.assertThat(headNode1.next.next.val).isEqualTo(3);
+        Assertions.assertThat(headNode1.next.next.next.val).isEqualTo(4);
+    }
+
+    /**
+     * Implement the merge sort algo. First use the fast & slow ptr to find the end node
+     * of the first half. Then recursively call itself using head ptr of two half. Then
+     * return the sorted merged linked list of the two sorted linked lists.
+     * <p>
+     * Note: This is basically the combination of two problems
+     * - Find Middle Of Linked List.
+     * - Merge two sorted linked lists
+     * <p>
+     * Time complexity: O(n⋅log n)
+     * There are a total of N elements on each level in the recursion tree.
+     * Therefore, it takes O(N) time for the merging process to complete on
+     * each level. And there are a total of logN levels.
+     * <p>
+     * Space complexity: O(log n), recursive call stack length
+     */
+    ListNode sortList(ListNode head) {
+        if (head == null || head.next == null)
+            return head;
+        // Find the end node of the first half
+        ListNode slow = head, fast = head;
+        while (fast.next != null && fast.next.next != null) {
+            fast = fast.next.next;
+            slow = slow.next;
+        }
+        ListNode secHead = slow.next;
+        slow.next = null;
+        // Recursively split the original list into two halves. The split continues until there is
+        // only one node in the linked list
+        ListNode left = sortList(head);
+        ListNode right = sortList(secHead);
+        return merge(left, right);
+    }
+
+    private ListNode merge(ListNode left, ListNode right) {
+        ListNode dummy = new ListNode(0);
+        ListNode tail = dummy;
+        while (left != null && right != null) {
+            if (left.val < right.val) {
+                tail.next = left;
+                left = left.next;
+            } else {
+                tail.next = right;
+                right = right.next;
+            }
+            tail = tail.next;
+        }
+        if (left != null) {
+            tail.next = left;
+        } else {
+            tail.next = right;
+        }
+        return dummy.next;
+    }
+
+    ListNode tail = new ListNode(-1);
+    ListNode nextSubList = new ListNode(-1);
+
+    /**
+     * Bottom Up Merge Sort implementation to achieve O(1) space complexity
+     */
+    public ListNode sortListOpt(ListNode head) {
+        if (head == null || head.next == null)
+            return head;
+        int n = getCount(head);
+        ListNode start = head;
+        ListNode dummyHead = new ListNode(-1);
+        for (int size = 1; size < n; size = size * 2) {
+            tail = dummyHead;
+            while (start != null) {
+                if (start.next == null) {
+                    tail.next = start;
+                    break;
+                }
+                ListNode mid = split(start, size);
+                mergeII(start, mid);
+                start = nextSubList;
+            }
+            start = dummyHead.next;
+        }
+        return dummyHead.next;
+    }
+
+    ListNode split(ListNode start, int size) {
+        ListNode midPrev = start;
+        ListNode end = start.next;
+        //use fast and slow approach to find middle and end of second linked list
+        for (int index = 1; index < size && (midPrev.next != null || end.next != null); index++) {
+            if (end.next != null) {
+                end = (end.next.next != null) ? end.next.next : end.next;
+            }
+            if (midPrev.next != null) {
+                midPrev = midPrev.next;
+            }
+        }
+        ListNode mid = midPrev.next;
+        midPrev.next = null;
+        nextSubList = end.next;
+        end.next = null;
+        // return the start of second linked list
+        return mid;
+    }
+
+    void mergeII(ListNode list1, ListNode list2) {
+        ListNode dummyHead = new ListNode(-1);
+        ListNode newTail = dummyHead;
+        while (list1 != null && list2 != null) {
+            if (list1.val < list2.val) {
+                newTail.next = list1;
+                list1 = list1.next;
+                newTail = newTail.next;
+            } else {
+                newTail.next = list2;
+                list2 = list2.next;
+                newTail = newTail.next;
+            }
+        }
+        newTail.next = (list1 != null) ? list1 : list2;
+        // traverse till the end of merged list to get the newTail
+        while (newTail.next != null) {
+            newTail = newTail.next;
+        }
+        // link the old tail with the head of merged list
+        tail.next = dummyHead.next;
+        // update the old tail to the new tail of merged list
+        tail = newTail;
+    }
+
+    int getCount(ListNode head) {
+        int cnt = 0;
+        ListNode ptr = head;
+        while (ptr != null) {
+            ptr = ptr.next;
+            cnt++;
+        }
+        return cnt;
+    }
+
+    /**
+     * Rotate List
+     * Given the head of a linked list, rotate the list to the right by k places.
+     * <p>
+     * Input: head = [1,2,3,4,5], k = 2
+     * Output: [4,5,1,2,3]
+     * <p>
+     * Input: head = [0,1,2], k = 4
+     * Output: [2,0,1]
+     * <p>
+     * Constraints:
+     * 0 <= k <= 2 * 109
+     */
+    @Test
+    void testRotateRight() {
+        ListNode headNode1 = createListNode(5);
+        headNode1.val = 1;
+        headNode1.next.val = 2;
+        headNode1.next.next.val = 3;
+        headNode1.next.next.next.val = 4;
+        headNode1.next.next.next.next.val = 5;
+        headNode1 = rotateRight(headNode1, 2);
+        Assertions.assertThat(headNode1.val).isEqualTo(4);
+        Assertions.assertThat(headNode1.next.val).isEqualTo(5);
+        Assertions.assertThat(headNode1.next.next.val).isEqualTo(1);
+        Assertions.assertThat(headNode1.next.next.next.val).isEqualTo(2);
+        Assertions.assertThat(headNode1.next.next.next.next.val).isEqualTo(3);
+    }
+
+    /**
+     * First find the length of list and the tail. Then normalize k (k %= length). Link
+     * the tail to the head to form a ring, then the new tail after k rotation is at the
+     * (length - k)th node from the head. Move to there and make it the tail node and
+     * return its original next node as new head.
+     * <p>
+     * Observation:
+     * 1. The problem is similar to the "Rotate Array" problem, but we don't need
+     * to do three reverse because we can take advantage of linked list.
+     * 2. If k is <= list length, after k rotation, the last k nodes will be moved to the
+     * head of the list.
+     * 3. If we connect the current tail to the head, then we just need to find the new
+     * tail node position, then we will also know the new head. And the new tail is at
+     * the (length - k) node from the original list.
+     * <p>
+     * Time complexity: O(N)
+     * Space complexity: O(1)
+     */
+    ListNode rotateRight(ListNode head, int k) {
+        if (head == null)
+            return head;
+        int length = 1;
+        ListNode tail = head;
+        // Find the length of linked list
+        while (tail.next != null) {
+            tail = tail.next;
+            length++;
+        }
+        // Normalize the k
+        k %= length;
+        // Connect tail to the head so not it froms a circle
+        tail.next = head;
+        // When the list rotates k times, the new tail will be at the (length - k)th node.
+        // So we need to move length - k - 1 steps from the head node.
+        int stepToNewTail = length - k - 1;
+        ListNode newTail = head;
+        while (stepToNewTail > 0) {
+            newTail = newTail.next;
+            stepToNewTail--;
+        }
+        // Set the new head and tail node
+        ListNode newHead = newTail.next;
+        newTail.next = null;
+        return newHead;
+    }
+
 }

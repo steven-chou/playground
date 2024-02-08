@@ -18,6 +18,69 @@ import java.util.function.BiPredicate;
  *      https://www.geeksforgeeks.org/graph-and-its-representations/
  */
 public class GraphQuestion {
+
+    /**
+     * Topological sort Kahn's Algorithm implementation
+     * Each edge pair, [x, y], in the edges represents y --> x in the graph
+     * <p>
+     * V represents the number of vertices, and E represents the number of edges
+     * Time complexity: O(V+E)
+     * Initializing the adjacency list, i.e. graph, takes O(E) time as we go through all the edges. The in-degree array
+     * take O(V) time.
+     * Each queue operation takes O(1) time, and a single node will be pushed once, leading to O(V) operations for V
+     * nodes. We iterate over the neighbors of each node that is popped out of the queue iterating over all the edges
+     * once. Since there are total of E edges, it would take O(E) time to iterate over the edges.
+     * Hence, O(E) + O(V+E) = O(V+E)
+     * <p>
+     * Space complexity: O(m+n)
+     * The adjacency list takes O(E) space. The in-degree array takes O(V) space.
+     * The queue can have no more than V elements in the worst-case scenario. It would take up O(V)
+     * space in that case.
+     */
+    int[] FindTopologicalOrdering(int nodeTotal, int[][] edges) {
+        int[] inDegree = new int[nodeTotal];
+        // Graph is represented as an adjacency list.
+        // For directed graph say node 0 and node are connected w/ an edge from 0 -> 1, we will have graph[0] = {1}
+        // graph.get(i): Nodes having an inbound edge from the node i, e.g. i --> a, i --> b, graph[i] = {a, b}
+        List<List<Integer>> graph = new ArrayList<>();
+        for (int i = 0; i < nodeTotal; i++) {
+            graph.add(new ArrayList<>());
+        }
+        // Construct the adjacent list and calculate the in-degree of each node.
+        for (int[] edge : edges) {
+            int from = edge[1];
+            int to = edge[0];
+            graph.get(from).add(to);
+            ++inDegree[to];
+        }
+        // queue always contains the nodes with no incoming edges, i.e. zero in-degree
+        Queue<Integer> zeroIngreeNodeQueue = new ArrayDeque<>();
+        for (int i = 0; i < inDegree.length; i++) {
+            if (inDegree[i] == 0)
+                zeroIngreeNodeQueue.offer(i);
+        }
+        int[] order = new int[nodeTotal];
+        int idx = 0;
+        while (!zeroIngreeNodeQueue.isEmpty()) {
+            // The node pop from the queue has no incoming edge, the goal of this algo is to visit such
+            // kind of node, then remove it from the graph, then explore its connected neighbor nodes.
+            Integer node = zeroIngreeNodeQueue.poll();
+            order[idx++] = node;
+            for (Integer toNode : graph.get(node)) {
+                // To simulate that we remove this node from the graph, we decrement the in-degree count
+                // of the node having edge from this node
+                --inDegree[toNode];
+                if (inDegree[toNode] == 0)
+                    // If the toNode has no more incoming edge, add it to the queue
+                    zeroIngreeNodeQueue.offer(toNode);
+            }
+        }
+        if (idx != nodeTotal)
+            // Some nodes in the graph are not reduced to zero in-degree, which means cycle is found
+            return new int[0];
+        return order;
+    }
+
     /**
      * Find the Celebrity
      * Suppose you are at a party with n people labeled from 0 to n - 1 and among them, there may
@@ -152,18 +215,18 @@ public class GraphQuestion {
         Assertions.assertThat(numIslandsBFS(grid)).isEqualTo(1);
         Assertions.assertThat(numIslandsDFS(grid)).isEqualTo(1);
     }
-    
+
     /**
      * BFS
-     * Here we use a separate 2D array to keep track of the visited cell.
-     * Linear scan the 2D grid map, if a node contains a '1', then it is a root node that triggers a Breadth First Search.
-     * Put it into a queue(int[] type, which stores the row and column index) and mark the corresponding cell in the visited cells.
-     * Iteratively search the neighbors of enqueued nodes until the queue becomes empty.
+     * Use a separate boolean 2D array to keep track of the visited cells.
+     * Iterate the grid, if the cell contains '1' and not visited, use it as starting cell to perform BFS
+     * traversal. In BFS, we move to 4 directions from one cell if they have '1', and then mark them
+     * visited. We increment the island count after finishing one iteration of BFS from a cell
      * Time Complexity: O(M⋅N) where M is the number of rows and N is the number of columns.
      * Space Complexity: When we use the separate 2D array for keeping track of the visiting nodes, it will be O(M⋅N).
-     * However, if we use the same approach as DFS, i.e. marking the viisted cell directly in the source grid,
+     * However, if we use the same approach as DFS, i.e. marking the visited cell directly in the source grid,
      * it will be O(min(M,N)) because in worst case where the grid is filled with lands,
-     * the size of queue can grow up to min(M,NM,NM,N). in case that the grid map is filled with lands where DFS goes by M⋅N deep.
+     * the size of queue can grow up to min(M,N).
      */
     int numIslandsBFS(char[][] grid) {
         if (grid == null || grid.length == 0)
@@ -203,12 +266,11 @@ public class GraphQuestion {
 
     /**
      * DFS
-     * Linear scan the 2d grid map, if a node contains a '1', then it is a root node
-     * that triggers a Depth First Search. During DFS, every visited node should be
-     * set as '0' to mark as visited node. Count the number of root nodes that trigger
-     * DFS, this number would be the number of islands since each DFS starting at some
-     * root identifies an island.
-     * Note: This solution modifies the source grid so it may not be appropriate
+     * Use a separate boolean 2D array to keep track of the visited cells.
+     * Iterate the grid, if the cell contains '1' and not visited, use it as starting cell to perform
+     * DFS traversal. In DFS, if the rowIdx and colIdx is not out of boundary and not visited and
+     * has '1', we mark the node visited and make recursive calls using 4 adjacent cells respectively.
+     * We increment the island count after finishing one iteration of DFS from a cell
      * Time Complexity: O(M⋅N) where M is the number of rows and N is the number of columns.
      * Space Complexity: O(M⋅N) in case that the grid map is filled with lands where DFS goes by M⋅N deep.
      */
@@ -217,26 +279,128 @@ public class GraphQuestion {
             return 0;
         int count = 0;
         int rowNum = grid.length, colNum = grid[0].length;
+        boolean[][] visited = new boolean[rowNum][colNum];
         for (int i = 0; i < rowNum; i++) {
             for (int j = 0; j < colNum; j++) {
-                if (grid[i][j] == '1') {
-                    markIslandDFS(i, j, grid);
-                    ++count;
+                if (grid[i][j] == '1' && !visited[i][j]) {
+                    markIslandDFS(i, j, grid, visited);
+                    count++;
                 }
             }
         }
         return count;
     }
 
-    void markIslandDFS(int row, int col, char[][] grid) {
+
+    void markIslandDFS(int row, int col, char[][] grid, boolean[][] visited) {
         if (row < 0 || row >= grid.length || col < 0 || col >= grid[0].length // boundary check
-                || grid[row][col] == '0')
+                || visited[row][col] || grid[row][col] == '0') // Only visit unvisited '1' cell
             return;
-        grid[row][col] = '0';
-        markIslandDFS(row + 1, col, grid);
-        markIslandDFS(row - 1, col, grid);
-        markIslandDFS(row, col + 1, grid);
-        markIslandDFS(row, col - 1, grid);
+        visited[row][col] = true;
+        markIslandDFS(row + 1, col, grid, visited);
+        markIslandDFS(row - 1, col, grid, visited);
+        markIslandDFS(row, col + 1, grid, visited);
+        markIslandDFS(row, col - 1, grid, visited);
+    }
+
+    /**
+     * Word Search
+     * Given an m x n grid of characters board and a string word, return true if word exists in the grid.
+     * The word can be constructed from letters of sequentially adjacent cells, where adjacent cells are horizontally or
+     * vertically neighboring. The same letter cell may not be used more than once.
+     * <p>
+     * board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"
+     * Output: true
+     * <p>
+     * https://leetcode.com/problems/word-search/description/
+     */
+    @Test
+    void testExist() {
+        char[][] board = {{'A', 'B', 'C', 'E'}, {'S', 'F', 'C', 'S'}, {'A', 'D', 'E', 'E'}};
+        Assertions.assertThat(exist(board, "ABCCED")).isTrue();
+    }
+
+    /**
+     * Iterates each cell in the grid. For each cell, pass the (x, y), searchCharIdx(0) and a visited boolean
+     * grid to a method. In the method, if (x, y) out of bound or cell was visited or current cell value !=
+     * searchCharIdx value in the string, returns false. If searchCharIdx is the last index of the string
+     * and cell value are equal, returns true. Otherwise, mark the cell visited and recursively explore four
+     * adjacent cells w/ searchCharIdx + 1 to search for the next char in the string. If anyone returns true,
+     * return true. Otherwise, mark the current cell not visited before we backtrack to the previous cell
+     * and return false.
+     * <p>
+     * We would walk around the 2D grid, and at each step, we mark our choice before jumping into the next
+     * step. And at the end of each step, we would also revert our mark so that we will have a clean slate
+     * to try another direction.
+     * In addition, the exploration is done via the DFS strategy, where we go as far as possible before
+     * we try the next direction.
+     * Key points:
+     * 1. The recursive method should have an searchCharIdx var and get increment by 1 when it is called,
+     * so we can use it as base case to determine if we find the last matched char in the word
+     * 2. We need to check the row and col boundary besides the cell value against the char in the word
+     * 3. When doing DFS recursive call, we need to call it for four adjacent cells, which means passing
+     * different row and col four times.
+     * 4. We need to mark the current visiting cell in the boolean grid, so it won't be visited again.
+     * We also need to revert it back once recursive call returns.
+     * <p>
+     * Note: we can reduce the space complexity to O(L), where L is the length of the word to be matched
+     * and also the max depth of the call stack, if we just modify the input grid using the special char
+     * to mark the visited cell instead of a separate boolean grid.
+     * <p>
+     * Time Complexity:O(N⋅3^L), where N is the number of cells in the board and L is the length of the word to be matched.
+     * 1. Besides the very first move, we can have at most 4 directions to move, the choices are reduced to 3. So it is
+     * basically 3-ary tree, each of the branches represent a potential exploration in the corresponding direction.
+     * Therefore, in the worst case, the total number of invocation would be the number of nodes in a full 3-nary tree,
+     * which is about 3^L
+     * 2. We iterate through the board for backtracking, i.e. there could be N times invocation for the backtracking
+     * function in the worst case.
+     * <p>
+     * Space Complexity: O(L + M⋅N) where L is the length of the word to be matched.
+     * The maximum length of the call stack would be the length of the word. M⋅N to maintain the boolean visited grid
+     */
+    boolean exist(char[][] board, String word) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[0].length; j++) {
+                boolean[][] visited = new boolean[board.length][board[0].length];
+                if (searchWord(i, j, 0, board, word, visited))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    boolean searchWord(int r, int c, int charIdx, char[][] board, String word, boolean[][] visited) {
+        // Check boundaries and if the current cell was visited and has the char we currently look for
+        if (r < 0 || r == board.length || c < 0 || c == board[0].length
+                || visited[r][c] || word.charAt(charIdx) != board[r][c]) {
+            return false;
+        }
+        // charIdx is used for tracking the progress for searching each char in the word. It is incremented in each
+        // recursive call, so we will search the next char of the word in the next adjacent cells.
+        // When the recursive call reaches here w/ index equal to the word length, it means this cell has the last char
+        // of the string, so we successfully found the whole word
+        if (charIdx == word.length() - 1) {
+            return true;
+        }
+        // The current cell has the char we need. Mark the cell visited, so recursive DFS later on won't go
+        // back to visit the same cell twice in one path (call stack)
+        visited[r][c] = true;
+
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        boolean found = false;
+        /// search the next char in the word in DFS manner toward four adjacent cells
+        for (int[] dir : dirs) {
+            int row = r + dir[0];
+            int col = c + dir[1];
+            if (searchWord(row, col, charIdx + 1, board, word, visited)) {
+                return true;
+            }
+        }
+        // When reaching here, it means all paths from 4 direction of the current cell didn't find the char(s) we need.
+        // Before returning to the previous cell to explore other adjacent cells, we need to mark this cell unvisited,
+        // so it can be visited again from different path. This is basically BACKTRACKING.
+        visited[r][c] = false;
+        return false;
     }
 
     private class Node {
@@ -301,7 +465,7 @@ public class GraphQuestion {
         node2.neighbors = List.of(node1, node3);
         node3.neighbors = List.of(node2, node4);
         node4.neighbors = List.of(node1, node3);
-        Node clonedNode1 = cloneGraph(node1);
+        Node clonedNode1 = cloneGraphDFS(node1);
         Assertions.assertThat(clonedNode1.neighbors).hasSize(2);
     }
 
@@ -311,13 +475,13 @@ public class GraphQuestion {
      * 2. If we don't find the node in the visited hash map, we create a copy of it and put it in the hash map.
      * 3. Now make the recursive call for the neighbors of the node
      * <p>
-     * Time Complexity: O(N+M), where N is a number of nodes (vertices) and MMM is a number of edges.
+     * Time Complexity: O(N+M), where N is a number of nodes (vertices) and M is a number of edges.
      * Space Complexity: O(N). This space is occupied by the visited hash map and in addition to that,
      * space would also be occupied by the recursion stack since we are adopting a recursive approach here.
      * The space occupied by the recursion stack would be equal to O(H) where H is the height of the graph.
      * Overall, the space complexity would be O(N).
      */
-    Node cloneGraph(Node node) {
+    Node cloneGraphDFS(Node node) {
         Map<Node, Node> visitedToClone = new HashMap<>();
         return cloneAdjacentNode(node, visitedToClone);
     }
@@ -339,6 +503,43 @@ public class GraphQuestion {
         }
         return newNode;
     }
+
+    Node cloneGraphBFS(Node node) {
+        if (node == null) {
+            return null;
+        }
+
+        // Hash map to save the visited node and it's respective clone
+        // as key and value respectively. This helps to avoid cycles.
+        Map<Node, Node> visited = new HashMap<>();
+
+        // Put the first node in the queue
+        Queue<Node> queue = new ArrayDeque<>();
+        queue.add(node);
+        // Clone the node and put it in the visited dictionary.
+        visited.put(node, new Node(node.val, new ArrayList<>()));
+
+        // Start BFS traversal
+        while (!queue.isEmpty()) {
+            // Pop a node say "n" from the from the front of the queue.
+            Node n = queue.remove();
+            // Iterate through all the neighbors of the node "n"
+            for (Node neighbor : n.neighbors) {
+                if (!visited.containsKey(neighbor)) {
+                    // Clone the neighbor and put in the visited, if not present already
+                    visited.put(neighbor, new Node(neighbor.val, new ArrayList<>()));
+                    // Add the newly encountered node to the queue.
+                    queue.add(neighbor);
+                }
+                // Add the clone of the neighbor to the neighbors of the clone node "n".
+                visited.get(n).neighbors.add(visited.get(neighbor));
+            }
+        }
+
+        // Return the clone of the node from visited.
+        return visited.get(node);
+    }
+
 
     /**
      * Flood Fill
@@ -397,8 +598,8 @@ public class GraphQuestion {
     void updateCellColor(int[][] grid, int row, int col, int oldColor, int newColor) {
         // base case
         if (row >= grid.length || row < 0 || col < 0 || col >= grid[row].length
-                || grid[row][col] != oldColor)
-            // Can move the index boundary check before making recursive call to reduce unnecessary calls
+                || grid[row][col] != oldColor || grid[row][col] == newColor)
+            // Move the index boundary check before making recursive call to reduce unnecessary calls
             return;
         grid[row][col] = newColor;
         updateCellColor(grid, row + 1, col, oldColor, newColor);
@@ -470,10 +671,12 @@ public class GraphQuestion {
     class Cell {
         int row;
         int col;
+        int step; // Track the level of BFS when the cell is visited
 
-        Cell(int row, int col) {
+        Cell(int row, int col, int step) {
             this.row = row;
             this.col = col;
+            this.step = step;
         }
     }
 
@@ -489,7 +692,7 @@ public class GraphQuestion {
                 int val = mat[i][j];
                 if (val == 0) {
                     // Insert all '0' cells to the queue and mark correspond cell visited
-                    queue.offer(new Cell(i, j));
+                    queue.offer(new Cell(i, j, 0));
                     visited[i][j] = true;
                 }
             }
@@ -502,15 +705,24 @@ public class GraphQuestion {
                 // Iterate over 4 neighboring cells
                 int nextRow = cell.row + dir[0], nextCol = cell.col + dir[1];
                 if (validBound.test(nextRow, nextCol) && !visited[nextRow][nextCol]) { // Check inside the bound and not visited
+                    // ** This is the alternative way to compute the distance w/o storing the step/level in the Cell object **
                     // answer grid is init to 0, when we perform BFS from the '0' cells removed from the queue, the distance of the
                     // neighbor cell is the distance of the source cell(stored in the answer grid) + 1. For example, the first
                     // level BFS makes all neighbors of '0' cell in the matrix have '1' in the answer grid. And the 2nd level BFS
                     // makes the neighbors of those cells have '2' in the answer grid, so on and so forth.
                     // Therefore, neighboring cell distance is the source cell distance + 1
-                    int distance = answer[cell.row][cell.col] + 1;
-                    answer[nextRow][nextCol] = distance;
+                    // int distance = answer[cell.row][cell.col] + 1;
+                    // answer[nextRow][nextCol] = distance;
+
+                    // Every time when we traverse to 4 adjacent cells from a cell polled from the queue, we increment the BFS
+                    // level/steps from the source cell. Cuz we start BFS from '0' cells, so the level/steps is the distance to
+                    // the '0'.
+                    // Note: Each cell only expands one level at one time, so the '1' cell first mark visited is guaranteed having
+                    // the shortest distance to '0' cell
+                    int level = cell.step + 1;
+                    answer[nextRow][nextCol] = level;
                     visited[nextRow][nextCol] = true;
-                    queue.offer(new Cell(nextRow, nextCol));
+                    queue.offer(new Cell(nextRow, nextCol, level));
                 }
             }
         }
@@ -640,12 +852,17 @@ public class GraphQuestion {
         };
         Assertions.assertThat(canFinish(2, grid)).isFalse();
         grid = new int[][]{
+                {1, 4}, {2, 4}, {3, 1}, {3, 2}
+        };
+        Assertions.assertThat(canFinish(5, grid)).isTrue();
+        grid = new int[][]{
                 {1, 0},
                 {2, 0},
                 {2, 1}
         };
         Assertions.assertThat(canFinish(3, grid)).isTrue();
     }
+
 
     /**
      * Implement Kahn's Topological sorting algo to detect the cycle in the graph
@@ -654,14 +871,14 @@ public class GraphQuestion {
      * (to indicate that course b should be completed before taking course a), we get a directed graph.
      * <p>
      * If there is a cycle in this directed graph, it suggests that we will not be able to finish all
-     * of the courses. Otherwise, we can perform a topological sort of the graph to determine the order
-     * in which all of the courses can be finished.
+     * the courses. Otherwise, we can perform a topological sort of the graph to determine the order
+     * in which all the courses can be finished.
      * We implement the Kahn's algorithm to get the topological ordering. Kahn’s algorithm works by
      * keeping track of the number of incoming edges into each node (indegree). It works by repeatedly
      * visiting the nodes with an indegree of zero and deleting all the edges associated with it leading
      * to a decrement of indegree for the nodes whose incoming edges are deleted. This process continues
      * until no elements with zero indegree can be found.
-     * *The Kahn’s algo usually prodecues the result of topological ordering, but here we only care
+     * *The Kahn’s algo usually produces the result of topological ordering, but here we only care
      * if there is cycle
      * <p>
      * 1. Create an array indegree of length n where indegree[x] stores the number of edges entering node x.
@@ -671,20 +888,19 @@ public class GraphQuestion {
      * increment the indegree of prerequisite[0] by 1.
      * 3. Initialize a queue of integers q and start a BFS algorithm moving from the leaf nodes to the
      * parent nodes.
-     * 4. Begin the BFS traversal by pushing all of the leaf nodes (indegree equal to 0) in the queue.
+     * 4. Begin the BFS traversal by pushing all the leaf nodes (indegree equal to 0) in the queue.
      * 5. Create an integer variable visitedNodeCount = 0 to count the number of visited nodes.
      * 6. While the queue is not empty;
      * -	Dequeue the first node from the queue.
      * -	Increment nodesVisited by 1.
-     * -	For each neighbor (nodes that have an incoming edge from node) of node, we decrement
-     * indegree[neighbor]by 1 to delete the node -> neighbor edge.
-     * -	If indegree[neighbor] == 0, it means that neighbor behaves as a leaf node, so we push neighbor in
-     * the queue.
+     * -	For each neighbor of node (nodes that have an incoming edge from node), we decrement
+     * -    indegree[neighbor]by 1 to delete the node -> neighbor edge.
+     * -	If indegree[neighbor] == 0, we push this neighbor node to the queue.
      * If the number of nodes visited is less than the total number of nodes, i.e., visitedNodeCount < n we
      * return false as there must be a cycle. Otherwise, if visitedNodeCount == numCourses, we return true.
      * We can shorten it to just return visitedNodeCount == numCourses.
      * <p>
-     * Time complexity: O(m+n)
+     * Time complexity: O(m+n), n be the number of courses and m be the size of prerequisites
      * Initializing the adj list takes O(m) time as we go through all the edges. The indegree array take O(n) time.
      * Each queue operation takes O(1) time, and a single node will be pushed once, leading to O(n) operations for n
      * nodes. We iterate over the neighbors of each node that is popped out of the queue iterating over all the edges
@@ -874,7 +1090,7 @@ public class GraphQuestion {
     }
 
     /**
-     * Use the variant Topological sorting algo to iterativley remove the "leaf" node in the graph, then update
+     * Use the variant Topological sorting algo to iteratively remove the "leaf" node in the graph, then update
      * the degree of other nodes and remove the new leaves until 1 or 2 nodes left, which is the answer.
      * <p>
      * First, a leaf is a node of degree 1, and the height of a tree can be defined as the maximum distance
@@ -1486,63 +1702,6 @@ public class GraphQuestion {
             }
         }
         return 0;
-    }
-
-    /**
-     * Spiral Matrix
-     * Given an m x n matrix, return all elements of the matrix in spiral order.
-     * <p>
-     * Input: matrix = [[1,2,3],[4,5,6],[7,8,9]]
-     * Output: [1,2,3,6,9,8,7,4,5]
-     * <p>
-     * Input: matrix = [[1,2,3,4],[5,6,7,8],[9,10,11,12]]
-     * Output: [1,2,3,4,8,12,11,10,9,5,6,7]
-     * <p>
-     * https://leetcode.com/problems/spiral-matrix/description/
-     */
-    @Test
-    void testSpiralOrder() {
-        int[][] matrix = {
-                {1, 2, 3},
-                {4, 5, 6},
-                {7, 8, 9}
-        };
-
-        Assertions.assertThat(spiralOrder(matrix)).containsExactly(1, 2, 3, 6, 9, 8, 7, 4, 5);
-    }
-
-    /**
-     * Use two pointers(rowPtr & colPtr) to iterate one row and column at one time. We use rowNums and colNums to keep track of
-     * the number of rows/cols not visited yet, and use them to decide how far each ptr can move. Also use an offset var to
-     * control the two ptr direction of right/down or left/up and next position. We decrement the rowNums or colNums after
-     * finish visiting one row or column, so we reach the end when either of them becomes 0.
-     * <p>
-     * Time complexity: O(M⋅N)
-     * Space complexity: O(1)
-     */
-    List<Integer> spiralOrder(int[][] matrix) {
-        List<Integer> result = new ArrayList<>();
-        // The following two var denotes how many rows/columns not visited yet. This controls the max steps the ptr can
-        // move along the column or row
-        int rowNums = matrix.length;
-        int colNums = matrix[0].length;
-        int offset = 1; // added to the ptr to determine the next position in the matrix. Start at right/down direction
-        int rowPtr = 0;
-        int colPtr = -1; // init to -1 so the total number of steps colPtr can move will be equal to colNums(cuz it iterates the first row first)
-        while (rowNums * colNums > 0) {
-            for (int j = 1; j <= colNums; j++) {// iterate over one row. The loop only control how many steps ptr will go
-                colPtr += offset; // Move the column ptr to next cell
-                result.add(matrix[rowPtr][colPtr]);
-            }
-            --rowNums; // Decrement remaining number of rows
-            for (int i = 1; i <= rowNums; i++) {// iterate over one column.
-                rowPtr += offset; // Move the row ptr to next cell
-                result.add(matrix[rowPtr][colPtr]);
-            }
-            --colNums; // Decrement remaining number of columns
-            offset *= -1; // Flip the ptr move direction i.e. right/down <==> left/up
-        }
-        return result;
     }
 
 }

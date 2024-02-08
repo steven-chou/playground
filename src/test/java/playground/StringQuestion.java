@@ -273,6 +273,71 @@ public class StringQuestion {
     }
 
     /**
+     * Permutation in String
+     * Given two strings s1 and s2, return true if s2 contains a permutation
+     * of s1, or false otherwise.
+     * <p>
+     * In other words, return true if one of s1's permutations is the substring
+     * of s2.
+     * <p>
+     * Input: s1 = "ab", s2 = "eidbaooo"
+     * Output: true
+     * Explanation: s2 contains one permutation of s1 ("ba").
+     * Example 2:
+     * <p>
+     * Input: s1 = "ab", s2 = "eidboaoo"
+     * Output: false
+     */
+    @Test
+    void testCheckInclusion() {
+        assertThat(checkInclusion("ab", "eidbaooo")).isTrue();
+        assertThat(checkInclusion("ab", "eidboaoo")).isFalse();
+    }
+
+    /**
+     * First populate the charToCountS1 Map for str. Maintain the left ptr(init: 0) for left side of
+     * sliding window. Iterate str s2 w/ right ptr, for each char at s2, update the charToCountWin
+     * map. When the current sliding window size(i-j+1) == s1.length, if two maps are equal, return
+     * true. Then update the charToCountWin map by dropping the entry or decrement the court for char
+     * point by ptr left, then advance left ptr.
+     * <p>
+     * Let l1 be the length of string s1 and l2 be the length of string s2s.
+     * Time complexity: O(l1 + 26*(l2 - l1))
+     * Space complexity: O(1). Constant space is used.
+     */
+    boolean checkInclusion(String s1, String s2) {
+        if (s1.length() > s2.length()) {
+            return false;
+        }
+        Map<Character, Integer> charToCountS1 = new HashMap<>();
+        for (int i = 0; i < s1.length(); i++) {
+            char c = s1.charAt(i);
+            charToCountS1.put(c, charToCountS1.getOrDefault(c, 0) + 1);
+        }
+        Map<Character, Integer> charToCountWin = new HashMap<>();
+        int winSize = s1.length(); // Sliding window size
+        int left = 0;
+        for (int right = 0; right < s2.length(); right++) {
+            char c = s2.charAt(right);
+            charToCountWin.put(c, charToCountWin.getOrDefault(c, 0) + 1);
+            if (right - left + 1 == winSize) {
+                // Compare two map
+                if (charToCountS1.equals(charToCountWin))
+                    return true;
+                // Drop the left-most char from the map before we advance the left ptr
+                char leftChar = s2.charAt(left);
+                int leftCharCount = charToCountWin.get(leftChar);
+                if (leftCharCount == 1)
+                    charToCountWin.remove(leftChar);
+                else
+                    charToCountWin.put(leftChar, leftCharCount - 1);
+                left++;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Valid Palindrome
      * A phrase is a palindrome if, after converting all uppercase letters into lowercase letters
      * and removing all non-alphanumeric characters, it reads the same forward and backward.

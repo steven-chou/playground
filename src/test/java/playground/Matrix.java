@@ -298,4 +298,61 @@ public class Matrix {
                 matrix[i][0] = 0;
         }
     }
+
+    /**
+     * Spiral Matrix
+     * Given an m x n matrix, return all elements of the matrix in spiral order.
+     * <p>
+     * Input: matrix = [[1,2,3],[4,5,6],[7,8,9]]
+     * Output: [1,2,3,6,9,8,7,4,5]
+     * <p>
+     * Input: matrix = [[1,2,3,4],[5,6,7,8],[9,10,11,12]]
+     * Output: [1,2,3,4,8,12,11,10,9,5,6,7]
+     * <p>
+     * https://leetcode.com/problems/spiral-matrix/description/
+     */
+    @Test
+    void testSpiralOrder() {
+        int[][] matrix = {
+                {1, 2, 3},
+                {4, 5, 6},
+                {7, 8, 9}
+        };
+
+        assertThat(spiralOrder(matrix)).containsExactly(1, 2, 3, 6, 9, 8, 7, 4, 5);
+    }
+
+    /**
+     * Use two pointers(rowPtr & colPtr) to iterate one row and column at one time. We use rowNums and colNums to keep track of
+     * the number of rows/cols not visited yet, and use them to decide how far each ptr can move. Also use an offset var to
+     * control the two ptr direction of right/down or left/up and next position. We decrement the rowNums or colNums after
+     * finish visiting one row or column, so we reach the end when either of them becomes 0.
+     * <p>
+     * Time complexity: O(M⋅N)
+     * Space complexity: O(1)
+     */
+    List<Integer> spiralOrder(int[][] matrix) {
+        List<Integer> result = new ArrayList<>();
+        // The following two var denotes how many rows/columns not visited yet. This controls the max steps the ptr can
+        // move along the column or row
+        int rowNums = matrix.length;
+        int colNums = matrix[0].length;
+        int offset = 1; // added to the ptr to determine the next position in the matrix. Start at right/down direction
+        int rowPtr = 0;
+        int colPtr = -1; // init to -1 so the total number of steps colPtr can move will be equal to colNums(cuz it iterates the first row first)
+        while (rowNums * colNums > 0) {
+            for (int j = 1; j <= colNums; j++) {// iterate over one row. The loop only control how many steps ptr will go
+                colPtr += offset; // Move the column ptr to next cell
+                result.add(matrix[rowPtr][colPtr]);
+            }
+            --rowNums; // Decrement remaining number of rows
+            for (int i = 1; i <= rowNums; i++) {// iterate over one column.
+                rowPtr += offset; // Move the row ptr to next cell
+                result.add(matrix[rowPtr][colPtr]);
+            }
+            --colNums; // Decrement remaining number of columns
+            offset *= -1; // Flip the ptr move direction i.e. right/down <==> left/up
+        }
+        return result;
+    }
 }

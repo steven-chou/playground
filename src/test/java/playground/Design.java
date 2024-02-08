@@ -679,6 +679,113 @@ public class Design {
     }
 
     /**
+     * Design HashMap
+     * Design a HashMap without using any built-in hash table libraries.
+     * <p>
+     * Implement the MyHashMap class:
+     * <p>
+     * MyHashMap() initializes the object with an empty map.
+     * <p>
+     * void put(int key, int value) inserts a (key, value) pair into the HashMap.
+     * If the key already exists in the map, update the corresponding value.
+     * <p>
+     * int get(int key) returns the value to which the specified key is mapped,
+     * or -1 if this map contains no mapping for the key.
+     * <p>
+     * void remove(key) removes the key and its corresponding value if the map
+     * contains the mapping for the key.
+     * <p>
+     * Constraints:
+     * 0 <= key, value <= 10^6
+     * <p>
+     * 1. Choose a prime number, e.g. 2069, as the base modulus(KEY_SPACE) and the size of
+     * buckets.
+     * 2. Bucket class
+     * - has a LinkedList of the Pair type. Each item is a pair of original key and value.
+     * - put: update the pair in the list if key is found, otherwise add it to the list
+     * - get: return the value of the given key in the list, otherwise -1.
+     * - remove: remove the pair in the list if the key is found.
+     * 4. MyHashMap class,
+     * - has a ArrayList of Bucket type
+     * - for put, get and remove method, we first do (key % KEY_SPACE) to get the associated
+     * bucket index in the list then call the corresponding method from the Bucket object.
+     * <p>
+     * Note:
+     * Java HashMap default to use 16 as bucket size instead of prime number. (HashTable uses 11)
+     * When the resizing happens, HashMap uses the power-of-two expansion. It uses bin size
+     * as nth of power of two and doubling the size whenever it reaches a threshold value
+     * (bucket size * loadFactor).
+     * With this technique, keys in the table either stay in the same index or move with a
+     * power of two offset(size of old bucket).
+     * <p>
+     * https://www.quora.com/Why-is-the-bucket-size-16-by-default-in-HashMap
+     * https://www.baeldung.com/java-hashmap-load-factor
+     */
+    class MyHashMap {
+        // Every key that shares a common factor with the number of buckets will be hashed
+        // to a bucket that is a multiple of this factor. Therefore, to minimize collisions, it
+        // is important to reduce the number of common factors between m and the key. Hence,
+        // we choose m to be a number that has very few factors, i.e. a prime number.
+        // https://stackoverflow.com/questions/1145217/why-should-hash-functions-use-a-prime-number-modulus
+        private static final int KEY_SPACE = 2069;
+
+        class Bucket {
+            private final LinkedList<AbstractMap.SimpleEntry<Integer, Integer>> list;
+
+            public Bucket() {
+                this.list = new LinkedList<>();
+            }
+
+            public void put(int key, int value) {
+                boolean keyFound = false;
+                for (AbstractMap.SimpleEntry<Integer, Integer> item : list) {
+                    if (item.getKey().equals(key)) {
+                        keyFound = true;
+                        item.setValue(value);
+                        break;
+                    }
+                }
+                if (!keyFound)
+                    this.list.add(new AbstractMap.SimpleEntry<>(key, value));
+            }
+
+            public int get(int key) {
+                for (AbstractMap.SimpleEntry<Integer, Integer> item : list) {
+                    if (item.getKey().equals(key)) {
+                        return item.getValue();
+                    }
+                }
+                return -1;
+            }
+
+            public void remove(int key) {
+                list.removeIf(e -> e.getKey().equals(key));
+            }
+        }
+
+        private final List<Bucket> hashTable;
+
+        public MyHashMap() {
+            hashTable = new ArrayList<>();
+            for (int i = 0; i < KEY_SPACE; i++) {
+                hashTable.add(new Bucket());
+            }
+        }
+
+        public void put(int key, int value) {
+            this.hashTable.get(key % KEY_SPACE).put(key, value);
+        }
+
+        public int get(int key) {
+            return this.hashTable.get(key % KEY_SPACE).get(key);
+        }
+
+        public void remove(int key) {
+            this.hashTable.get(key % KEY_SPACE).remove(key);
+        }
+    }
+
+    /**
      * Find Median from Data Stream
      * The median is the middle value in an ordered integer list. If the size of the list is even,
      * there is no middle value, and the median is the mean of the two middle values.
