@@ -3262,7 +3262,32 @@ public class ArrayQuestion {
         assertThat(smallestDistancePair(new int[]{2, 4, 5, 8, 9}, 5)).isEqualTo(3);
     }
 
-    public int smallestDistancePair(int[] nums, int k) {
+    /**
+     * Sort the array first, use the Find-first-true Binary search using the possible pair distances
+     * as search space(left: -1, right: nums[nums.length - 1] - nums[0]). The condition is the
+     * (number of pairs in the nums having distance <= mid) >= k. Use the sliding window and DP
+     * to find the number of pairs in nums satisfying the condition.
+     * <p>
+     * Algo:
+     * 1. The key is to identify the search space, which is what the problem looks for, the distance
+     * of the pair. When we sort the array, it can help us find the lower/upper bound of search
+     * space, then the next thing will be to figure out the condition for BS.
+     * <p>
+     * 2. To effective find the number of pairs in the nums having distance <= mid. Cuz we have
+     * sorted the array. We can use the sliding window and DP to find the answer in linear time.
+     * <p>
+     * Time Complexity: O(n⋅log d) + O(n⋅log n)
+     * O(n⋅log n) for the initial sort of nums
+     * O(n⋅log d) for searching, where d is the size of the distance array
+     * Hence O(n⋅log d) + O(n⋅log n)
+     * <p>
+     * Space Complexity: O(1)
+     * <p>
+     * Check the code comment and the following references
+     * https://www.youtube.com/watch?v=WHfljqX61Y8
+     * https://medium.com/swlh/binary-search-find-k-th-smallest-pair-distance-91cce923c273
+     */
+    int smallestDistancePair(int[] nums, int k) {
         Arrays.sort(nums);
         int left = -1;
         int right = nums[nums.length - 1] - nums[0];
@@ -3279,8 +3304,9 @@ public class ArrayQuestion {
     }
 
     /**
-     * Use slice window to find the number of pairs in the array whose distance is less than or equal to
-     * the target distance
+     * Use sliding window and DP to find the number of pairs in the array whose distance is less
+     * than or equal to the target distance. This implementation is very tricky.
+     * Time Complexity: O(n)
      */
     private int noOfPairsWithDistanceLessThanOrEqualTo(int[] nums, int distance) {
         int total = 0;
@@ -3294,12 +3320,17 @@ public class ArrayQuestion {
             }
 
             // Now count the pairs in the window (How can this logic still work after the window shrinks?)
-            // for example: distance of 1 = 1 pair, distance of 2 = 2 pairs
-            // distance of 3 = 1 + 2 = 3 pairs
-            // distance of 4 = 1 + 2 + 3 = 6 pairs and so on
+            // This is a one dimension DP problem
+            // If left = 0, right = 0 (1 number) total pairs = 0, dp[0] = 0
+            // If left = 0, right = 1 (2 numbers) total pairs = 1, dp[1] = dp[0] + (1 - 0)
+            // If left = 0, right = 2 (3 numbers) total pairs = 3, dp[2] = dp[1] + (2 - 0), 2 more pairs than the last time.
+            // Hence, dp[i] = dp[i-1] + (right - left)
+            // i.e. newCount = lastCount + # of elements after the left ptr.
+            // That's why we calculate count => right - left
+            // When the window is moved and shrunk, the rule still holds cuz the window will eventually shrink to 1 number
+            // long so the dp[] is accumulated in reversed order.
             total += right - left;
         }
-
         return total;
     }
 }
