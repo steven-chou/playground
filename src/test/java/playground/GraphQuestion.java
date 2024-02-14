@@ -126,6 +126,13 @@ public class GraphQuestion {
     }
 
     /**
+     * Iterate from 0 to n-1, make the first person as candidate, then call knows API w/ candidate and
+     * the next person. If returns true, makes the next person as candidate. Otherwise, keep the same
+     * candidate and continue the loop for the next person. After the loop, we need to use the candidate
+     * w/ API to check if he indeed doesn't know everyone and everyone knows him. Otherwise, there is no
+     * celebrity.
+     * <p>
+     * Observation
      * The brute force approach iterates every person and call the knows API iteratively on the rest of ppl
      * to determine if he is celebrity. Thus will take O(n^2).
      * To improve the alog, the idea is with each call to knows(...), we can conclusively determine that
@@ -144,9 +151,11 @@ public class GraphQuestion {
      * -    if knows(celebrity_candidate, i):
      * -        celebrity_candidate = i
      * <p>
-     * At the end, the only person we haven't ruled out is in the celebrityCandidate variable.
+     * In the end, the only person we haven't ruled out is in the celebrityCandidate variable.
      * However, cuz it is possible that there is NO celebrity at all, we still need to use isCelebrity(...)
-     * function on this person to check whether he is a celebrity.
+     * function on this person to check whether he is a celebrity, i.e. For every person i other than celebrityCandidate,
+     * if (knows(celebrityCandidate, i) || !knows(i, celebrityCandidate)) is true, then no celebrity. Otherwise,
+     * celebrityCandidate is celebrity
      * <p>
      * Time Complexity : O(n).
      * The first part finds a celebrity candidate. This requires doing n−1 calls to knows(...) API, and so is O(n).
@@ -159,7 +168,7 @@ public class GraphQuestion {
         int celebrityCandidate = 0;
         for (int i = 0; i < n; i++) {
             if (knows(celebrityCandidate, i))
-                // Rule out this celebrityCandidate cuz he shouldn't know anyone
+                // Rule out this celebrityCandidate cuz celebrity shouldn't know anyone
                 celebrityCandidate = i;
         }
         // Need to do final check on this candidate
@@ -1474,9 +1483,10 @@ public class GraphQuestion {
     }
 
     /**
-     * Treat variables as nodes in the directed graph, and the quotient is the directed edge from one to the
-     * other. Then perform BFS/DFS to check if there exists a path between them. If so, return the cumulative
-     * products along the path as the result.
+     * Treat variables as nodes in the directed graph, and the quotient is the weight of the directed edge
+     * from one to the other. For each pair of nodes in the query, perform BFS/DFS traversal from one to
+     * the other in the graph and accumulate the product of the weight of all edges in the path. If the
+     * node or path doesn't exist, it will be -1 as result.
      * <p>
      * We could reformulate the equations with the graph data structure, where each variable can be
      * represented as a node in the graph, and the division relationship between variables can be modeled
@@ -1603,9 +1613,14 @@ public class GraphQuestion {
      * Make each word as a node in an undirected graph and edges between words which differ by just one letter,
      * then perform BFS from start word to the end word by level.
      * <p>
-     * The most critical part is we need the logic(getNeighborsFromWordSet method) to iterate each char in a given
-     * word and create a new string by iteratively replacing this char with char in [a-z] to determine which words
-     * from the word list are the neighboring nodes for the next level of BFS.
+     * The most complex part is the logic to find the words in the wordList that has only one char difference
+     * from the given word.
+     * When we perform BFS, this is basically to find the neighboring nodes to visit at next level of BFS.
+     * <p>
+     * The helper method, getNeighborsFromWordSet, it takes the current word and the unvisited word set,
+     * then iterate each char in the current word and create a new string by iteratively replacing this char
+     * with char in [a-z] to see if such string exists in the unvisited word set. If so, put it in the list
+     * and return them in the end.
      * <p>
      * There is another implementation to build a cutomized adjacent list up front, so we can find the neighboring
      * word node differ by one letter by look up the map, but this is slower and consume more memory. Check
@@ -1618,8 +1633,8 @@ public class GraphQuestion {
      */
     int ladderLength(String beginWord, String endWord, List<String> wordList) {
         Queue<String> queue = new ArrayDeque<>();
-        // Instead of visited set, we use the set from wordList and pass it to the getNeighborsFromWordSet method
-        // to determine the neighbor nodes.
+        // Instead of visited set, we create the set from wordList to track remaining available words, and pass it
+        // to the getNeighborsFromWordSet method to determine the neighbor nodes, i.e. differ 1 char from the current node.
         Set<String> unvisitedWords = new HashSet<>(wordList);
         int level = 0;
         queue.offer(beginWord);

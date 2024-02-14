@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 /**
  * TODO: Recursion Note:
  *  1. Basic knowledge
- *      Permutation: n! (n factorial) total solution space
- *      Combination: C(n, k) = n! / k!(n-l)! ===> "C n取k, n choose k"
+ *      Permutation: n! (n factorial) total solution space, P(n, k) = n! / (n-k)! ===> "P n取k, k-permutation of n "
+ *      Combination: C(n, k) = n! / k!(n-k)! ===> "C n取k, n choose k"
  *      Subset: 2^n  ===> because binomial theorem(二項式定理)
  *           (1+1)^n = C(n,0) + C(n,1) + C(n,2) + ... + C(n,n) ==> 2^n  http://www.math.nsysu.edu.tw/eprob/PerComb/Binomial/
  *  2. When we want to update or accumulate the result of a primitive type such as integer count in the recursive function

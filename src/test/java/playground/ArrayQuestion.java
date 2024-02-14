@@ -715,6 +715,111 @@ public class ArrayQuestion {
         }
     }
 
+    /**
+     * String Compression
+     * Given an array of characters chars, compress it using the following algorithm:
+     * <p>
+     * Begin with an empty string s. For each group of consecutive repeating characters in chars:
+     * <p>
+     * If the group's length is 1, append the character to s.
+     * Otherwise, append the character followed by the group's length.
+     * The compressed string s should not be returned separately, but instead, be stored in the
+     * input character array chars. Note that group lengths that are 10 or longer will be split
+     * into multiple characters in chars.
+     * <p>
+     * After you are done modifying the input array, return the new length of the array.
+     * <p>
+     * You must write an algorithm that uses only constant extra space.
+     * <p>
+     * Input: chars = ["a","a","b","b","c","c","c"]
+     * Output: Return 6, and the first 6 characters of the input array should be: ["a","2","b","2","c","3"]
+     * Explanation: The groups are "aa", "bb", and "ccc". This compresses to "a2b2c3".
+     * <p>
+     * Input: chars = ["a"]
+     * Output: Return 1, and the first character of the input array should be: ["a"]
+     * Explanation: The only group is "a", which remains uncompressed since it's a single character.
+     * <p>
+     * Input: chars = ["a","b","b","b","b","b","b","b","b","b","b","b","b"]
+     * Output: Return 4, and the first 4 characters of the input array should be: ["a","b","1","2"].
+     * Explanation: The groups are "a" and "bbbbbbbbbbbb". This compresses to "ab12".
+     */
+    @Test
+    void testCompress() {
+        char[] chars = new char[]{'a', 'a', 'b', 'b', 'c', 'c', 'c'};
+        int ans = compress(chars);
+        assertThat(ans).isEqualTo(6);
+        assertThat(chars).containsExactly('a', '2', 'b', '2', 'c', '3', 'c');
+        chars = new char[]{'a', 'b', 'c'};
+        ans = compress(chars);
+        assertThat(ans).isEqualTo(3);
+        assertThat(chars).containsExactly('a', 'b', 'c');
+    }
+
+    /**
+     * Use two pointers(left: 1, right: 0), left to track the next writing position for char and count
+     * in front of the array . Use right to iterate the array, and maintain the last seen char and count.
+     * If current char is different from last seen char, if count > 1, iteratively write each count char
+     * to left ptr index and increment it. Then write the current char at left ptr and update the last
+     * seen char to current char, and reset count to 1. We need to apply the same logic after the loop
+     * ends for the last char in the array.
+     * <p>
+     * Time Complexity: O(n)
+     * Space Complexity: O(1)
+     */
+    int compress(char[] chars) {
+        if (chars.length == 1) {
+            return 1;
+        }
+        int left = 1; // track the next writing position in front of the array
+        int count = 0;
+        char currentChar = chars[0];
+        for (int right = 0; right < chars.length; right++) {
+            char c = chars[right];
+            if (c != currentChar) {
+                if (count > 1) {
+                    String countStr = Integer.toString(count);
+                    for (int i = 0; i < countStr.length(); i++) {
+                        chars[left++] = countStr.charAt(i);
+                    }
+                }
+                chars[left++] = c; // write the current char in the front
+                currentChar = c;
+                count = 1;
+            } else {
+                count++;
+            }
+        }
+        // Apply the same logic to the last char in the array
+        if (count > 1) {
+            String countStr = Integer.toString(count);
+            for (int i = 0; i < countStr.length(); i++) {
+                chars[left++] = countStr.charAt(i);
+            }
+        }
+        return left;
+    }
+
+    /**
+     * Solution from LeetCode
+     */
+    int compressLC(char[] chars) {
+        int i = 0, res = 0;
+        while (i < chars.length) {
+            int groupLength = 1;
+            while (i + groupLength < chars.length && chars[i + groupLength] == chars[i]) {
+                groupLength++;
+            }
+            chars[res++] = chars[i];
+            if (groupLength > 1) {
+                for (char c : Integer.toString(groupLength).toCharArray()) {
+                    chars[res++] = c;
+                }
+            }
+            i += groupLength;
+        }
+        return res;
+    }
+
 
     /**
      * Two Sum
@@ -3124,5 +3229,77 @@ public class ArrayQuestion {
             }
         }
         return maxLength;
+    }
+
+    /**
+     * Find K-th Smallest Pair Distance
+     * The distance of a pair of integers a and b is defined as the absolute difference
+     * between a and b.
+     * <p>
+     * Given an integer array nums and an integer k, return the kth smallest distance among
+     * all the pairs nums[i] and nums[j] where 0 <= i < j < nums.length.
+     * <p>
+     * Input: nums = [1,3,1], k = 1
+     * Output: 0
+     * Explanation: Here are all the pairs:
+     * (1,3) -> 2
+     * (1,1) -> 0
+     * (3,1) -> 2
+     * Then the 1st smallest distance pair is (1,1), and its distance is 0.
+     * <p>
+     * Input: nums = [1,1,1], k = 2
+     * Output: 0
+     * <p>
+     * Input: nums = [1,6,1], k = 3
+     * Output: 5
+     * https://leetcode.com/problems/find-k-th-smallest-pair-distance/description/
+     */
+    @Test
+    void testSmallestDistancePair() {
+        assertThat(smallestDistancePair(new int[]{1, 3, 1}, 1)).isEqualTo(0);
+        assertThat(smallestDistancePair(new int[]{1, 1, 1}, 2)).isEqualTo(0);
+        assertThat(smallestDistancePair(new int[]{1, 6, 1}, 3)).isEqualTo(5);
+        assertThat(smallestDistancePair(new int[]{2, 4, 5, 8, 9}, 5)).isEqualTo(3);
+    }
+
+    public int smallestDistancePair(int[] nums, int k) {
+        Arrays.sort(nums);
+        int left = -1;
+        int right = nums[nums.length - 1] - nums[0];
+
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            if (noOfPairsWithDistanceLessThanOrEqualTo(nums, mid) >= k) {
+                right = mid;
+            } else {
+                left = mid;
+            }
+        }
+        return right;
+    }
+
+    /**
+     * Use slice window to find the number of pairs in the array whose distance is less than or equal to
+     * the target distance
+     */
+    private int noOfPairsWithDistanceLessThanOrEqualTo(int[] nums, int distance) {
+        int total = 0;
+        int left = 0;
+        for (int right = 0; right < nums.length; right++) {
+            // check if distance between two ptr " <= distance "
+            // when the distance becomes greater, shrink the window from left to minimize distance
+            // The goal is to find the windows covering the pair whose distance <= target distance
+            while (nums[right] - nums[left] > distance) {
+                left++;
+            }
+
+            // Now count the pairs in the window (How can this logic still work after the window shrinks?)
+            // for example: distance of 1 = 1 pair, distance of 2 = 2 pairs
+            // distance of 3 = 1 + 2 = 3 pairs
+            // distance of 4 = 1 + 2 + 3 = 6 pairs and so on
+            total += right - left;
+        }
+
+        return total;
     }
 }

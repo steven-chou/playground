@@ -8,6 +8,11 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /* TODO- Useful Tips:
+     - Take the first digit of integer (int input)
+        int num = input < 0 ? Math.abs(input) : input;
+        while (num > 9)
+            num /= 10;
+        return num;
      - Take each digit of an integer from the last digit one-by-one
         (1) Use mod
         int num = 9876;
@@ -40,6 +45,13 @@ public class MathQuestion {
      */
     @Test
     void testFizzBuzz() {
+        int input = -3120;
+        //int d;
+        int num = input < 0 ? Math.abs(input) : input;
+        while (num > 9) {
+            num /= 10;
+        }
+        System.out.println(num);
         List<String> output = fizzBuzz(5);
         Assertions.assertThat(output).containsExactly("1", "2", "Fizz", "4", "Buzz");
     }
