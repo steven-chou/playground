@@ -1958,6 +1958,9 @@ public class TreeQuestion {
 
         Assertions.assertThat(diameterOfBinaryTree(root)).isEqualTo(3);
         Assertions.assertThat(diameterOfBinaryTreeWithPathTest(root)).isEqualTo(3);
+
+        TreeNode singleNode = new TreeNode(1);
+        Assertions.assertThat(diameterOfBinaryTree(singleNode)).isEqualTo(0);
     }
 
     /**

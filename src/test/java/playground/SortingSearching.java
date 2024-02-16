@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Index.atIndex;
 
 /**
@@ -2013,5 +2014,107 @@ public class SortingSearching {
         return result;
     }
 
+    /**
+     * Find K-th Smallest Pair Distance
+     * The distance of a pair of integers a and b is defined as the absolute difference
+     * between a and b.
+     * <p>
+     * Given an integer array nums and an integer k, return the kth smallest distance among
+     * all the pairs nums[i] and nums[j] where 0 <= i < j < nums.length.
+     * <p>
+     * Input: nums = [1,3,1], k = 1
+     * Output: 0
+     * Explanation: Here are all the pairs:
+     * (1,3) -> 2
+     * (1,1) -> 0
+     * (3,1) -> 2
+     * Then the 1st smallest distance pair is (1,1), and its distance is 0.
+     * <p>
+     * Input: nums = [1,1,1], k = 2
+     * Output: 0
+     * <p>
+     * Input: nums = [1,6,1], k = 3
+     * Output: 5
+     * https://leetcode.com/problems/find-k-th-smallest-pair-distance/description/
+     */
+    @Test
+    void testSmallestDistancePair() {
+        assertThat(smallestDistancePair(new int[]{1, 3, 1}, 1)).isEqualTo(0);
+        assertThat(smallestDistancePair(new int[]{1, 1, 1}, 2)).isEqualTo(0);
+        assertThat(smallestDistancePair(new int[]{1, 6, 1}, 3)).isEqualTo(5);
+        assertThat(smallestDistancePair(new int[]{2, 4, 5, 8, 9}, 5)).isEqualTo(3);
+    }
+
+    /**
+     * Sort the array first, use the Find-first-true Binary search using the possible pair distances
+     * as search space(left: -1, right: nums[nums.length - 1] - nums[0]). The condition is the
+     * (number of pairs in the nums having distance <= mid) >= k. Use the sliding window and DP
+     * to find the number of pairs in nums satisfying the condition.
+     * <p>
+     * Algo:
+     * 1. The key is to identify the search space, which is what the problem looks for, the distance
+     * of the pair. When we sort the array, it can help us find the lower/upper bound of search
+     * space, then the next thing will be to figure out the condition for BS.
+     * <p>
+     * 2. To effective find the number of pairs in the nums having distance <= mid. Cuz we have
+     * sorted the array. We can use the sliding window and DP to find the answer in linear time.
+     * <p>
+     * Time Complexity: O(n⋅log d) + O(n⋅log n)
+     * O(n⋅log n) for the initial sort of nums
+     * O(n⋅log d) for searching, where d is the size of the distance array
+     * Hence O(n⋅log d) + O(n⋅log n)
+     * <p>
+     * Space Complexity: O(1)
+     * <p>
+     * Check the code comment and the following references
+     * https://www.youtube.com/watch?v=WHfljqX61Y8
+     * https://medium.com/swlh/binary-search-find-k-th-smallest-pair-distance-91cce923c273
+     */
+    int smallestDistancePair(int[] nums, int k) {
+        Arrays.sort(nums);
+        int left = -1;
+        int right = nums[nums.length - 1] - nums[0];
+
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            if (noOfPairsWithDistanceLessThanOrEqualTo(nums, mid) >= k) {
+                right = mid;
+            } else {
+                left = mid;
+            }
+        }
+        return right;
+    }
+
+    /**
+     * Use sliding window and DP to find the number of pairs in the array whose distance is less
+     * than or equal to the target distance. This implementation is very tricky.
+     * Time Complexity: O(n)
+     */
+    private int noOfPairsWithDistanceLessThanOrEqualTo(int[] nums, int distance) {
+        int total = 0;
+        int left = 0;
+        for (int right = 0; right < nums.length; right++) {
+            // check if distance between two ptr " <= distance "
+            // when the distance becomes greater, shrink the window from left to minimize distance
+            // The goal is to find the windows covering the pair whose distance <= target distance
+            while (nums[right] - nums[left] > distance) {
+                left++;
+            }
+
+            // Now count the pairs in the window (How can this logic still work after the window shrinks?)
+            // This is a one dimension DP problem
+            // If left = 0, right = 0 (1 number) total pairs = 0, dp[0] = 0
+            // If left = 0, right = 1 (2 numbers) total pairs = 1, dp[1] = dp[0] + (1 - 0)
+            // If left = 0, right = 2 (3 numbers) total pairs = 3, dp[2] = dp[1] + (2 - 0), 2 more pairs than the last time.
+            // Hence, dp[i] = dp[i-1] + (right - left)
+            // i.e. newCount = lastCount + # of elements after the left ptr.
+            // That's why we calculate count => right - left
+            // When the window is moved and shrunk, the rule still holds cuz the window will eventually shrink to 1 number
+            // long so the dp[] is accumulated in reversed order.
+            total += right - left;
+        }
+        return total;
+    }
 
 }

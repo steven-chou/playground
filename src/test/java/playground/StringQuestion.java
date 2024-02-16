@@ -880,6 +880,78 @@ public class StringQuestion {
     }
 
     /**
+     * Minimum Remove to Make Valid Parentheses
+     * Given a string s of '(' , ')' and lowercase English characters.
+     * <p>
+     * Your task is to remove the minimum number of parentheses ( '(' or ')', in any positions )
+     * so that the resulting parentheses string is valid and return any valid string.
+     * <p>
+     * Formally, a parentheses string is valid if and only if:
+     * <p>
+     * It is the empty string, contains only lowercase characters, or
+     * It can be written as AB (A concatenated with B), where A and B are valid strings, or
+     * It can be written as (A), where A is a valid string.
+     * <p>
+     * Input: s = "lee(t(c)o)de)"
+     * Output: "lee(t(c)o)de"
+     * Explanation: "lee(t(co)de)" , "lee(t(c)ode)" would also be accepted.
+     * <p>
+     * Input: s = "a)b(c)d"
+     * Output: "ab(c)d"
+     * <p>
+     * Input: s = "))(("
+     * Output: ""
+     * Explanation: An empty string is also valid.
+     * https://leetcode.com/problems/minimum-remove-to-make-valid-parentheses/description/
+     */
+    @Test
+    void testMinRemoveToMakeValid() {
+        assertThat(minRemoveToMakeValid("lee(t(c)o)de)")).isEqualTo("lee(t(c)o)de");
+        assertThat(minRemoveToMakeValid("a)b(c)d")).isEqualTo("ab(c)d");
+        assertThat(minRemoveToMakeValid("))((")).isEqualTo("");
+    }
+
+    /**
+     * For each char in the string, if "(", push its index to the stack, if ")", pop the stack if it is
+     * not empty, otherwise, add its index to the invalidIdx Set. If the stack is not empty after the loop,
+     * pop all index from the stack and add them to the invalidIdx set. Then iterate the string and use
+     * the StringBuilder to append the char whose index is not in the set
+     * <p>
+     * Time Complexity: O(n)
+     * Space Complexity: O(n)
+     */
+    String minRemoveToMakeValid(String s) {
+        Set<Integer> invalidIdx = new HashSet<>();
+        Deque<Integer> stack = new ArrayDeque<>();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '(') {
+                stack.push(i);
+            } else if (c == ')') {
+                if (!stack.isEmpty()) {
+                    stack.pop();
+                } else {
+                    invalidIdx.add(i);
+                }
+            }
+        }
+
+        if (!stack.isEmpty()) {
+            while (!stack.isEmpty()) {
+                invalidIdx.add(stack.pop());
+            }
+        }
+
+        StringBuilder stb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            if (!invalidIdx.contains(i)) {
+                stb.append(s.charAt(i));
+            }
+        }
+        return stb.toString();
+    }
+
+    /**
      * Longest Valid Parentheses
      * Given a string containing just the characters '(' and ')', return the length of the longest
      * valid (well-formed) parentheses substring.

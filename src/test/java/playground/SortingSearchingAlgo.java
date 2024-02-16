@@ -58,7 +58,7 @@ public class SortingSearchingAlgo {
      * <p>
      * Time complexity: O(n⋅log n)
      * There are a total of N elements on each level in the recursion tree. Therefore, it takes O(N)
-     * time for the merging process to complete on each level. And there are a total of logN levels.
+     * time for the merging process to complete on each level. And there are a total of log N levels.
      * Space complexity: O(n)
      * The recursive stack will take O(log n) space, and we used additional array of size n when copying the split array.
      * https://www.youtube.com/watch?v=alJswNJ4P3U
@@ -154,9 +154,12 @@ public class SortingSearchingAlgo {
     }
 
     /**
-     * The partition function that chooses a pivot, partitions the array around the
-     * pivot, places the pivot value where it belongs, and then returns the index of
-     * where the pivot finally lies
+     * The partition function chooses the last element, i.e. right, as pivot, then
+     * it maintains index i as it scans the array using another index j such that the elements at lo
+     * through i-1 (inclusive) are less than the pivot, and the elements at i through j (inclusive) are equal to
+     * or greater than the pivot. Divides the array around the pivot. Finally it move the pivot element to the
+     * correct pivot position (between the smaller and larger elements)
+     * This is "Lomuto partition scheme", another more efficient partition implementation is "Hoare partition scheme"
      */
     private int partition(int[] arr, int left, int right) {
         // usually right is the last index of the split section or the original array
@@ -166,23 +169,26 @@ public class SortingSearchingAlgo {
          * i ptr will keep track of the "tail" of the section of items less than the pivot
          * so that at the end we can "sandwich" the pivot between the section less than
          * it and the section greater than it
+         * It starts at one index ahead of left, cuz it is possible that the selected pivot is the min value in the
+         * left - right range, no swap will happen when scanning this section. So the left will become te new pivot,
+         * and the pivot, i.e. min value in this case, will be swapped to the left
          */
         int i = left - 1;
 
         for (int j = left; j < right; j++) {
-            // Look for the number point by j equal or smaller than the pivot
+            // Look for the number point by j which is equal to or smaller than the pivot
             if (arr[j] <= pivot) {
                 // Idea is when j ptr finds a number smaller or equal to pivot, we want to put it on the "less than pivot"
                 // section. Cuz i sits at the tail/last item of that section, we advance i and then perform swap i with j
                 i++;
-
                 swap(arr, i, j);
             }
         }
         // Now i is at the tail of the section smaller or equal to pivot, so we want to put the pivot at i's next
-        // position
-        swap(arr, i + 1, right);
-        return i + 1; // Return the pivot's final resting position
+        // position, which is between the smaller and larger elements
+        i++;
+        swap(arr, i, right);
+        return i; // Return the pivot's final resting position
     }
 
     // Helper function to swap elements at 2 different array indices
