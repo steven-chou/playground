@@ -937,7 +937,7 @@ public class Design {
             node.next.prev = node.prev;
         }
 
-        // Add node to the end of the linked list (before tail node)
+        // Add node to the END of the linked list (before tail node)
         private void addNode(ListNode node) {
             tail.prev.next = node;
             node.prev = tail.prev;

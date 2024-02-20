@@ -29,8 +29,14 @@ import static org.assertj.core.data.Index.atIndex;
  *   2. Java built-in binary search(Arrays.binarySearch OR Collections.binarySearch) has O(logN) time complexity.
  *      When the key is NOT found, it returns (-(insertion point) - 1). The insertion point is defined as the point at
  *      which the key would be inserted into the array: the index of the first element greater than the key,
- *      or a.length if all elements in the array are less than the specified key. Therefore, to get a positive insertion
- *      index from the result, you need (index < 0) ? -index - 1
+ *      or a.length if all elements in the array are less than the specified key.
+ *      When the target is not found, i.e. returned index < 0, use (-index - 1) to get the index of the first
+ *      element that is greater than the target, or length of list if all elements in the list are less than the specified key
+ *      Code:
+ *      index = (index < 0) ? -index - 1 : index;
+ *      if (index == array.length) {
+ * 	        // All elements are smaller than target
+ *      }
  *   3. Generate random int
  *      new Random().nextInt(upperBound) -> Returns a pseudorandom, uniformly distributed value between 0 (inclusive) and the specified value, i.e. upperBound(EXCLUSIVE)
  *   4. Generate random int in a given range, [min(inclusive), max(exclusive)] *If need max inclusive, just do max+1
@@ -380,6 +386,93 @@ public class SortingSearching {
             result[i] = tmp.get(i);
         }
         return result;
+    }
+
+    /**
+     * Top K Frequent Words
+     * Given an array of strings words and an integer k, return the k most frequent strings.
+     * <p>
+     * Return the answer sorted by the frequency from highest to lowest. Sort the words with
+     * the same frequency by their lexicographical order.
+     * <p>
+     * Input: words = ["i","love","leetcode","i","love","coding"], k = 2
+     * Output: ["i","love"]
+     * Explanation: "i" and "love" are the two most frequent words.
+     * Note that "i" comes before "love" due to a lower alphabetical order.
+     * <p>
+     * Input: words = ["the","day","is","sunny","the","the","the","sunny","is","is"], k = 4
+     * Output: ["the","is","sunny","day"]
+     * Explanation: "the", "is", "sunny" and "day" are the four most frequent words, with the
+     * number of occurrence being 4, 3, 2 and 1 respectively.
+     * <p>
+     * https://leetcode.com/problems/top-k-frequent-words/description/
+     */
+    @Test
+    void testTopKFrequentWords() {
+        Assertions.assertThat(topKFrequentMaxHeap(new String[]{"i", "love", "leetcode", "i", "love", "coding"}, 2)).containsExactly("i", "love");
+        Assertions.assertThat(topKFrequentMaxHeap(new String[]{"the", "day", "is", "sunny", "the", "the", "the", "sunny", "is", "is"}, 4)).containsExactly("the", "is", "sunny", "day");
+        Assertions.assertThat(topKFrequentMinHeap(new String[]{"i", "love", "leetcode", "i", "love", "coding"}, 2)).containsExactly("i", "love");
+        Assertions.assertThat(topKFrequentMinHeap(new String[]{"the", "day", "is", "sunny", "the", "the", "the", "sunny", "is", "is"}, 4)).containsExactly("the", "is", "sunny", "day");
+    }
+
+    /**
+     * Iterate the array and build strToCount Map, then put every (k, v) pair in the MaxHeap.
+     * Heap comparator is descending order by count, then ascending order by str. Finally,
+     * Poll the first k elements from the heap and add to the returned list.
+     * <p>
+     * Time Complexity: O(N + k⋅log N)
+     * Space Complexity: O(N)
+     */
+    List<String> topKFrequentMaxHeap(String[] words, int k) {
+        Map<String, Integer> strToCount = new HashMap<>();
+        for (String s : words) {
+            strToCount.put(s, strToCount.getOrDefault(s, 0) + 1);
+        }
+        Comparator<Pair<String, Integer>> comp = Comparator.<Pair<String, Integer>>comparingInt(p -> p.getValue()).reversed().thenComparing(p -> p.getKey());
+        Queue<Pair<String, Integer>> pq = new PriorityQueue<>(comp);
+        strToCount.forEach((key, v) -> pq.offer(new Pair(key, v)));
+
+        List<String> list = new ArrayList<>();
+        while (k > 0) {
+            list.add(pq.poll().getKey());
+            k--;
+        }
+        return list;
+    }
+
+    /**
+     * Iterate the array and build strToCount Map, then put every (k, v) pair to the MinHeap,
+     * but maintain the heap size k.
+     * Heap comparator is ascending order by count, then descending order by str. Finally,
+     * Poll all elements from the heap and add to the list. Then reverse the list and return.
+     * <p>
+     * Time Complexity: O(N⋅log k)
+     * Space Complexity: O(N)
+     */
+    List<String> topKFrequentMinHeap(String[] words, int k) {
+        Map<String, Integer> strToCount = new HashMap<>();
+        for (String s : words) {
+            strToCount.put(s, strToCount.getOrDefault(s, 0) + 1);
+        }
+        // This is MinHeap, so the comparator is opposite of the requirement: count ascending, then string descending
+        Comparator<String> comp = Comparator.<String>comparingInt(s -> strToCount.get(s)).thenComparing(s -> s, Collections.reverseOrder());
+        Queue<String> pq = new PriorityQueue<>(comp);
+        for (String s : strToCount.keySet()) {
+            pq.offer(s);
+            // Maintain max K elements in the heap, no need to do the comparison with the top element, cuz our comparator
+            // already guarantee the order in the heap
+            if (pq.size() > k) {
+                pq.poll();
+            }
+        }
+
+        List<String> list = new ArrayList<>();
+        while (!pq.isEmpty()) {
+            list.add(pq.poll());
+        }
+        // It is MinHeap, so we need to reverse the order to get the right order we want.
+        Collections.reverse(list);
+        return list;
     }
 
     /**

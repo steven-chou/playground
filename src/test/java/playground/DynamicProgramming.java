@@ -31,7 +31,7 @@ public class DynamicProgramming {
     }
 
     /**
-     * Iteratively construct each row from the top. The first and last element are always 0, the rest of them is
+     * Iteratively construct each row from the top. The first and last element are always 1, the rest of them are
      * constructed from the sum of elements above-and-to-the-left and above-and-to-the-right row.
      * <p>
      * Observation:
@@ -45,7 +45,7 @@ public class DynamicProgramming {
      * <p>
      * Algo:
      * Iteratively construct each row from the top of triangle by applying the above logic.
-     * For each row, the first and last element are always 0, the rest of them is constructed from the sum of
+     * For each row, the first and last element are always 1, the rest of them is constructed from the sum of
      * elements above-and-to-the-left and above-and-to-the-right row
      * Time Complexity: O(numRows^2). Space Complexity: O(1)
      */
@@ -112,16 +112,15 @@ public class DynamicProgramming {
             return n;
         int first = 0;
         int second = 1;
-        int sum = 0;
         // The input n is 0-based, and we start from the third number, so i = 2
         for (int i = 2; i <= n; i++) {
             // calculate next value as the sum of previous two values
-            sum = first + second;
+            int sum = first + second;
             // switch all values to the next value in the series
             first = second;
             second = sum;
         }
-        return sum;
+        return second;
     }
 
 
@@ -180,17 +179,23 @@ public class DynamicProgramming {
 
     /**
      * House Robber
-     * You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed,
-     * the only constraint stopping you from robbing each of them is that adjacent houses have security systems connected and
-     * it will automatically contact the police if two adjacent houses were broken into on the same night.
+     * You are a professional robber planning to rob houses along a street. Each house has a certain
+     * amount of money stashed, the only constraint stopping you from robbing each of them is that
+     * adjacent houses have security systems connected and it will automatically contact the police
+     * if two adjacent houses were broken into on the same night.
      * <p>
-     * Given an integer array nums representing the amount of money of each house, return the maximum amount of money
-     * you can rob tonight without alerting the police.
+     * Given an integer array nums representing the amount of money of each house, return the
+     * maximum amount of money you can rob tonight without alerting the police.
      * <p>
      * Input: nums = [1,2,3,1]
      * Output: 4
      * Explanation: Rob house 1 (money = 1) and then rob house 3 (money = 3).
      * Total amount you can rob = 1 + 3 = 4.
+     * <p>
+     * Input: nums = [2,7,9,3,1]
+     * Output: 12
+     * Explanation: Rob house 1 (money = 2), rob house 3 (money = 9) and rob house 5 (money = 1).
+     * Total amount you can rob = 2 + 9 + 1 = 12.
      * https://leetcode.com/problems/house-robber/editorial/
      */
     @Test
@@ -203,15 +208,16 @@ public class DynamicProgramming {
 
     /**
      * Dynamic Programming
-     * If we are at some house, logically, we have 2 options: we can choose to rob this house, or we can choose to not rob this house.
-     * If we decide not to rob the house, then we don't gain any money. Whatever money we had from the previous house
-     * is how much money we will have at this house - which is opt(i - 1).
-     * If we decide to rob the house, then we gain nums[i] money. However, this is only possible if we did not rob the
-     * previous house. This means the money we had when arriving at this house is the money we had from the previous
-     * house without robbing it, which would be however much money we had 2 houses ago, opt(i - 2). After robbing the current house,
-     * we will have opt(i - 2) + nums[i] money.
+     * If we are at some house, logically, we have 2 options: we can choose to rob this house, or we can
+     * choose to not rob this house.
+     * If we decide not to rob the house, then we don't gain any money. Whatever money we had from the
+     * previous house is how much money we will have at this house - which is opt(i - 1).
+     * If we decide to rob the house, then we gain nums[i] money. However, this is only possible if we
+     * did not rob the previous house. This means the money we had when arriving at this house is the
+     * money we had from the previous house without robbing it, which would be however much money we had
+     * 2 houses ago, opt(i - 2). After robbing the current house, we will have opt(i - 2) + nums[i] money.
      * <p>
-     * Therefore the recurrence equation:
+     * Therefore, the recurrence equation:
      * opt(i) = max(opt(i-1), opt(i-2) + nums[i])
      * <p>
      * And the base cases are
@@ -237,8 +243,20 @@ public class DynamicProgramming {
 
     /**
      * Maximum Subarray
-     * Given an integer array nums, find the subarray with the largest sum, and return its sum.
-     * https://leetcode.com/problems/maximum-subarray/editorial/
+     * Given an integer array nums, find the subarray with the largest sum,
+     * and return its sum.
+     * Input: nums = [-2,1,-3,4,-1,2,1,-5,4]
+     * Output: 6
+     * Explanation: The subarray [4,-1,2,1] has the largest sum 6.
+     * <p>
+     * Input: nums = [1]
+     * Output: 1
+     * Explanation: The subarray [1] has the largest sum 1.
+     * <p>
+     * Input: nums = [5,4,-1,7,8]
+     * Output: 23
+     * Explanation: The subarray [5,4,-1,7,8] has the largest sum 23.
+     * https://leetcode.com/problems/maximum-subarray/description/
      */
     @Test
     void testMaxSubArray() {
@@ -251,8 +269,8 @@ public class DynamicProgramming {
     /**
      * Dynamic Programming
      * To generalize the solution to the sub-problem
-     * When we are at nums[i], we should add nums[i] to the sub-arrary ONLY if the new sum is greater than
-     * the nums[i] itself.
+     * When we are at nums[i], we should add nums[i] to the sub-array ONLY if the new sum is
+     * greater than the nums[i] itself.
      * <p>
      * For example:
      * subArraySum = -10
@@ -263,7 +281,7 @@ public class DynamicProgramming {
      * nums[i] = 5
      * --> include the index i in sub-array and add 5 to the subArraySum
      * <p>
-     * Therefore, the recurrence equation is
+     * Let opt[i] denotes the max sub array sum at the ith number, the recurrence equation is
      * opt(i) = max(opt(i-1) + nums[i], nums[i])
      * Time Complexity: O(n). Space Complexity: O(1)
      */
@@ -283,8 +301,27 @@ public class DynamicProgramming {
 
     /**
      * Unique Paths
-     * There is a robot on an m x n grid. The robot is initially located at the top-left corner (i.e., grid[0][0]). The robot tries to move to the bottom-right corner (i.e., grid[m - 1][n - 1]). The robot can only move either down or right at any point in time.
-     * Given the two integers m and n, return the number of possible unique paths that the robot can take to reach the bottom-right corner.
+     * There is a robot on an m x n grid. The robot is initially located at the top-left
+     * corner (i.e., grid[0][0]). The robot tries to move to the bottom-right corner
+     * (i.e., grid[m - 1][n - 1]). The robot can only move either down or right at any point
+     * in time.
+     * <p>
+     * Given the two integers m and n, return the number of possible unique paths that the
+     * robot can take to reach the bottom-right corner.
+     * <p>
+     * The test cases are generated so that the answer will be less than or equal to 2 * 10^9.
+     * <p>
+     * Input: m = 3, n = 7
+     * Output: 28
+     * <p>
+     * Input: m = 3, n = 2
+     * Output: 3
+     * Explanation: From the top-left corner, there are a total of 3 ways to reach the
+     * bottom-right corner:
+     * 1. Right -> Down -> Down
+     * 2. Down -> Down -> Right
+     * 3. Down -> Right -> Down
+     * https://leetcode.com/problems/unique-paths/description/
      */
     @Test
     void testUniquePaths() {
@@ -295,9 +332,13 @@ public class DynamicProgramming {
      * Dynamic Programming
      * Base case is opt[0][0] = 1
      * <p>
+     * The cells in the first row and column are 1
+     * opt[row][0]  = 1
+     * opt[0][col] = 1
+     * <p>
      * Recurrence relation:
      * opt[row][col] = opt[row - 1][col] + opt[row][col - 1]
-     * where opt[row][0] and opt[0][col] are 1 in case of out of bound
+     * <p>
      * Time Complexity: O(mn). Space Complexity: O(mn)
      */
     int uniquePaths(int m, int n) {
@@ -315,9 +356,28 @@ public class DynamicProgramming {
 
     /**
      * Unique Paths II
-     * You are given an m x n integer array grid. There is a robot initially located at the top-left corner (i.e., grid[0][0]). The robot tries to move to the bottom-right corner (i.e., grid[m - 1][n - 1]). The robot can only move either down or right at any point in time.
-     * An obstacle and space are marked as 1 or 0 respectively in grid. A path that the robot takes cannot include any square that is an obstacle.
-     * Return the number of possible unique paths that the robot can take to reach the bottom-right corner.
+     * You are given an m x n integer array grid. There is a robot initially located at
+     * the top-left corner (i.e., grid[0][0]). The robot tries to move to the bottom-right
+     * corner (i.e., grid[m - 1][n - 1]). The robot can only move either down or right
+     * at any point in time.
+     * <p>
+     * An obstacle and space are marked as 1 or 0 respectively in grid. A path that the
+     * robot takes cannot include any square that is an obstacle.
+     * <p>
+     * Return the number of possible unique paths that the robot can take to reach the
+     * bottom-right corner.
+     * <p>
+     * Input: obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]
+     * Output: 2
+     * Explanation: There is one obstacle in the middle of the 3x3 grid above.
+     * There are two ways to reach the bottom-right corner:
+     * 1. Right -> Right -> Down -> Down
+     * 2. Down -> Down -> Right -> Right
+     * <p>
+     * Input: obstacleGrid = [[0,1],[0,0]]
+     * Output: 1
+     * <p>
+     * https://leetcode.com/problems/unique-paths-ii/description/
      */
     @Test
     void testUniquePathsWithObstacles() {
@@ -326,15 +386,34 @@ public class DynamicProgramming {
     }
 
     /**
-     * Dynamic Programming
-     * We use the input, obstacleGrid array to store the final result so we don't need extra space
-     * 1. If the first cell i.e. obstacleGrid[0,0] contains 1, this means there is an obstacle in the first cell. Hence the robot won't be able to make any move and we would return the number of ways as 0.
+     * The recurrence relation is the same as the Unique Path I. But we need to first process the
+     * first row and the column and take the obstacle into account. Then we process the cells from
+     * [1][1]. If the cell is obstacle, set to 0, otherwise set to the sum of [r-1][c] and [c][r-1]
+     * * We use the input, obstacleGrid array to store the final result so we don't need extra space
+     * <p>
+     * 1. If the first cell i.e. obstacleGrid[0,0] contains 1, this means there is an obstacle in
+     * the first cell. Hence the robot won't be able to make any move and we would return the number
+     * of ways as 0.
+     * <p>
      * 2. Otherwise, if obstacleGrid[0,0] has a 0 originally we set it to 1 and move ahead.
-     * 3. Iterate the first row. If a cell originally contains a 1, this means the current cell has an obstacle and shouldn't contribute to any path. Hence, set the value of that cell to 0. Otherwise, set it to the value of previous cell i.e. obstacleGrid[i,j] = obstacleGrid[i,j-1]
-     * 4. Iterate the first column. If a cell originally contains a 1, this means the current cell has an obstacle and shouldn't contribute to any path. Hence, set the value of that cell to 0. Otherwise, set it to the value of previous cell i.e. obstacleGrid[i,j] = obstacleGrid[i-1,j]
-     * 5. Now, iterate through the array starting from cell obstacleGrid[1,1]. If a cell originally doesn't contain any obstacle then the number of ways of reaching that cell would be the sum of number of ways of reaching the cell above it and number of ways of reaching the cell to the left of it.
+     * <p>
+     * 3. Iterate the first row. If a cell originally contains a 1, this means the current cell has
+     * an obstacle and shouldn't contribute to any path. Hence, set the value of that cell to 0.
+     * Otherwise, set it to the value of previous cell, i.e. obstacleGrid[i,j] = obstacleGrid[i,j-1]
+     * <p>
+     * 4. Iterate the first column. If a cell originally contains a 1, this means the current cell
+     * has an obstacle and shouldn't contribute to any path. Hence, set the value of that cell to 0.
+     * Otherwise, set it to the value of previous cell i.e. obstacleGrid[i,j] = obstacleGrid[i-1,j]
+     * <p>
+     * 5. Now, iterate through the array starting from cell obstacleGrid[1,1]. If a cell originally
+     * doesn't contain any obstacle then the number of ways of reaching that cell would be the sum
+     * of number of ways of reaching the cell above it and number of ways of reaching the cell to
+     * the left of it.
+     * <p>
      * obstacleGrid[i,j] = obstacleGrid[i-1,j] + obstacleGrid[i,j-1]
-     * 6. If a cell contains an obstacle set it to 0 and continue. This is done to make sure it doesn't contribute to any other path.
+     * <p>
+     * 6. If a cell contains an obstacle set it to 0 and continue. This is done to make sure it
+     * doesn't contribute to any other path.
      * Time Complexity: O(mn). Space Complexity: O(1)
      */
     int uniquePathsWithObstacles(int[][] obstacleGrid) {
@@ -373,12 +452,21 @@ public class DynamicProgramming {
 
     /**
      * Coin Change
-     * https://leetcode.com/problems/coin-change/editorial/
-     * You are given an integer array coins representing coins of different denominations and an integer amount representing a total amount of money.
+     * You are given an integer array coins representing coins of different denominations
+     * and an integer amount representing a total amount of money.
      * <p>
-     * Return the fewest number of coins that you need to make up that amount. If that amount of money cannot be made up by any combination of the coins, return -1.
+     * Return the fewest number of coins that you need to make up that amount. If that
+     * amount of money cannot be made up by any combination of the coins, return -1.
      * <p>
      * You may assume that you have an infinite number of each kind of coin.
+     * <p>
+     * Input: coins = [1,2,5], amount = 11
+     * Output: 3
+     * Explanation: 11 = 5 + 5 + 1
+     * <p>
+     * Input: coins = [2], amount = 3
+     * Output: -1
+     * https://leetcode.com/problems/coin-change/description/
      */
     @Test
     void testCoinChange() {
@@ -389,25 +477,29 @@ public class DynamicProgramming {
     }
 
     /**
-     * Dynamic Programming
-     * F(S) - minimum NUMBER of coins needed to make change for amount S using coin denominations [C0…Cn−1]
+     * Definition:
+     * dp[i]: minimum number of coins needed to make change for amount i using coin denominations
+     * [C0…Cn−1]
      * <p>
-     * Let's assume that we know F(S) where some change val1,val2,…
-     * for S which is optimal and the last coin's denomination is C.
+     * Let's assume that we know dp[i] where some change val1, val2,…
+     * for i which is optimal and the last coin's denomination is C.
      * Then the following equation should be true because of optimal substructure of the problem:
      * <p>
-     * F(S) = F(S−C) + 1
-     * # Plus 1 because no matter what coin denominations we chose for F(S), we always add one coin to the number of coins being used
+     * dp[i] = dp[i − C] + 1
+     * Plus 1 because no matter what coin denominations we chose for dp[i], we always add one
+     * coin to the number of coins being used
      * <p>
-     * But we don't know which is the denomination of the last coin C. We compute F(S−Ci) for each possible denomination C0,C1,C2…Cn−1 and choose the minimum among them.
+     * But we don't know which denomination of the last coin C is. So we need to compute dp(i − C)
+     * for each possible denomination C0,C1,C2…Cn−1 and choose the minimum among them.
+     * <p>
      * Therefore the recurrence relation is
      * <p>
-     * F(S) = MIN i=0...n−1 F(S−Ci)+1, subject to S−Ci ≥ 0
+     * dp[i] = MIN i=0...n−1(dp[i−Ci] + 1), subject to i−Ci ≥ 0
      * <p>
      * For the base case
      * <p>
-     * F(S)=0 ,when S = 0 (No coin needed when the amount is 0)
-     * F(S)=−1 ,when n = 0
+     * dp[0] = 0, no coin needed when the amount is 0
+     * dp[i] = −1, when n = 0, no coins can satisfy
      * Time complexity : O(S*n), S is the amount and n is the number of coin type
      * On each step the algorithm finds the next F(i) in n iterations, where 1≤ i ≤S. Therefore in total the iterations are S∗n.
      * Space complexity : O(S)
@@ -435,6 +527,9 @@ public class DynamicProgramming {
      * Longest Increasing Subsequence
      * Given an integer array nums, return the length of the longest strictly increasing subsequence.
      * <p>
+     * A subsequence is an array that can be derived from another array by deleting some or no
+     * elements without changing the order of the remaining elements.
+     * <p>
      * Input: nums = [10,9,2,5,3,7,101,18]
      * Output: 4
      * Explanation: The longest increasing subsequence is [2,3,7,101], therefore the length is 4.
@@ -454,18 +549,33 @@ public class DynamicProgramming {
 
     /**
      * Dynamic Programming
+     * dp[i]: length of the LIS ends at index i
+     * <p>
      * base case:
-     * dp[i] initial value is 1, since every element on its own is technically an increasing subsequence.
-     * recurrence relation:
-     * dp[i] = max(dp[j] + 1) for all j where nums[j] < nums[i] and j < i.
-     * # Plus 1 because we add the current element to the subsequence
+     * dp[i] initial value is 1, cuz every element on its own is technically an increasing
+     * subsequence.
+     * <p>
+     * Recurrence relation:
+     * dp[i] = max(dp[j] + 1), nums[j] < nums[i] and j < i.
+     * Plus 1 because we add the current element to the subsequence
+     * <p>
+     * ans = max(dp)
+     * <p>
+     * Algo:
+     * For each element, nums[i], check all the elements that come before it. We use j
+     * to iterate from 0 to i-1, if nums[j] < nums[i], we can build a subsequence, set
+     * dp[i] = max(dp[j] + 1, dp[i])
+     * <p>
+     * Sample:
+     * num | 3 | 4 | 1 | 2 | 8 | 5 | 6
+     * dp  | 1 | 2 | 1 | 2 | 3 | 3 | 4
      * Time Complexity: O(n^2). Space Complexity: O(n)
      */
     int lengthOfLIS(int[] nums) {
         int[] dp = new int[nums.length];
         Arrays.fill(dp, 1);
         int maxLength = 0;
-        for (int i = 0; i < nums.length; i++) {
+        for (int i = 1; i < nums.length; i++) {
             for (int j = 0; j < i; j++) {
                 if (nums[i] > nums[j])
                     dp[i] = Math.max(dp[j] + 1, dp[i]);
@@ -477,21 +587,35 @@ public class DynamicProgramming {
     }
 
     /**
-     * Intelligently Build a Subsequence(DP + Binary Search)
+     * Approach 2: DP + Greedy + Binary Search
+     * Observation:
      * Let nums=[3,4,1,2,8,5,6]
      * For two subsequences of the same length[1,2,8] and [3,4,5],
      * [3,4,5] is better cuz the last element 5 is smaller than 8 which has more chance to expand,
      * e.g. [3,4,5,6] but not [1,2,8,6].
+     * <p>
      * What about [1,2,5] and [3,4,5]? They are the same to the following numbers at length 3.
      * [1,2] is better than [3,4] at length 2. ONLY the last number matters!
+     * <p>
      * Algo:
      * dp[i]: the smallest ending number of a subsequence that has length i+1
      * 1. Initialize an ArrayList dp which contains the first element of nums.
      * 2. Iterate through the input, starting from the second element. For each element num:
-     * If num is greater than any element in dp, then add num to dp. This means we extend the longest subsequence
-     * Otherwise, use binary search in dp to find the smallest element that is greater than or equal to num. Replace that element with num to generate a better subsequence
+     * -        If num is greater than the last element in dp, add num to dp. This means we can
+     * -        extend the longest subsequence
+     * -        Otherwise, use binary search to find the smallest element that is greater than or
+     * -        equal to num. Replace that element with num to generate a better subsequence for
+     * -        that length
      * 3. Return the length of dp
-     * Time Complexity: O(Nlog(N)). Space Complexity: O(n)
+     * <p>
+     * Note:
+     * After the loop ends, the elements in the dp doesn't necessary mean they are the exact
+     * elements for the LIS. Each number at i only represents the smallest ending number when
+     * the LIS is equal to i+1. We only care about the max length here.
+     * <p>
+     * The video covers both solutions
+     * https://www.youtube.com/watch?v=l2rCz7skAlk
+     * Time Complexity: O(N⋅log(N)). Space Complexity: O(n)
      */
     int lengthOfLISOpt(int[] nums) {
         ArrayList<Integer> dp = new ArrayList<>();
@@ -502,10 +626,13 @@ public class DynamicProgramming {
                 // longer increasing subsequence. Hence, we append the current number.
                 dp.add(nums[i]);
             else {
+                // The if condition guarantees the dp is always ascending order
                 // Use binary search to find the smallest element in the dp list that is greater than or equal to the current number.
                 int j = Collections.binarySearch(dp, nums[i]);
                 // update the element at the found position with the current number.
                 // Note: binarySearch returns (-(insertion point) - 1) when key isn't found
+                // num[i] must be less than the last number in dp, so we don't need to consider j is at the insertion point
+                // beyond the end of array
                 dp.set((j < 0) ? -j - 1 : j, nums[i]);
             }
         }
@@ -945,6 +1072,7 @@ public class DynamicProgramming {
      * <p>
      * Input: text1 = "abc", text2 = "abc"
      * Output: 3
+     * https://leetcode.com/problems/longest-common-subsequence/description/
      */
     @Test
     void testLongestCommonSubsequence() {
@@ -955,7 +1083,7 @@ public class DynamicProgramming {
 
     /**
      * Observation:
-     * 1. Let LCS(X, Y) be a function that computes a longest subsequence common to X and Y.
+     * 1. Let LCS(X, Y) be a function that computes the longest subsequence common to X and Y.
      * <p>
      * Let LCS(X^A,Y^A) = LCS(X,Y)^A, for all strings X, Y and all symbols A, where ^ denotes string concatenation.
      * Ex: LCS("BANANA","ATANA") = LCS("BANAN","ATAN")^"A", Continuing for the remaining common symbols,

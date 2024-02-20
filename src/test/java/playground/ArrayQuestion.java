@@ -234,8 +234,8 @@ public class ArrayQuestion {
     }
 
     /**
-     * Iterate the array an keep track of the minPrice and maxProfit(currentPrice - minPrice). Update minPrice if current
-     * price is smaller, otherwise, calculate the profit and update maxProfit
+     * Iterate the array an keep track of the minPrice(init: 0) and maxProfit(init: INT_MAX). Update
+     * minPrice if current price is smaller, and update the maxProfit if currentPrice - minPrice is bigger
      * <p>
      * Observation:
      * We need to find the largest price following each valley, which difference could be the max profit.
@@ -2814,8 +2814,11 @@ public class ArrayQuestion {
     }
 
     /**
-     * Iterate the nums array forward to compute the left side product, then iterate backward to compute the right product
-     * and multiply it to the previous left side product
+     * Iterate the nums array from the second number forward to compute the left side product
+     * for each number and store at the ans array (ans[0] == 1, ans[i] = ans[i-1] * nums[i-1])
+     * Then let rightProd = 1, iterate backward from nums[nums.length - 2] to compute the
+     * right product of each number and multiply its left product in ans array.
+     * (rightProd *= nums[i+1], ans[i] = ans[i] * rightProd)
      * <p>
      * Observation:
      * 1. If we can compute the product of all the numbers to the left and all the numbers to the right of the index i.

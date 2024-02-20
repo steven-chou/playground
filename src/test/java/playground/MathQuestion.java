@@ -295,7 +295,43 @@ public class MathQuestion {
 
     /**
      * Roman to Integer
-     * https://leetcode.com/problems/roman-to-integer/editorial/
+     * Roman numerals are represented by seven different symbols: I, V, X, L, C, D and M.
+     * <p>
+     * Symbol       Value
+     * I             1
+     * V             5
+     * X             10
+     * L             50
+     * C             100
+     * D             500
+     * M             1000
+     * For example, 2 is written as II in Roman numeral, just two ones added together.
+     * 12 is written as XII, which is simply X + II. The number 27 is written as XXVII,
+     * which is XX + V + II.
+     * <p>
+     * Roman numerals are usually written largest to smallest from left to right. However,
+     * the numeral for four is not IIII. Instead, the number four is written as IV. Because
+     * the one is before the five we subtract it making four. The same principle applies
+     * to the number nine, which is written as IX. There are six instances where subtraction
+     * is used:
+     * <p>
+     * I can be placed before V (5) and X (10) to make 4 and 9.
+     * X can be placed before L (50) and C (100) to make 40 and 90.
+     * C can be placed before D (500) and M (1000) to make 400 and 900.
+     * Given a roman numeral, convert it to an integer.
+     * <p>
+     * Input: s = "III"
+     * Output: 3
+     * Explanation: III = 3.
+     * <p>
+     * Input: s = "LVIII"
+     * Output: 58
+     * Explanation: L = 50, V= 5, III = 3.
+     * <p>
+     * Input: s = "MCMXCIV"
+     * Output: 1994
+     * Explanation: M = 1000, CM = 900, XC = 90 and IV = 4.
+     * https://leetcode.com/problems/roman-to-integer/
      */
     @Test
     void testRomanToInt() {
@@ -322,8 +358,12 @@ public class MathQuestion {
     }
 
     /**
-     * Make a Map of String -> Integer with the 13 "symbols", Scan the string from left to right.
-     * Firstly checking if we're at a length-2 symbol, and if not, then treating it as a length-1 symbol.
+     * First make a Map of String -> Integer with the 13 roman symbols.
+     * Use while loop to iterate the input str, first take the current char and next char to
+     * check if this 2-char substring exists in the map, if so, add its value to the running
+     * sum. Otherwise, use the current single char substring to get the value from the map,
+     * then add it to the running sum.
+     * <p>
      * Time Complexity: O(1). Space Complexity: O(1)
      */
     int romanToInt(String s) {
@@ -346,6 +386,42 @@ public class MathQuestion {
 
     /**
      * Integer to Roman
+     * Roman numerals are represented by seven different symbols: I, V, X, L, C, D and M.
+     * <p>
+     * Symbol       Value
+     * I             1
+     * V             5
+     * X             10
+     * L             50
+     * C             100
+     * D             500
+     * M             1000
+     * For example, 2 is written as II in Roman numeral, just two one's added together.
+     * 12 is written as XII, which is simply X + II. The number 27 is written as XXVII,
+     * which is XX + V + II.
+     * <p>
+     * Roman numerals are usually written largest to smallest from left to right. However,
+     * the numeral for four is not IIII. Instead, the number four is written as IV. Because
+     * the one is before the five we subtract it making four. The same principle applies
+     * to the number nine, which is written as IX. There are six instances where subtraction
+     * is used:
+     * <p>
+     * I can be placed before V (5) and X (10) to make 4 and 9.
+     * X can be placed before L (50) and C (100) to make 40 and 90.
+     * C can be placed before D (500) and M (1000) to make 400 and 900.
+     * Given an integer, convert it to a roman numeral.
+     * <p>
+     * Input: num = 3
+     * Output: "III"
+     * Explanation: 3 is represented as 3 ones.
+     * <p>
+     * Input: num = 58
+     * Output: "LVIII"
+     * Explanation: L = 50, V = 5, III = 3.
+     * <p>
+     * Input: num = 1994
+     * Output: "MCMXCIV"
+     * Explanation: M = 1000, CM = 900, XC = 90 and IV = 4.
      * https://leetcode.com/problems/integer-to-roman/description/
      */
     @Test
@@ -357,20 +433,93 @@ public class MathQuestion {
     private static final String[] symbols = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
 
     /**
+     * First we need 2 arrays for the 13 roman symbols and corresponding values, from largest to
+     * smallest. Be careful what symbols must be included.
+     * {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1}
+     * {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"}
+     * <p>
+     * Algo:
+     * We loop over each symbol, from largest to smallest. For each symbol, as long as the current
+     * number <= current symbol value, we subtract the symbol value from current number, append
+     * the symbol to the building string. So the loop moves to the next symbol when the current
+     * remainder of the current number can't fit the current symbol value.
      * Time Complexity: O(1). Space Complexity: O(1)
      */
     String intToRoman(int num) {
         StringBuilder sb = new StringBuilder();
         // Loop through each symbol, stopping if num becomes 0.
         for (int i = 0; i < vals.length && num > 0; i++) {
-            // Repeat while the current symbol still fits into num. So we can use the same symbol multiple times as long
-            // as it fits
+            // Repeat while the current symbol still fits into num. So we can use the same symbol multiple
+            // times as long as it fits
             while (vals[i] <= num) {
                 num -= vals[i];
                 sb.append(symbols[i]);
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Integer to English Words
+     * Convert a non-negative integer num to its English words representation.
+     * <p>
+     * Input: num = 123
+     * Output: "One Hundred Twenty Three"
+     * <p>
+     * Input: num = 12345
+     * Output: "Twelve Thousand Three Hundred Forty Five"
+     * <p>
+     * Input: num = 1234567
+     * Output: "One Million Two Hundred Thirty Four Thousand Five Hundred Sixty Seven"
+     * https://leetcode.com/problems/integer-to-english-words/description/
+     */
+    @Test
+    void testNumberToWords() {
+        Assertions.assertThat(numberToWords(123)).isEqualTo("One Hundred Twenty Three");
+        Assertions.assertThat(numberToWords(12345)).isEqualTo("Twelve Thousand Three Hundred Forty Five");
+    }
+
+    private final String[] LESS_THAN_20 = {"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+            "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"};
+    private final String[] TENS = {"", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+
+    /**
+     * Define LESS_THAN_20 string array (let first element = "" ) for number [1 - 19]
+     * TENS string array (let first element = "" ) for number [10, 20, ..., 90]
+     * <p>
+     * Define a help method, if n < 20, word = LESS_THAN_20[n],
+     * else if n < 100, word = TENS[num / 10] + " " + help(num % 10)
+     * else if n < 1000, word = help[num / 100] + " Hundred " + help(num % 100)
+     * else if n < 1000000, word = help[num / 1000] + " Thousand " + help(num % 1000)
+     * else if n < 1000000000, word = help[num / 1000000] + " Million " + help(num % 1000000)
+     * else word = help[num / 1000000000] + " Billion " + help(num % 1000000000)
+     * return word.trim()
+     * <p>
+     * Time complexity: O(1)
+     * Space complexity: O(1)
+     */
+    String numberToWords(int num) {
+        if (num == 0)
+            return "Zero";
+        return help(num);
+    }
+
+    String help(int num) {
+        String word = "";
+        if (num < 20) {
+            word = LESS_THAN_20[num];
+        } else if (num < 100) {
+            word = TENS[num / 10] + " " + help(num % 10);
+        } else if (num < 1000) {
+            word = help(num / 100) + " Hundred " + help(num % 100);
+        } else if (num < 1000000) {
+            word = help(num / 1000) + " Thousand " + help(num % 1000);
+        } else if (num < 1000000000) {
+            word = help(num / 1000000) + " Million " + help(num % 1000000);
+        } else {
+            word = help(num / 1000000000) + " Billion " + help(num % 1000000000);
+        }
+        return word.trim();
     }
 
     /**

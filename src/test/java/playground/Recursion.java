@@ -63,9 +63,10 @@ public class Recursion {
 
 
     /**
-     * Recursively generating one number in the combination each step. We maintain a startNum as the number
-     * greater than the current one and pass it to the next call to find the next digit and backtrack before
-     * return.
+     * In the recursive method, use a start var to track the number in the sequence [1-n] we are exploring now.
+     * Then iterate from start to n, for each number, add it to the building list, and make recrusive call w/ the
+     * next number, then remove the number from the building list after it returns and before backtrack to the
+     * previous level. Recursion ends when the building list size is equal to n
      * <p>
      * Observation:
      * Think of the solution space as decision tree. Each node is a potential element added to the permutation.
@@ -334,8 +335,10 @@ public class Recursion {
     }
 
     /**
-     * Recursively pick one number at each step. We iterate each number and if it is not in the current building
-     * list, make recursive call for the next level and backtrack before return
+     * In the recursive method, we iterate each number, if it is not in the current building list, add
+     * the number to the building list and make recursive call, then remove the number from the building
+     * list after it returns and backtrack to the previous level. Recursion ends when the building list
+     * size is equal to the nums length
      * <p>
      * Observation:
      * The difference between this problem and Combination porblem is here we want permutation so at each resursion level
@@ -591,6 +594,7 @@ public class Recursion {
     }
 
     /**
+     * Letter Combinations of a Phone Number
      * Given a string containing digits from 2-9 inclusive, return all possible letter combinations
      * that the number could represent.
      * Return the answer in any order.
@@ -615,8 +619,10 @@ public class Recursion {
             '6', "mno", '7', "pqrs", '8', "tuv", '9', "wxyz");
 
     /**
-     * First build the digitToLetters map. Start from the first digit, find the associated str in map and for each char,
-     * add it to the current building str and recursively call itself w/ next index to process next digit char then backtrack.
+     * First build the digitToLettersStr map. In the recursive method, use a var idx to track whcih digit
+     * in the input we are exploring. Iterate each char of the string of the associated digit, add the char
+     * to the building string, then make recursive call w/ (idx + 1) to explore next digit. Remove the char
+     * from the building string after recursion return and before backtrack to the previous level
      * <p>
      * The solution is very similar to the Combination problem. The only difference is instead of iterating a sequence,
      * we will have a static lookup map, and iterate the string chars associated with the digit from the input.
@@ -634,7 +640,7 @@ public class Recursion {
      * Space Complexity: O(n), where n is the length of digits
      */
     List<String> letterCombinations(String digits) {
-        if (digits.length() == 0)
+        if (digits.isEmpty())
             return new ArrayList<>();
         List<String> combinations = new ArrayList<>();
         findLetterCombinations(0, new StringBuilder(), combinations, digits);
