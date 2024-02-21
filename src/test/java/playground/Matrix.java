@@ -355,4 +355,153 @@ public class Matrix {
         }
         return result;
     }
+
+    /**
+     * Diagonal Traverse
+     * Given an m x n matrix mat, return an array of all the elements of the array in
+     * a diagonal order.
+     * <p>
+     * Input: mat = [[1,2,3],[4,5,6],[7,8,9]]
+     * Output: [1,2,4,7,5,3,6,8,9]
+     * Example 2:
+     * <p>
+     * Input: mat = [[1,2],[3,4]]
+     * Output: [1,2,3,4]
+     * <p>
+     * https://leetcode.com/problems/diagonal-traverse/description/
+     */
+    @Test
+    void testFindDiagonalOrderI() {
+        int[][] matrix = {
+                {1, 2, 3},
+                {4, 5, 6},
+                {7, 8, 9}
+        };
+        assertThat(findDiagonalOrder(matrix)).containsExactly(1, 2, 4, 7, 5, 3, 6, 8, 9);
+    }
+
+    /**
+     * Put Pair(0, 0) in the queue and traversal matrix in level BFS. For each level, first remove
+     * and add the cell value to levelList from the queue. If col == 0 and row+1 isn't out bound,
+     * put (row+1, col) in the queue. If col+1 isn't out bound, put (row, col+1) in the queue.
+     * After each level loop ends, if it is even level, we need to reverse the levelList and add
+     * to the final ans list
+     * <p>
+     * * This is actually the extension of the Diagonal Traverse II problem, do that first before
+     * this
+     * <p>
+     * Observation:
+     * Consider the 2D list is a graph and each cell is [i, j]
+     * -          [0,0]
+     * -      [1,0]  [0,1]
+     * -   [2,0]  [1,1]  [0,2]
+     * -[3,0] [2,1] [1,2]  [0,3]
+     * <p>
+     * We can see except for the first column, i.e. j:0, at each row, we can generate the cell
+     * from every cell [i,j] at its previous row as [i, j+1]. As for the cell at the first column,
+     * it will be [i+1, j].
+     * <p>
+     * Therefore, we just need to use this rule to put each correspond [i, j] from left to right
+     * in the queue and perform BFS to visit each of them.
+     * <p>
+     * However, for the even-level, we want to visit them from left to right, so we need to do
+     * BFS level traversal and reverse the level visited list before adding them to the result
+     * <p>
+     * Time complexity: O(n) + O(n) = O(n), n is the total cells in the matrix
+     * For all even level, we have additional 2 + 4 + ... + sqrt(n), for reversing list ops
+     * which will sum up as sqrt(n)/2 * (2 + sqrt(n))/2 = O(n)
+     * Space complexity: O(sqrt(n))
+     */
+    int[] findDiagonalOrder(int[][] mat) {
+        List<Integer> ans = new ArrayList<>();
+        Deque<Pair<Integer, Integer>> queue = new ArrayDeque<>();
+        queue.offer(new Pair<>(0, 0));
+        int level = 0;
+        while (!queue.isEmpty()) {
+            int qSize = queue.size();
+            level++;
+            List<Integer> levelNums = new ArrayList<>();
+            for (int i = 0; i < qSize; i++) {
+                Pair<Integer, Integer> cell = queue.poll();
+                Integer row = cell.getKey();
+                Integer col = cell.getValue();
+                levelNums.add(mat[row][col]);
+                // Only for the first column, we put the next level cell at the left (row+1, col)
+                if (col == 0 && row + 1 < mat.length) {
+                    queue.offer(new Pair<>(row + 1, col));
+                }
+                // each row may have different size. It is not a complete grid, so column bound depend on current row
+                if (col + 1 < mat[0].length) {
+                    queue.offer(new Pair<>(row, col + 1));
+                }
+            }
+            if (level % 2 == 0) {
+                // even level, we want to visit from right to left, hence, reverse the level list
+                Collections.reverse(levelNums);
+            }
+            ans.addAll(levelNums);
+        }
+        return ans.stream().mapToInt(i -> i).toArray();
+    }
+
+    /**
+     * Diagonal Traverse II
+     * Given a 2D integer array nums, return all elements of nums in diagonal order
+     * as shown in the below images.
+     * <p>
+     * Input: nums = [[1,2,3],[4,5,6],[7,8,9]]
+     * Output: [1,4,2,7,5,3,8,6,9]
+     * <p>
+     * Input: nums = [[1,2,3,4,5],[6,7],[8],[9,10,11],[12,13,14,15,16]]
+     * Output: [1,6,2,8,7,3,9,4,12,10,5,13,11,14,15,16]
+     * https://leetcode.com/problems/diagonal-traverse-ii/description/
+     */
+    @Test
+    void testFindDiagonalOrderII() {
+        List<List<Integer>> matrix = List.of(List.of(1, 2, 3), List.of(4, 5, 6), List.of(7, 8, 9));
+        assertThat(findDiagonalOrder(matrix)).containsExactly(1, 4, 2, 7, 5, 3, 8, 6, 9);
+    }
+
+    /**
+     * Put Pair(0, 0) in the queue and traversal 2D list in BFS. Remove and visit the pair from
+     * the queue. If col == 0 and row+1 isn't out bound, put (row+1, col) in the queue. If col+1
+     * isn't out bound, put (row, col+1) in the queue.
+     * <p>
+     * Observation:
+     * Consider the 2D list as a graph and each cell is [i, j]
+     * -          [0,0]
+     * -      [1,0]  [0,1]
+     * -   [2,0]  [1,1]  [0,2]
+     * -[3,0] [2,1] [1,2]  [0,3]
+     * <p>
+     * We can see except for the first column, i.e. j:0, at each row, we can generate the cell
+     * from every cell [i,j] at its previous row as [i, j+1]. As for the cell at the first column,
+     * it will be [i+1, j].
+     * <p>
+     * Therefore, we just need to use this rule to put each correspond [i, j] from left to right
+     * in the queue and perform BFS to visit each of them.
+     * <p>
+     * Time complexity: O(n)
+     * Space complexity: O(sqrt(n)), the max number of the diagonal. Or the height of the tree, log n
+     */
+    int[] findDiagonalOrder(List<List<Integer>> nums) {
+        List<Integer> ans = new ArrayList<>();
+        Deque<Pair<Integer, Integer>> queue = new ArrayDeque<>();
+        queue.offer(new Pair<>(0, 0));
+        while (!queue.isEmpty()) {
+            Pair<Integer, Integer> cell = queue.poll();
+            Integer row = cell.getKey();
+            Integer col = cell.getValue();
+            ans.add(nums.get(row).get(col));
+            // Only for the first column, we put the next level cell at the left (row+1, col)
+            if (col == 0 && row + 1 < nums.size()) {
+                queue.offer(new Pair<>(row + 1, col));
+            }
+            // each row may have different size. It is not a complete grid, so column bound depend on current row
+            if (col + 1 < nums.get(row).size()) {
+                queue.offer(new Pair<>(row, col + 1));
+            }
+        }
+        return ans.stream().mapToInt(i -> i).toArray();
+    }
 }

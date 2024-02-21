@@ -121,7 +121,7 @@ public class SortingSearchingAlgo {
      * -  important partition step.
      * 3. We apply the above steps recursively to both sub-lists on the left and right of the pivot.
      * <p>
-     * Time Complexity:
+     * Time Complexity: O(n⋅log(n))
      * Worst case scenario: When pivot is at min/max value every time, it will be close to O(n^2)
      * At top recursion level, require n-1 comparison(split n input to 0 and n-1), second level we
      * require n-2 comparison for n-1 input, and so on so forth. We will have a extreme skewed recursion tree. To sum

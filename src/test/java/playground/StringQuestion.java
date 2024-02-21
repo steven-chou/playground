@@ -352,22 +352,13 @@ public class StringQuestion {
      * Input: s = "race a car"
      * Output: false
      * Explanation: "raceacar" is not a palindrome.
-     * https://leetcode.com/problems/valid-palindrome/solution/
+     * https://leetcode.com/problems/valid-palindrome/description/
      */
     @Test
     void testIsPalindrome() {
         Assertions.assertTrue(isPalindrome("A man, a plan, a canal: Panama"));
         Assertions.assertFalse(isPalindrome("race a car"));
     }
-
-    /*
-    Set two pointers, one at each end of the input string
-    If the input is palindromic, both the pointers should point to equivalent characters, at all times.
-    If this condition is not met at any point of time, we break and return early.
-    We can simply ignore non-alphanumeric characters by continuing to traverse further.
-    Continue traversing inwards until the pointers meet in the middle.
-    Time Complexity: O(N). Space Complexity: O(1)
-     */
 
     /**
      * Use two ptr(i:0, j:tail) to iterate the str from two ends. First iteratively move i and j to the
@@ -1663,8 +1654,9 @@ public class StringQuestion {
 
     /**
      * Iterate the str and build the char->count HashMap/array[128], then sum up the count number that
-     * can be paired in the map. If the sum is less than str length, which means not all chars in str are
-     * completely paired, we add one to the sum to account for the center unique char in the palindrome str.
+     * can be paired in the map (sum += count / 2 * 2). If the sum is less than str length, which means
+     * not all chars in str are completely paired, we add one to the sum to account for the center unique
+     * char in the palindrome str.
      * <p>
      * After we make the charToCount Map, the first thing we need to know is the total number of pairs of
      * the same char. This will first give us an even-length palindrome string. When we iterate the map,
