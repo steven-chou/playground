@@ -430,7 +430,6 @@ public class Matrix {
                 if (col == 0 && row + 1 < mat.length) {
                     queue.offer(new Pair<>(row + 1, col));
                 }
-                // each row may have different size. It is not a complete grid, so column bound depend on current row
                 if (col + 1 < mat[0].length) {
                     queue.offer(new Pair<>(row, col + 1));
                 }
