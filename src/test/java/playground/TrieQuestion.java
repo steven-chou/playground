@@ -3,10 +3,8 @@ package playground;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class TrieQuestion {
     /**
@@ -235,7 +233,7 @@ public class TrieQuestion {
      * 5. Limit the result to 3 and return dfs once reached this limit.
      * 6. Add the words to the final result.
      * <p>
-     * Time complexity : O(M) to build the trie where M is total number of characters in products For each
+     * Time complexity : O(M) to build the trie, where M is total number of characters in products For each
      * prefix we find its representative node in O(len(prefix)) and dfs to find at most 3 words which is an
      * O(1) operation. Thus the overall complexity is dominated by the time required to build the trie.
      * <p>
@@ -299,6 +297,7 @@ public class TrieQuestion {
         }
     }
 
+    // The entry point of the solution to the problem
     List<List<String>> suggestedProducts(String[] products, String searchWord) {
         // Build the trie first
         ProductTrie trie = new ProductTrie();
@@ -406,6 +405,174 @@ public class TrieQuestion {
         Assertions.assertThat(wordDictionary.search("pad")).isFalse();
         Assertions.assertThat(wordDictionary.search(".ad")).isTrue();
         Assertions.assertThat(wordDictionary.search("b..")).isTrue();
+    }
+
+    /**
+     * Design Search Autocomplete System
+     * Design a search autocomplete system for a search engine. Users may input a sentence
+     * (at least one word and end with a special character '#').
+     * <p>
+     * You are given a string array sentences and an integer array times both of length n
+     * where sentences[i] is a previously typed sentence and times[i] is the corresponding
+     * number of times the sentence was typed. For each input character except '#', return
+     * the top 3 historical hot sentences that have the same prefix as the part of the
+     * sentence already typed.
+     * <p>
+     * Here are the specific rules:
+     * <p>
+     * The hot degree for a sentence is defined as the number of times a user typed the
+     * exactly same sentence before.
+     * The returned top 3 hot sentences should be sorted by hot degree (The first is the
+     * hottest one). If several sentences have the same hot degree, use ASCII-code order
+     * (smaller one appears first).
+     * If less than 3 hot sentences exist, return as many as you can.
+     * When the input is a special character, it means the sentence ends, and in this case,
+     * you need to return an empty list.
+     * <p>
+     * Implement the AutocompleteSystem class:
+     * <p>
+     * AutocompleteSystem(String[] sentences, int[] times) Initializes the object with the
+     * sentences and times arrays.
+     * <p>
+     * List<String> input(char c) This indicates that the user typed the character c.
+     * Returns an empty array [] if c == '#' and stores the inputted sentence in the system.
+     * Returns the top 3 historical hot sentences that have the same prefix as the part of the
+     * sentence already typed. If there are fewer than 3 matches, return them all.
+     * <p>
+     * Input
+     * ["AutocompleteSystem", "input", "input", "input", "input"]
+     * [[["i love you", "island", "iroman", "i love leetcode"], [5, 3, 2, 2]], ["i"], [" "],
+     * ["a"], ["#"]]
+     * <p>
+     * Output
+     * [null, ["i love you", "island", "i love leetcode"], ["i love you", "i love leetcode"],
+     * [], []]
+     * <p>
+     * Explanation
+     * AutocompleteSystem obj = new AutocompleteSystem(["i love you", "island", "iroman",
+     * "i love leetcode"], [5, 3, 2, 2]);
+     * <p>
+     * obj.input("i");
+     * // return ["i love you", "island", "i love leetcode"]. There are four sentences that
+     * have prefix "i". Among them, "ironman" and "i love leetcode" have same hot degree.
+     * Since ' ' has ASCII code 32 and 'r' has ASCII code 114, "i love leetcode" should be
+     * in front of "ironman". Also we only need to output top 3 hot sentences, so "ironman"
+     * will be ignored.
+     * <p>
+     * obj.input(" ");
+     * // return ["i love you", "i love leetcode"]. There are only two sentences that have
+     * prefix "i ".
+     * <p>
+     * obj.input("a"); // return []. There are no sentences that have prefix "i a".
+     * <p>
+     * obj.input("#");
+     * // return []. The user finished the input, the sentence "i a" should be saved as
+     * a historical sentence in system. And the following input will be counted as a new search.
+     */
+    @Test
+    void testAutocompleteSystem() {
+        AutocompleteSystem obj = new AutocompleteSystem(new String[]{"i love you", "island", "iroman", "i love leetcode"}, new int[]{5, 3, 2, 2});
+        // There are four sentences that have prefix "i". Among them, "ironman" and "i love leetcode" have same hot degree. Since ' ' has ASCII code 32
+        // and 'r' has ASCII code 114, "i love leetcode" should be in front of "ironman". Also we only need to output top 3 hot sentences, so "ironman" will be ignored.
+        Assertions.assertThat(obj.input('i')).containsExactly("i love you", "island", "i love leetcode");
+        Assertions.assertThat(obj.input(' ')).containsExactly("i love you", "i love leetcode");
+        // There are no sentences that have prefix "i a".
+        Assertions.assertThat(obj.input('a')).hasSize(0);
+        // The user finished the input, the sentence "i a" should be saved as a historical sentence in system. And the following input will be counted as a new search.
+        Assertions.assertThat(obj.input('#')).hasSize(0);
+    }
+
+    /**
+     *
+     */
+    class AutocompleteSystem {
+        private final TrieNode root;
+        private final TrieNode deadNode;
+        private TrieNode currentNode;
+        private final StringBuilder currentSentence;
+
+        class TrieNode {
+            Map<Character, TrieNode> charToChildNode;
+            Map<String, Integer> sentenceToCount;
+
+            public TrieNode() {
+                this.charToChildNode = new HashMap<>();
+                this.sentenceToCount = new HashMap<>();
+            }
+        }
+
+        /**
+         * Initializes the object with the sentences and times arrays.
+         * Time complexity: O(n⋅k), n as the length of sentences, k as the average length of all sentences,
+         */
+        public AutocompleteSystem(String[] sentences, int[] times) {
+            root = new TrieNode();
+            for (int i = 0; i < sentences.length; i++) {
+                addSentenceToTrie(sentences[i], times[i]);
+            }
+            this.deadNode = new TrieNode();
+            currentSentence = new StringBuilder();
+            currentNode = root;
+        }
+
+        private void addSentenceToTrie(String sentence, int degree) {
+            TrieNode current = root;
+            for (char c : sentence.toCharArray()) {
+                current = current.charToChildNode.computeIfAbsent(c, k -> new TrieNode());
+                current.sentenceToCount.put(sentence, current.sentenceToCount.getOrDefault(sentence, 0) + degree);
+            }
+        }
+
+        /**
+         * This indicates that the user typed the character c.
+         * Returns an empty array [] if c == '#' and stores the inputted sentence in the system.
+         * Returns the top 3 historical hot sentences that have the same prefix as the part of the
+         * sentence already typed. If there are fewer than 3 matches, return them all.
+         * Time complexity: O(n⋅log n), n as the length of sentences, primarily for the sorting
+         * O(n⋅log k), k = 3, when using minHeap
+         */
+        public List<String> input(char c) {
+            if (c == '#') {
+                addSentenceToTrie(currentSentence.toString(), 1);
+                currentSentence.setLength(0); // reset stb
+                currentNode = root;
+                return new ArrayList<>();
+            }
+            // c != #
+            if (!currentNode.charToChildNode.containsKey(c)) {
+                // no existing sentences that have the current sentence we are typing as a prefix.
+                currentNode = deadNode;
+                // add it to the current sentence, so it will be saved in the trie later
+                currentSentence.append(c);
+                return new ArrayList<>();
+            } else {
+                // There is a child node of the current c at the current node.
+                // Add current char to the current sentence, and move current node to this child node
+                currentSentence.append(c);
+                currentNode = currentNode.charToChildNode.get(c);
+                // Now returns the top 3 sentences from the sentenceToDegree map of this node
+
+                // Slightly better solution using minHeap to get Top K sentences.
+                // Cuz we use minHeap, the comparator is defined in the opposite way. Sort by degree ascending, then by sentence descending
+//                Queue<String> minHeap = new PriorityQueue<>(Comparator.<String>comparingInt(s -> currentNode.sentenceToDegree.get(s)).thenComparing(Comparator.reverseOrder()));
+//                for (String s : currentNode.sentenceToDegree.keySet()) {
+//                    minHeap.offer(s);
+//                    if (minHeap.size() > 3)
+//                        minHeap.poll();
+//                }
+//                List<String> ans = new ArrayList<>();
+//                while (!minHeap.isEmpty())
+//                    ans.add(minHeap.poll());
+//                Collections.reverse(ans);
+//                return ans;
+
+                // Use stream API to sort the sentences by degree descending, then by sentence ascending. Then take top 3
+                List<String> sentences = new ArrayList<>(currentNode.sentenceToCount.keySet());
+                return sentences.stream()
+                        .sorted(Comparator.<String>comparingInt(s -> currentNode.sentenceToCount.get(s)).reversed().thenComparing(Comparator.naturalOrder()))
+                        .limit(3).collect(Collectors.toList());
+            }
+        }
     }
 }
 

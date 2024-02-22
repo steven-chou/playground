@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -1017,5 +1018,110 @@ public class Recursion {
             board.add(rowStr);
         }
         result.add(board);
+    }
+
+    /**
+     * Optimal Account Balancing
+     * You are given an array of transactions where transactions[i] = [fromi, toi, amounti]
+     * indicates that the person with ID = fromi gave amounti $ to the person with ID = toi.
+     * <p>
+     * Return the minimum number of transactions required to settle the debt.
+     * <p>
+     * Input: transactions = [[0,1,10],[2,0,5]]
+     * Output: 2
+     * Explanation:
+     * Person #0 gave person #1 $10.
+     * Person #2 gave person #0 $5.
+     * Two transactions are needed. One way to settle the debt is person #1 pays person #0 and #2 $5 each.
+     * <p>
+     * Input: transactions = [[0,1,10],[1,0,1],[1,2,5],[2,0,5]]
+     * Output: 1
+     * Explanation:
+     * Person #0 gave person #1 $10.
+     * Person #1 gave person #0 $1.
+     * Person #1 gave person #2 $5.
+     * Person #2 gave person #0 $5.
+     * Therefore, person #1 only need to give person #0 $4, and all debt is settled.
+     * <p>
+     * <p>
+     * https://leetcode.com/problems/optimal-account-balancing/description/
+     */
+    @Test
+    void testMinTransfers() {
+        int[][] input = {
+                {0, 1, 10},
+                {2, 0, 5}
+        };
+        Assertions.assertThat(minTransfers(input)).isEqualTo(2);
+        input = new int[][]{
+                {0, 1, 10},
+                {1, 0, 1},
+                {1, 2, 5},
+                {2, 0, 5}
+        };
+        Assertions.assertThat(minTransfers(input)).isEqualTo(1);
+    }
+
+    /**
+     * First build the map personToBalance to get everyone's balance. Then for all non-zero balance,
+     * starting from first person, balances[0], we look for all other people, balances[i], (i>0),
+     * which have opposite sign to balances[0]. Then each such balances[i] can make one transaction
+     * balances[i] += balances[0] to clear the person with balance, balances[0]. From now on,
+     * the person with balances, balances[0] is dropped out of the problem, and we recursively drop
+     * persons one by one until everyone's balances is cleared meanwhile updating the minimum
+     * number of transactions during DFS. We need to undo the balance transfer after each recursion
+     * returns before backtracking.
+     * <p>
+     * Time complexity: O((n−1)!)
+     * In dfs(0), there exists a maximum of n−1 persons as possible start, each of which leads
+     * to a recursive call to dfs(1). Therefore, we have
+     * dfs(0)
+     * =(n−1)⋅dfs(1)
+     * =(n−1)⋅((n−2)⋅dfs(2))
+     * =(n−1)⋅(n−2)⋅((n−3)⋅dfs(3))
+     * =...
+     * =(n−1)!⋅dfs(n−1)
+     * <p>
+     * *dfs() here means findMinTransactionCount method
+     * <p>
+     * Space complexity: O(n)
+     */
+    int minTransfers(int[][] transactions) {
+        Map<Integer, Integer> personToBalance = new HashMap<>();
+        // Compute everyone's balance after the transactions
+        for (int[] t : transactions) {
+            personToBalance.put(t[0], personToBalance.getOrDefault(t[0], 0) - t[2]);
+            personToBalance.put(t[1], personToBalance.getOrDefault(t[1], 0) + t[2]);
+        }
+        AtomicInteger minCount = new AtomicInteger(Integer.MAX_VALUE);
+        // We only care about non-zero balance.
+        List<Integer> nonZeroBalance = personToBalance.values().stream().filter(v -> v != 0).collect(Collectors.toList());
+        findMinTransactionCount(nonZeroBalance, 0, 0, minCount);
+        return minCount.intValue();
+    }
+
+    private void findMinTransactionCount(List<Integer> balances, int start, int count, AtomicInteger minCount) {
+        int currentBalance = balances.get(start);
+        while (start < balances.size() && currentBalance == 0) // curr person has balance 0, skip it.
+            start++;
+
+        if (start == balances.size()) {
+            // All balances are clear (Why? Proof?)
+            minCount.set(Math.min(count, minCount.get()));
+            return;
+        }
+
+        for (int i = start + 1; i < balances.size(); i++) {
+            // if either 1. currentBalance & balance[i] are both positive or negative
+            //           2. currentBalance | balance[i] has 0 balance
+            // then transfer between them is meaningless
+            if ((currentBalance < 0 && balances.get(i) > 0) || (currentBalance > 0 && balances.get(i) < 0)) {
+                // transfer all balance from balance[start] to balance[i], i.e. after the transaction, balance[start] = 0
+                balances.set(i, balances.get(i) + currentBalance);
+                findMinTransactionCount(balances, start + 1, count + 1, minCount);
+                // Undo the transaction for backtracking
+                balances.set(i, balances.get(i) - currentBalance);
+            }
+        }
     }
 }
