@@ -459,8 +459,16 @@ public class Recursion {
 
 
     /**
-     * Given an integer array nums of unique elements, return all possible subsets (the power set).
-     * The solution set must not contain duplicate subsets. Return the solution in any order.
+     * Subsets
+     * Given an integer array nums of unique elements, return all possible subsets
+     * (the power set). The solution set must not contain duplicate subsets.
+     * Return the solution in any order.
+     * <p>
+     * Input: nums = [1,2,3]
+     * Output: [[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]
+     * <p>
+     * Input: nums = [0]
+     * Output: [[],[0]]
      * https://leetcode.com/problems/subsets/
      */
     @Test
@@ -1100,7 +1108,7 @@ public class Recursion {
         return minCount.intValue();
     }
 
-    private void findMinTransactionCount(List<Integer> balances, int start, int count, AtomicInteger minCount) {
+    void findMinTransactionCount(List<Integer> balances, int start, int count, AtomicInteger minCount) {
         int currentBalance = balances.get(start);
         while (start < balances.size() && currentBalance == 0) // curr person has balance 0, skip it.
             start++;
@@ -1121,6 +1129,117 @@ public class Recursion {
                 findMinTransactionCount(balances, start + 1, count + 1, minCount);
                 // Undo the transaction for backtracking
                 balances.set(i, balances.get(i) - currentBalance);
+            }
+        }
+    }
+
+    /**
+     * Unique Paths III
+     * You are given an m x n integer array grid where grid[i][j] could be:
+     * <p>
+     * 1 representing the starting square. There is exactly one starting square.
+     * 2 representing the ending square. There is exactly one ending square.
+     * 0 representing empty squares we can walk over.
+     * -1 representing obstacles that we cannot walk over.
+     * Return the number of 4-directional walks from the starting square to the ending
+     * square, that walk over EVERY non-obstacle square exactly once.
+     * <p>
+     * Input: grid = [[1,0,0,0],[0,0,0,0],[0,0,2,-1]]
+     * Output: 2
+     * Explanation: We have the following two paths:
+     * 1. (0,0),(0,1),(0,2),(0,3),(1,3),(1,2),(1,1),(1,0),(2,0),(2,1),(2,2)
+     * 2. (0,0),(1,0),(2,0),(2,1),(1,1),(0,1),(0,2),(0,3),(1,3),(1,2),(2,2)
+     * <p>
+     * Input: grid = [[1,0,0,0],[0,0,0,0],[0,0,0,2]]
+     * Output: 4
+     * Explanation: We have the following four paths:
+     * 1. (0,0),(0,1),(0,2),(0,3),(1,3),(1,2),(1,1),(1,0),(2,0),(2,1),(2,2),(2,3)
+     * 2. (0,0),(0,1),(1,1),(1,0),(2,0),(2,1),(2,2),(1,2),(0,2),(0,3),(1,3),(2,3)
+     * 3. (0,0),(1,0),(2,0),(2,1),(2,2),(1,2),(1,1),(0,1),(0,2),(0,3),(1,3),(2,3)
+     * 4. (0,0),(1,0),(2,0),(2,1),(1,1),(0,1),(0,2),(0,3),(1,3),(1,2),(2,2),(2,3)
+     * <p>
+     * Input: grid = [[0,1],[2,0]]
+     * Output: 0
+     * Explanation: There is no path that walks over every empty square exactly once.
+     * Note that the starting and ending square can be anywhere in the grid.
+     * <p>
+     * https://leetcode.com/problems/unique-paths-iii/description/
+     */
+    @Test
+    void testUniquePathsIII() {
+        int[][] input = {
+                {1, 0, 0, 0},
+                {0, 0, 0, 0},
+                {0, 0, 2, -1}
+        };
+        Assertions.assertThat(uniquePathsIII(input)).isEqualTo(2);
+        input = new int[][]{
+                {0, 1},
+                {2, 0}
+        };
+        Assertions.assertThat(uniquePathsIII(input)).isEqualTo(0);
+    }
+
+    /**
+     * First iterate the grid to find the starting cell and total of empty cells. We need a visited grid
+     * to track cells visited. Use a recursive method to start from the starting cell and keep track of
+     * the visitedEmptyCellCount and pathCount. We iterate the 4 adjacent cells. If it is in-bound and is
+     * empty cell and not visited, we mark it visited and make recursive call with this adjacent cell
+     * and visitedEmptyCellCount + 1. The recursion base case is when we reach the target cell and
+     * visitedEmptyCellCount == emptyCellTotal, then we increment the pathCount. After recursion returns,
+     * we mark the cell unvisited before backtracking.
+     * <p>
+     * <p>
+     * Time complexity: O(3^n), where n be the total number of cells in the input grid.
+     * Although technically we have 4 directions to explore at each step, we have at
+     * most 3 directions to try at any moment except the first step.
+     * The last direction is the direction where we came from, therefore we don't need
+     * to explore it, since we have been there before.
+     * In the worst case where none of the cells is an obstacle, we have to explore
+     * each cell. Hence, the time complexity of the algorithm is O(4*3^(n−1)) = O(3^n).
+     * <p>
+     * Space complexity: O(n)
+     */
+    int uniquePathsIII(int[][] grid) {
+        AtomicInteger count = new AtomicInteger(0);
+        int r = 0, c = 0;
+        int emptyCellTotal = 0;
+        for (int i = 0; i < grid.length; i++) {
+            // Find the starting cell and count the empty cells we need to visit
+            for (int j = 0; j < grid[0].length; j++) {
+                if (grid[i][j] == 1) {
+                    r = i;
+                    c = j;
+                } else if (grid[i][j] == 0) {
+                    emptyCellTotal++;
+                }
+            }
+        }
+        boolean[][] visited = new boolean[grid.length][grid[0].length];
+        visited[r][c] = true;
+        visit(r, c, grid, visited, 0, count, emptyCellTotal + 1);
+        return count.get();
+    }
+
+    void visit(int row, int col, int[][] grid, boolean[][] visited, int visitedEmptyCellCount, AtomicInteger pathCount, int emptyCellTotal) {
+
+        if (grid[row][col] == 2 && visitedEmptyCellCount == emptyCellTotal) {
+            // The path is valid only if we visited ALL empty cells and reach the target
+            pathCount.set(pathCount.incrementAndGet());
+            return;
+        }
+
+        int[][] dirs = new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] dir : dirs) {
+            int nextRow = row + dir[0];
+            int nextCol = col + dir[1];
+            if (nextRow >= 0 && nextRow < grid.length && nextCol >= 0 && nextCol < grid[0].length
+                    && !visited[nextRow][nextCol] && grid[row][col] != -1) {
+                // only visit the unvisited empty cell and in-bound
+                visited[nextRow][nextCol] = true;
+                visit(nextRow, nextCol, grid, visited, visitedEmptyCellCount + 1, pathCount, emptyCellTotal);
+                // Mark the cell unvisited before backtracking
+                visited[nextRow][nextCol] = false;
             }
         }
     }

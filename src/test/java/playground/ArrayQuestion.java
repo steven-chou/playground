@@ -1213,81 +1213,6 @@ public class ArrayQuestion {
     }
 
     /**
-     * Count and Say
-     * The count-and-say sequence is a sequence of digit strings defined by the recursive formula:
-     * <p>
-     * countAndSay(1) = "1"
-     * countAndSay(n) is the way you would "say" the digit string from countAndSay(n-1), which is then
-     * converted into a different digit string.
-     * To determine how you "say" a digit string, split it into the minimal number of substrings such
-     * that each substring contains exactly one unique digit. Then for each substring, say the number
-     * of digits, then say the digit. Finally, concatenate every said digit.
-     * <p>
-     * For example, the saying and conversion for digit string "3322251":
-     * Two 3, three 2, one 5, and one 1 ==> 23 32 15 11
-     * <p>
-     * Input: n = 1
-     * Output: "1"
-     * Explanation: This is the base case.
-     * <p>
-     * Input: n = 4
-     * Output: "1211"
-     * Explanation:
-     * countAndSay(1) = "1"
-     * countAndSay(2) = say "1" = one 1 = "11"
-     * countAndSay(3) = say "11" = two 1's = "21"
-     * countAndSay(4) = say "21" = one 2 + one 1 = "12" + "11" = "1211"
-     * <p>
-     * https://leetcode.com/problems/count-and-say/description/
-     */
-    @Test
-    void testCountAndSay() {
-        assertThat(countAndSay(6)).isEqualTo("312211");
-    }
-
-    /**
-     * Init the result str to "1". Starts the outer loop from 2 to n, for each iteration, init a StringBuilder,
-     * currentUniqueChar to the first char of result str and count=0. Starts inner loop to iterate chars at
-     * result str, if it is the last char, append count+1 and currentUniqueChar to stb, else if next char is
-     * not equal to currentUniqueChar, do the same thing and also update currentUniqueChar to next char and
-     * reset the count, otherwise, just increment the count. Update the result to stb string after the inner
-     * loop ends(finish one round of sequence generation)
-     * <p>
-     * Time Complexity: O(4^(n/3)
-     * Each 3 iterations a single digit becomes 4 digits. If we treat every three iterations as a
-     * recursion, since we have n iterations, we then have n/3 such recursions. During each recursion
-     * a digit becomes fourfold, then after (n/3) recursions we have 4^(n/3) digits.
-     * *Note: LeetCode has more detailed(complex) explanation
-     * <p>
-     * Space Complexity: O(4^(n/3)
-     */
-    String countAndSay(int n) {
-        String result = "1";
-        for (int i = 2; i <= n; i++) {
-            StringBuilder stb = new StringBuilder();
-            int count = 0;
-            char currentUniqueChar = result.charAt(0);
-            for (int j = 0; j < result.length(); j++) {
-                char c = result.charAt(j);
-                if (j == result.length() - 1) {
-                    // At the last element. Construct the substring and append to stb
-                    stb.append(++count).append(currentUniqueChar);
-                } else if (c != result.charAt(j + 1)) {
-                    // Next char is different. Construct the substring and append to stb
-                    stb.append(++count).append(currentUniqueChar);
-                    // Reset the currentUniqueChar and counter
-                    currentUniqueChar = result.charAt(j + 1);
-                    count = 0;
-                } else {
-                    count++;
-                }
-            }
-            result = stb.toString();
-        }
-        return result;
-    }
-
-    /**
      * Use an outer for loop as countAndSay(i) call, the inner for loop uses two ptrs to scan every section
      * of the same char and generate and concatenate "count"+"char" substrings
      * <p>
@@ -3234,5 +3159,145 @@ public class ArrayQuestion {
         return maxLength;
     }
 
+    /**
+     * Subarray Product Less Than K
+     * Given an array of integers nums and an integer k, return the number of contiguous
+     * subarrays where the product of all the elements in the subarray is strictly less
+     * than k.
+     * <p>
+     * Input: nums = [10,5,2,6], k = 100
+     * Output: 8
+     * Explanation: The 8 subarrays that have product less than 100 are:
+     * [10], [5], [2], [6], [10, 5], [5, 2], [2, 6], [5, 2, 6]
+     * Note that [10, 5, 2] is not included as the product of 100 is not strictly less
+     * than k.
+     * <p>
+     * Input: nums = [1,2,3], k = 0
+     * Output: 0
+     * <p>
+     * https://leetcode.com/problems/subarray-product-less-than-k/description/
+     */
+    @Test
+    void testNumSubarrayProductLessThanK() {
+        assertThat(numSubarrayProductLessThanK(new int[]{10, 5, 2, 6}, 100)).isEqualTo(8);
+        assertThat(numSubarrayProductLessThanK(new int[]{1, 2, 3}, 0)).isEqualTo(0);
+    }
+
+    /**
+     * Iterate the nums and use the sliding window from (left:0, right:0) to track the
+     * running product in the window. If the product in the current window >= k, shrink
+     * the window and drop the left number from the product until it is < k or
+     * left == right. Then we add the total number of sub-arrays in this window,
+     * (right-left+1) to the result
+     * <p>
+     * When computing the number of sub-arrays from a given range [j,i] inclusive.
+     * We use i - j + 1. This gives us the total number of sub-arrays that ends at i
+     * and starts at j or later (j = 0,1,2,...i).
+     * <p>
+     * For example: for [1,2,3,4]
+     * [j,i] = [0,0] ---> [1], 1 sub-array
+     * [j,i] = [0,1] ---> [2], [1,2], 2 sub-array
+     * [j,i] = [0,2] ---> [3], [2,3], [1,2,3], 3 sub-array
+     * [j,i] = [0,3] ---> [4], [3,4], [2,3,4], [1,2,3,4], 4 sub-array
+     * ...
+     * Cuz we keep accumulating all such total of sub-array when expanding and moving
+     * the sliding window, therefore we count all possible sub-arrays
+     * <p>
+     * Time complexity : O(n)
+     * Space complexity : O(1)
+     */
+    int numSubarrayProductLessThanK(int[] nums, int k) {
+        int product = 1;
+        int result = 0;
+        for (int left = 0, right = 0; right < nums.length; right++) {
+            product *= nums[right];
+            while (product >= k && left < right) {
+                // Keep shrinking the window and drop the left number from the product when the product
+                // in the window >= k. However, end the loop when left == right
+                product /= nums[left++];
+            }
+            if (product < k) {
+                // It is possible loop ends due to left == right and the product is still invalid
+                result += right - left + 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Count Subarrays With Score Less Than K
+     * The score of an array is defined as the product of its sum and its length.
+     * <p>
+     * For example, the score of [1, 2, 3, 4, 5] is (1 + 2 + 3 + 4 + 5) * 5 = 75.
+     * Given a positive integer array nums and an integer k, return the number of
+     * non-empty subarrays of nums whose score is strictly less than k.
+     * <p>
+     * A subarray is a contiguous sequence of elements within an array.
+     * <p>
+     * Input: nums = [2,1,4,3,5], k = 10
+     * Output: 6
+     * Explanation:
+     * The 6 subarrays having scores less than 10 are:
+     * - [2] with score 2 * 1 = 2.
+     * - [1] with score 1 * 1 = 1.
+     * - [4] with score 4 * 1 = 4.
+     * - [3] with score 3 * 1 = 3.
+     * - [5] with score 5 * 1 = 5.
+     * - [2,1] with score (2 + 1) * 2 = 6.
+     * Note that subarrays such as [1,4] and [4,3,5] are not considered because their
+     * scores are 10 and 36 respectively, while we need scores strictly less than 10.
+     * <p>
+     * Input: nums = [1,1,1], k = 5
+     * Output: 5
+     * Explanation:
+     * Every subarray except [1,1,1] has a score less than 5.
+     * [1,1,1] has a score (1 + 1 + 1) * 3 = 9, which is greater than 5.
+     * Thus, there are 5 subarrays having scores less than 5.
+     * <p>
+     * https://leetcode.com/problems/count-subarrays-with-score-less-than-k/description/
+     */
+    @Test
+    void testCountSubarrays() {
+        assertThat(countSubarrays(new int[]{2, 1, 4, 3, 5}, 10)).isEqualTo(6);
+        assertThat(countSubarrays(new int[]{1, 1, 1}, 5)).isEqualTo(5);
+    }
+
+    /**
+     * Iterate the nums and use the sliding window (left:0, right:0) to track the
+     * running sum in the window. If the score in the current window >= k, shrink the
+     * window and drop the left number from the sum until the score < k. Then we add the
+     * total number of sub-arrays in this window, (right-left+1), to the result.
+     * <p>
+     * When computing the number of sub-arrays from a given range [j,i] inclusive.
+     * We use i - j + 1. This gives us the total number of sub-arrays that ends at i
+     * and starts at j or later (j = 0,1,2,...i).
+     * <p>
+     * For example: for [1,2,3,4]
+     * [j,i] = [0,0] ---> [1], 1 sub-array
+     * [j,i] = [0,1] ---> [2], [1,2], 2 sub-array
+     * [j,i] = [0,2] ---> [3], [2,3], [1,2,3], 3 sub-array
+     * [j,i] = [0,3] ---> [4], [3,4], [2,3,4], [1,2,3,4], 4 sub-array
+     * ...
+     * Cuz we keep accumulating all such total of sub-array when expanding and moving
+     * the sliding window, therefore we count all possible sub-arrays
+     * <p>
+     * Time complexity : O(n)
+     * Space complexity : O(1)
+     */
+    long countSubarrays(int[] nums, long k) {
+        long sum = 0, result = 0;
+        for (int right = 0, left = 0; right < nums.length; right++) {
+            sum += nums[right];
+            while (sum * (right - left + 1) >= k)
+                // sub-array score is too big, so shrink the window and drop the left-most number from sum
+                // K >= 1, so when left = right + 1, score will be zero then the loop ends. The following number of
+                // sub-array will also be 0
+                sum -= nums[left++];
+            // Now adds the total number of sub-arrays that ends at right and starts at left or later.
+            // Check the comment at method javadoc for explanation
+            result += right - left + 1;
+        }
+        return result;
+    }
 
 }

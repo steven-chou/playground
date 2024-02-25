@@ -503,4 +503,143 @@ public class Matrix {
         }
         return ans.stream().mapToInt(i -> i).toArray();
     }
+
+    /**
+     * Shortest Path in a Grid with Obstacles Elimination
+     * You are given an m x n integer matrix grid where each cell is either 0 (empty) or 1 (obstacle).
+     * You can move up, down, left, or right from and to an empty cell in one step.
+     * <p>
+     * Return the minimum number of steps to walk from the upper left corner (0, 0) to the lower right
+     * corner (m - 1, n - 1) given that you can eliminate at most k obstacles. If it is not possible to
+     * find such walk return -1.
+     * <p>
+     * Input: grid = [[0,0,0],[1,1,0],[0,0,0],[0,1,1],[0,0,0]], k = 1
+     * Output: 6
+     * Explanation:
+     * The shortest path without eliminating any obstacle is 10.
+     * The shortest path with one obstacle elimination at position (3,2) is 6. Such path is (0,0) ->
+     * (0,1) -> (0,2) -> (1,2) -> (2,2) -> (3,2) -> (4,2).
+     * <p>
+     * Input: grid = [[0,1,1],[1,1,1],[1,0,0]], k = 1
+     * Output: -1
+     * Explanation: We need to eliminate at least two obstacles to find such a walk.
+     * <p>
+     * https://leetcode.com/problems/shortest-path-in-a-grid-with-obstacles-elimination/description/
+     */
+    @Test
+    void testShortestPath() {
+        int[][] matrix = {
+                {0, 0, 0},
+                {1, 1, 0},
+                {0, 0, 0},
+                {0, 1, 1},
+                {0, 0, 0},
+        };
+        assertThat(shortestPath(matrix, 1)).isEqualTo(6);
+    }
+
+    /**
+     * Define a StepState class to store the row, col, steps, and obstaclesRemoved. And a
+     * visited int[][] grid to store the obstaclesRemoved value from previous visit of each cell.
+     * (init to INT_MAX). Then start to create StepState from each cell and perform BFS.
+     * If we reach the target cell, return the currentStep's step value. Otherwise, explore
+     * 4 adjacent cells, if it is in-bound and the obstaclesRemoved of the new step <= k
+     * and < visited[x][y], add this step to the queue.
+     * <p>
+     * Observation:
+     * Two key differences from the normal BFS in the grid
+     * 1. A cell [x][y] may need to be visited again cuz coming from a different path may
+     * yield a better path to the target
+     * 2. We should only consider a new step if it can make a better path, i.e. encounter
+     * no or fewer obstacles
+     * <p>
+     * Algo:
+     * 1. StepState contains the row and col of the visited cell and the steps accumulated from
+     * the first step originating this path, and this is also the answer we will return when
+     * we reach the step reaches the target cell. Finally, we also need to track the obstacles
+     * we have encountered/removed, so we can know if the next step is valid.
+     * <p>
+     * 2. From the observation described above, we need a visited int grid for two purpose
+     * -	1 Indicate if the given cell was visited.
+     * -	2 We store the obstaclesRemoved value of the previous step when it was visited,
+     * -	  so when we have chance to visit the same cell again, we can compare the
+     * -	  obstaclesRemoved of the current step with it to decide if we should consider
+     * -	  this step (Greedy strategy)
+     * <p>
+     * 3. We start to perform BFS, when we reach the target cell, return the step value of
+     * the current step. Otherwise, explore 4 adjacent cells.
+     * However, we consider the new step ONLY if
+     * -	1. The number of obstacles it removed so far is less than or equal to k
+     * -   2. The step to this cell has more optimal result, i.e. less obstacle removed, or
+     * -	   this cell is not visited yet, i.e. visited[nextX][nextY] == Integer.MAX_VALUE
+     * <p>
+     * <p>
+     * Let N be the number of cells in the grid, and K be the quota to eliminate obstacles.
+     * <p>
+     * Time Complexity: O(N⋅K)
+     * We conduct a BFS traversal in the grid. In the worst case, we will visit each cell
+     * in the grid. And for each cell, at most, it will be visited K times, with different
+     * quotas of obstacle elimination.
+     * Thus, the overall time complexity of the algorithm is O(N⋅K).
+     * <p>
+     * Space Complexity: O(N⋅K)
+     * Queue and the visited grid
+     */
+    int shortestPath(int[][] grid, int k) {
+        class StepState {
+            final int row;
+            final int col;
+            // Keep track of the accumulated steps along this path so far. A new StepState's steps should
+            // be the previous steps + 1
+            final int steps;
+            // Keep track of the total number of obstacles it encountered/removed along this path so far
+            final int obstaclesRemoved;
+
+            public StepState(int row, int col, int steps, int obstaclesRemoved) {
+                this.row = row;
+                this.col = col;
+                this.steps = steps;
+                this.obstaclesRemoved = obstaclesRemoved;
+            }
+        }
+        int m = grid.length;
+        int n = grid[0].length;
+        int[][] dirs = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+        // The visited grid serves two purposes
+        // 1. Indicate if the given cell was visited.
+        // 2. We store the obstaclesRemoved value of the previous step when it was visited, so when
+        // we have chance to visit the same cell again, we can compare the obstaclesRemoved of the current step with it
+        // to decide if we should consider this step (Greedy strategy)
+        int[][] visited = new int[m][n];
+        for (int[] i : visited) {
+            Arrays.fill(i, Integer.MAX_VALUE); // Default to INT_MAX, so unvisited cell will always be considered
+        }
+        Deque<StepState> queue = new ArrayDeque<>();
+        queue.offer(new StepState(0, 0, 0, 0));
+        visited[0][0] = 0;
+
+        while (!queue.isEmpty()) {
+            StepState currentStep = queue.poll();
+            if (currentStep.row == m - 1 && currentStep.col == n - 1) {
+                // we reach the target. Cuz we perform BFS, it guarantees the shorted path will be found first.
+                return currentStep.steps;
+            }
+            for (int[] dir : dirs) {
+                int nextX = dir[0] + currentStep.row;
+                int nextY = dir[1] + currentStep.col;
+                if (nextX < 0 || nextX == m || nextY < 0 || nextY == n)
+                    continue; // out of bound, so skip it
+                int nextObstacleRemoved = currentStep.obstaclesRemoved + grid[nextX][nextY]; // obstacle in the grid[][] is 1
+                if (nextObstacleRemoved <= k && nextObstacleRemoved < visited[nextX][nextY]) {
+                    // Consider this step ONLY if
+                    // 1. The number of obstacles it removed so far is less than or equal to k
+                    // 2. The step to this cell has more optimal result, i.e. less obstacle removed, or this cell is not
+                    // visited yet, i.e. visited[nextX][nextY] == Integer.MAX_VALUE
+                    visited[nextX][nextY] = nextObstacleRemoved;
+                    queue.offer(new StepState(nextX, nextY, currentStep.steps + 1, nextObstacleRemoved));
+                }
+            }
+        }
+        return -1;
+    }
 }

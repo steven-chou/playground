@@ -38,7 +38,19 @@ import static org.assertj.core.api.Assertions.assertThat;
         char tempArray[] = inputString.toCharArray();
         Arrays.sort(tempArray)
         return new String(tempArray);
--
+    - For substring(beginIdx) valid beginIdx is [0, str.length()]
+        substring(beginIdx, endIdx), valid beginIdx is [0, str.length()], endIdx is [0, str.length()], beginIdx <= endIdx
+        str.substring(0, 0) // empty string
+        str.substring(str.length()) // empty string
+        str.substring(str.length(), str.length()) // empty string
+        str.substring(0, str.length()) // str
+        The first two characteristics are sometimes useful when iterating the string to generate the sub-string.
+        Example: Use 2-pointer approach to enumerate all possible combinations of sub-string including length-zero
+        when splitting the str into two parts
+        for (int i = 0; i <= str.length(); i++) {
+            System.out.print(str.substring(0, i) + ", ");
+            System.out.println(str.substring(i));
+        }
 
  */
 public class StringQuestion {
@@ -658,44 +670,6 @@ public class StringQuestion {
         return (int) s.charAt(idx) - (int) 'a';
     }
 
-    /**
-     * Count and Say
-     * https://leetcode.com/problems/count-and-say/solution/
-     */
-    @Test
-    void testCountAndSay() {
-        Assertions.assertEquals("1211", countAndSay(4));
-        Assertions.assertEquals("312211", countAndSay(6));
-    }
-
-    /* Reference:
-        https://www.baeldung.com/regular-expressions-java
-        https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html
-        https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Matcher.html
-     */
-    // Time Complexity: O(2^n), where n is the index of the desired sequence.
-    // Space Complexity: O(2^n-1)
-    String countAndSay(int n) { // TODO: MEMORIZE
-        String currSeq = "1";
-
-        // Pattern to match the repetitive digits
-        String regexPattern = "(.)\\1*";
-        Pattern pattern = Pattern.compile(regexPattern);
-
-        for (int i = 1; i < n; i++) {
-            Matcher m = pattern.matcher(currSeq);
-            StringBuilder nextSeq = new StringBuilder();
-
-            // each group contains identical and adjacent digits
-            while (m.find()) {
-                nextSeq.append(m.group().length()).append(m.group().charAt(0));
-            }
-            // prepare for the next iteration
-            currSeq = nextSeq.toString();
-        }
-
-        return currSeq;
-    }
 
     /**
      * Longest Common Prefix
@@ -1776,6 +1750,111 @@ public class StringQuestion {
     }
 
     /**
+     * Count and Say
+     * The count-and-say sequence is a sequence of digit strings defined by the recursive formula:
+     * <p>
+     * countAndSay(1) = "1"
+     * countAndSay(n) is the way you would "say" the digit string from countAndSay(n-1), which is then
+     * converted into a different digit string.
+     * To determine how you "say" a digit string, split it into the minimal number of substrings such
+     * that each substring contains exactly one unique digit. Then for each substring, say the number
+     * of digits, then say the digit. Finally, concatenate every said digit.
+     * <p>
+     * For example, the saying and conversion for digit string "3322251":
+     * Two 3, three 2, one 5, and one 1 ==> 23 32 15 11
+     * <p>
+     * Input: n = 1
+     * Output: "1"
+     * Explanation: This is the base case.
+     * <p>
+     * Input: n = 4
+     * Output: "1211"
+     * Explanation:
+     * countAndSay(1) = "1"
+     * countAndSay(2) = say "1" = one 1 = "11"
+     * countAndSay(3) = say "11" = two 1's = "21"
+     * countAndSay(4) = say "21" = one 2 + one 1 = "12" + "11" = "1211"
+     * <p>
+     * https://leetcode.com/problems/count-and-say/description/
+     */
+    @Test
+    void testCountAndSay() {
+        assertThat(countAndSay(4)).isEqualTo("1211");
+        assertThat(countAndSay(6)).isEqualTo("312211");
+    }
+
+    /**
+     * Init the result str to "1". Starts the outer loop from 2 to n, for each iteration, init a StringBuilder,
+     * currentUniqueChar to the first char of result str and count=0. Starts inner loop to iterate chars at
+     * result str, if it is the last char, append count+1 and currentUniqueChar to stb, else if next char is
+     * not equal to currentUniqueChar, do the same thing and also update currentUniqueChar to next char and
+     * reset the count, otherwise, just increment the count. Update the result to stb string after the inner
+     * loop ends(finish one round of sequence generation)
+     * <p>
+     * Time Complexity: O(4^(n/3)
+     * Each 3 iterations a single digit becomes 4 digits. If we treat every three iterations as a
+     * recursion, since we have n iterations, we then have n/3 such recursions. During each recursion
+     * a digit becomes fourfold, then after (n/3) recursions we have 4^(n/3) digits.
+     * *Note: LeetCode has more detailed(complex) explanation
+     * <p>
+     * Space Complexity: O(4^(n/3)
+     */
+    String countAndSay(int n) {
+        String result = "1";
+        for (int i = 2; i <= n; i++) {
+            StringBuilder stb = new StringBuilder();
+            int count = 0;
+            char currentUniqueChar = result.charAt(0);
+            for (int j = 0; j < result.length(); j++) {
+                char c = result.charAt(j);
+                if (j == result.length() - 1) {
+                    // At the last element. Construct the substring and append to stb
+                    stb.append(++count).append(currentUniqueChar);
+                } else if (c != result.charAt(j + 1)) {
+                    // Next char is different. Construct the substring and append to stb
+                    stb.append(++count).append(currentUniqueChar);
+                    // Reset the currentUniqueChar and counter
+                    currentUniqueChar = result.charAt(j + 1);
+                    count = 0;
+                } else {
+                    count++;
+                }
+            }
+            result = stb.toString();
+        }
+        return result;
+    }
+
+    /* Reference:
+        https://www.baeldung.com/regular-expressions-java
+        https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html
+        https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Matcher.html
+     */
+    // Time Complexity: O(2^n), where n is the index of the desired sequence.
+    // Space Complexity: O(2^n-1)
+    String countAndSayRegExp(int n) { // TODO: MEMORIZE
+        String currSeq = "1";
+
+        // Pattern to match the repetitive digits
+        String regexPattern = "(.)\\1*";
+        Pattern pattern = Pattern.compile(regexPattern);
+
+        for (int i = 1; i < n; i++) {
+            Matcher m = pattern.matcher(currSeq);
+            StringBuilder nextSeq = new StringBuilder();
+
+            // each group contains identical and adjacent digits
+            while (m.find()) {
+                nextSeq.append(m.group().length()).append(m.group().charAt(0));
+            }
+            // prepare for the next iteration
+            currSeq = nextSeq.toString();
+        }
+
+        return currSeq;
+    }
+
+    /**
      * Remove Colored Pieces if Both Neighbors are the Same Color
      * There are n pieces arranged in a line, and each piece is colored either by 'A' or by 'B'.
      * You are given a string colors of length n where colors[i] is the color of the ith piece.
@@ -1866,5 +1945,319 @@ public class StringQuestion {
         // Alice goes first, so she needs to have at least one more move available to win. If both have the same
         // number of moves, Bob wins.
         return aliceMove > bobMove;
+    }
+
+    /**
+     * Minimize Result by Adding Parentheses to Expression
+     * You are given a 0-indexed string expression of the form "<num1>+<num2>" where <num1>
+     * and <num2> represent positive integers.
+     * <p>
+     * Add a pair of parentheses to expression such that after the addition of parentheses,
+     * expression is a valid mathematical expression and evaluates to the smallest possible
+     * value. The left parenthesis must be added to the left of '+' and the right parenthesis
+     * must be added to the right of '+'.
+     * <p>
+     * Return expression after adding a pair of parentheses such that expression evaluates
+     * to the smallest possible value. If there are multiple answers that yield the same
+     * result, return any of them.
+     * <p>
+     * The input has been generated such that the original value of expression, and the
+     * value of expression after adding any pair of parentheses that meets the requirements
+     * fits within a signed 32-bit integer.
+     * <p>
+     * Input: expression = "247+38"
+     * Output: "2(47+38)"
+     * Explanation: The expression evaluates to 2 * (47 + 38) = 2 * 85 = 170.
+     * Note that "2(4)7+38" is invalid because the right parenthesis must be to the right
+     * of the '+'. It can be shown that 170 is the smallest possible value.
+     * <p>
+     * Input: expression = "12+34"
+     * Output: "1(2+3)4"
+     * Explanation: The expression evaluates to 1 * (2 + 3) * 4 = 1 * 5 * 4 = 20.
+     * <p>
+     * Input: expression = "999+999"
+     * Output: "(999+999)"
+     * Explanation: The expression evaluates to 999 + 999 = 1998.
+     * <p>
+     * https://leetcode.com/problems/minimize-result-by-adding-parentheses-to-expression/description/
+     */
+    @Test
+    void testMinimizeResult() {
+        assertThat(minimizeResult("247+38")).isEqualTo("2(47+38)");
+        assertThat(minimizeResult("12+34")).isEqualTo("1(2+3)4");
+        assertThat(minimizeResult("999+999")).isEqualTo("(999+999)");
+    }
+
+    /**
+     * Consider the array split as two parts by the '+', the idea is to try out all combination from the
+     * formula: n1 * (n2 + n3) * n4. So we iterate the first half part to generate the n1 and n2 pair,
+     * then iterate the second half part to generate all possible n3 and n4 pair. For each combination,
+     * we keep track of the min result and the position of n2 and n4. Finally use them to compose the
+     * final string with parenthesis.
+     * <p>
+     * Note:
+     * 1. The first loop starts at index 0, when we do substring(0, 0), the empty string should be treated
+     * as n1 = 1. This means n2 will be the number of all digit at the first part, so we can apply the
+     * formula correctly
+     * <p>
+     * 2. The tricky part is the inner loop iterating the second half part. It must start at plusIdx + 2.
+     * Cuz n3 must be at least one-digit number, it can't be empty.
+     * And the loop should end until j == expression.length(). Cuz we need to generate the use case for
+     * n3 = the number of all digits after plusIdx, n4 = 1. This will require the
+     * n4Str = exp.substring(expression.length) // ''
+     * <p>
+     * Time complexity: O(n^3)
+     * O(8*n/2) in inner loop which O(n) and result is O(n/2 * n/2 * 8n/2)= O(n^3)
+     * Space complexity: O(1)
+     */
+    String minimizeResult(String expression) {
+        int plusIdx = expression.indexOf('+');
+        int min = Integer.MAX_VALUE;
+        int leftP = -1, rightP = -1;
+        for (int i = 0; i < plusIdx; i++) {
+            // Key points:
+            // 1. n3 must be at least one-digit number, it can't be empty. Hence, we start the inner loop for the
+            //    2nd half part from j = (plusIdx + 2)
+            // 2. We need to generate the use case for n3 = all numbers after plusIdx, n4 = 1, so we need j to iterate
+            //    until j == expression.length(). Then the substring method we use will work as expected.
+            for (int j = plusIdx + 2; j <= expression.length(); j++) {
+                // n1 * (n2 + n3) * n4
+                int n1 = 1;
+                String n1Str = expression.substring(0, i); //from 0 to i-1 index
+                // when beginIdx == endIdx, return ""
+                if (!n1Str.isEmpty())
+                    n1 = Integer.parseInt(n1Str);
+
+                int n2 = Integer.parseInt(expression.substring(i, plusIdx)); //from i to plus-1 index
+
+                int n3 = Integer.parseInt(expression.substring(plusIdx + 1, j)); // from plus+1 index to j-1
+
+                int n4 = 1;
+                String n4Str = expression.substring(j); //from j to last
+                if (!n4Str.isEmpty())
+                    n4 = Integer.parseInt(n4Str);
+
+                int val = n1 * (n2 + n3) * n4;
+                if (val < min) {
+                    min = val;
+                    leftP = i; // i is point to the beginning of n2
+                    rightP = j; // j is point to the beginning of n4.
+                }
+            }
+        }
+        return expression.substring(0, leftP) + '(' + expression.substring(leftP, rightP) + ')' + expression.substring(rightP);
+    }
+
+    /**
+     * Reorganize String
+     * Given a string s, rearrange the characters of s so that any two adjacent
+     * characters are not the same.
+     * <p>
+     * Return any possible rearrangement of s or return "" if not possible.
+     * <p>
+     * Input: s = "aab"
+     * Output: "aba"
+     * <p>
+     * Input: s = "aaab"
+     * Output: ""
+     * <p>
+     * https://leetcode.com/problems/reorganize-string/description/
+     */
+    @Test
+    void testReorganizeString() {
+        assertThat(reorganizeString("aab")).isEqualTo("aba");
+        assertThat(reorganizeString("aaab")).isEqualTo("");
+        assertThat(reorganizeString("vvvlo")).isEqualTo("vovlv");
+        assertThat(reorganizeString("blflxll")).isEqualTo("lblxlfl");
+    }
+
+    /**
+     * First build the charToCount Map, then put all keys into MaxHeap (by count ascending).
+     * Use StringBuilder to append the char popped from the heap and keep track of the lastChar.
+     * If the top char in the heap is the same as the lastChar, popped it and store at the tmp.
+     * If the heap becomes empty, return "". Otherwise, after we get the next valid char from
+     * the heap, update the count in the map. Finally, put the tmp back to heap if any.
+     * <p>
+     * Time complexity: O(N⋅log k)
+     * Let N be the total characters in the string.
+     * Let k be the total unique characters in the string. k is bound to 26
+     * We add one character to the string per iteration, so there are O(N) iterations.
+     * In each iteration, we perform a maximum of 3 priority queue operations.
+     * Each priority queue operation costs O(log k)
+     * <p>
+     * Space complexity: O(k)
+     * Map and max heap size are both O(k)
+     *
+     * @param s
+     * @return
+     */
+    String reorganizeString(String s) {
+        StringBuilder stb = new StringBuilder();
+        Map<Character, Integer> charToCount = new HashMap<>();
+        for (char c : s.toCharArray()) {
+            charToCount.put(c, charToCount.getOrDefault(c, 0) + 1);
+        }
+        // MaxHeap order by char count
+        Queue<Character> maxHeap = new PriorityQueue<>(Comparator.<Character>comparingInt(c -> charToCount.get(c)).reversed());
+        for (char c : charToCount.keySet()) {
+            maxHeap.offer(c);
+        }
+
+        char lastChar = ' ';
+        while (!maxHeap.isEmpty()) {
+            char tmp = ' ';
+            if (maxHeap.peek() == lastChar) {
+                // If the top char in the heap is the same as the lastChar, we need to pop it,
+                // so we can use the next one.
+                tmp = maxHeap.poll();
+            }
+            if (maxHeap.isEmpty())
+                // If nothing left in the heap, we can't continue.
+                return "";
+
+            Character topC = maxHeap.poll();
+            stb.append(topC);
+            lastChar = topC;
+            // Update the char count in the map
+            int newCount = charToCount.get(lastChar) - 1;
+            if (newCount > 0) {
+                charToCount.put(lastChar, newCount);
+                maxHeap.offer(lastChar);
+            } else {
+                charToCount.remove(lastChar);
+            }
+            // put the popped char back to the heap
+            if (tmp != ' ')
+                maxHeap.offer(tmp);
+        }
+        return stb.toString();
+    }
+
+    /**
+     * By filling all the even indices first, we create a structure where no adjacent
+     * characters are the same within this group. Similarly, we proceed to fill the odd
+     * indices, ensuring that adjacent characters within this group are also different
+     * from each other.
+     * To guarantee a valid rearrangement, we need to ensure that the frequency of the
+     * most frequent letter does not exceed half the length of s, rounded up. If it does,
+     * it implies that it is not possible to arrange the string without adjacent
+     * repetitions, and we can return an empty string as the result.
+     * <p>
+     * After the count for the most frequent character has exhausted we can place the
+     * remaining characters in the remaining positions. Once we have finished populating
+     * all even indices, we move on to the first odd index and then fill in the odd indices.
+     * <p>
+     * Time complexity: O(N)
+     * <p>
+     * Space complexity: O(k)
+     */
+    public String reorganizeStringLCOpt(String s) {
+        var charCounts = new int[26];
+        for (char c : s.toCharArray()) {
+            charCounts[c - 'a']++;
+        }
+        int maxCount = 0, letter = 0;
+        for (int i = 0; i < charCounts.length; i++) {
+            if (charCounts[i] > maxCount) {
+                maxCount = charCounts[i];
+                letter = i;
+            }
+        }
+        if (maxCount > (s.length() + 1) / 2) {
+            return "";
+        }
+        var ans = new char[s.length()];
+        int index = 0;
+
+        // Place the most frequent letter
+        while (charCounts[letter] != 0) {
+            ans[index] = (char) (letter + 'a');
+            index += 2;
+            charCounts[letter]--;
+        }
+
+        // Place rest of the letters in any order
+        for (int i = 0; i < charCounts.length; i++) {
+            while (charCounts[i] > 0) {
+                if (index >= s.length()) {
+                    index = 1;
+                }
+                ans[index] = (char) (i + 'a');
+                index += 2;
+                charCounts[i]--;
+            }
+        }
+
+        return String.valueOf(ans);
+    }
+
+    /**
+     * Jump Game III
+     * Given an array of non-negative integers arr, you are initially positioned at start index of
+     * the array. When you are at index i, you can jump to i + arr[i] or i - arr[i], check if you
+     * can reach any index with value 0.
+     * <p>
+     * Notice that you can not jump outside of the array at any time.
+     * <p>
+     * Input: arr = [4,2,3,0,3,1,2], start = 5
+     * Output: true
+     * Explanation:
+     * All possible ways to reach at index 3 with value 0 are:
+     * index 5 -> index 4 -> index 1 -> index 3
+     * index 5 -> index 6 -> index 4 -> index 1 -> index 3
+     * <p>
+     * Input: arr = [4,2,3,0,3,1,2], start = 0
+     * Output: true
+     * Explanation:
+     * One possible way to reach at index 3 with value 0 is:
+     * index 0 -> index 4 -> index 1 -> index 3
+     * <p>
+     * Input: arr = [3,0,2,1,2], start = 2
+     * Output: false
+     * Explanation: There is no way to reach at index 1 with value 0.
+     * <p>
+     * https://leetcode.com/problems/jump-game-iii/description/
+     */
+    @Test
+    void testCanReach() {
+        assertThat(canReach(new int[]{4, 2, 3, 0, 3, 1, 2}, 5)).isTrue();
+        assertThat(canReach(new int[]{4, 2, 3, 0, 3, 1, 2}, 0)).isTrue();
+        assertThat(canReach(new int[]{3, 0, 2, 1, 2}, 2)).isFalse();
+    }
+
+    /**
+     * Treat a jump from one index to another is a path from one node to the other in the graph.
+     * So we can use BFS and put the index in the queue. For each node removed from the queue,
+     * if the next right and left jump node are not out of bound. Add them to the queue. We also
+     * need to keep track of the visited index using the set, cuz no need to visit the same index
+     * twice.
+     * <p>
+     * Time complexity: O(n)
+     * Space complexity: O(n)
+     */
+    boolean canReach(int[] arr, int start) {
+        Deque<Integer> queue = new ArrayDeque<>();
+        Set<Integer> visited = new HashSet<>();
+        queue.offer(start);
+        // Maintain a visited set, cuz no need to visit the same index twice
+        visited.add(start);
+
+        while (!queue.isEmpty()) {
+            int idx = queue.poll();
+            if (arr[idx] == 0) {
+                return true;
+            }
+            int rJumpIdx = idx + arr[idx];
+            if (rJumpIdx < arr.length && !visited.contains(rJumpIdx)) {
+                queue.offer(rJumpIdx);
+                visited.add(rJumpIdx);
+            }
+            int lJumpIdx = idx - arr[idx];
+            if (lJumpIdx >= 0 && !visited.contains(lJumpIdx)) {
+                queue.offer(lJumpIdx);
+                visited.add(lJumpIdx);
+            }
+        }
+        return false;
     }
 }
