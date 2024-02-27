@@ -15,17 +15,6 @@ import java.util.*;
  */
 public class LinkedListQuestion {
 
-    /**
-     * Delete Node in a Linked List
-     * You are given the node to be deleted node. You will not be given access to the first node of head.
-     * All the values of the linked list are unique, and it is guaranteed that the given node is not the last node in
-     * the linked list.
-     * https://leetcode.com/problems/delete-node-in-a-linked-list/solution/
-     */
-    @Test
-    void testDeleteNode() {
-        //deleteNode(new ListNode(1, null));
-    }
 
     private static class ListNode {
         int val;
@@ -39,87 +28,6 @@ public class LinkedListQuestion {
             this.val = val;
             this.next = next;
         }
-    }
-
-    //Time & Space Complexity: O(1)
-
-    /**
-     * 1. Copy the val of the next node of the deleting node to the deleting node
-     * 2. Set the next pointer of the deleting node to the next node of the deleting node
-     * 3. Set the next pointer of the next node of the deleting node to null
-     * Step 1: 1 -> 2 -> 3 -> 4 (delete node 2)
-     * Step 2: 1 -> 3 -> 3 -> 4
-     * Step 3: 1 -> 3 -> 4   3 -> null
-     *
-     * @param node - The node which will be deleted from the list
-     */
-    void deleteNode(ListNode node) {
-        ListNode nextNode = node.next;
-        node.val = nextNode.val;
-        node.next = nextNode.next;
-        nextNode.next = null;
-    }
-
-    /**
-     * Remove Linked List Elements
-     * Given the head of a linked list and an integer val, remove all the nodes of the linked list that
-     * has Node.val == val, and return the new head.
-     * https://leetcode.com/problems/remove-linked-list-elements/description/
-     * <p>
-     * Time Complexity: O(n)
-     * Space Complexity: O(1)
-     *
-     * @param head head node of linked list
-     * @param val  deleting node value
-     * @return head node
-     */
-    ListNode removeElements(ListNode head, int val) {
-        // Sentinel nodes is needed and its main purpose is to standardize the situation, for example,
-        // make linked list to be never empty and never headless and hence
-        // simplify insert and delete. This is important when deleting node(s) are at head
-        ListNode sentinel = new ListNode(0);
-        sentinel.next = head;
-        ListNode prev = sentinel, current = head;
-        while (current != null) {
-            if (current.val == val) {
-                prev.next = current.next;
-                current = current.next;
-            } else {
-                prev = current;
-                current = current.next;
-            }
-        }
-        return sentinel.next;
-    }
-
-    /**
-     * Remove Nth Node From End of List
-     * https://leetcode.com/problems/remove-nth-node-from-end-of-list/solution/
-     */
-    @Test
-    void testRemoveNthFromEnd() {
-        ListNode headNode = createListNode(5);
-        ListNode head = removeNthFromEnd(headNode, 2);
-        Assertions.assertThat(head.val).isEqualTo(1);
-    }
-
-    //Time Complexity: O(L). Space Complexity: O(1)
-    ListNode removeNthFromEnd(ListNode head, int n) {
-        // Need the sentinel node to handel the scenario we will delete the head/first node.
-        ListNode dummy = new ListNode(0, head);
-        ListNode firstPtr = dummy;
-        ListNode secondPtr = dummy;
-        // Advances first pointer so that the gap between first and second is n nodes apart
-        for (int i = 1; i <= n + 1; i++) {
-            firstPtr = firstPtr.next;
-        }
-        // Move first to the end, maintaining the gap
-        while (firstPtr != null) {
-            firstPtr = firstPtr.next;
-            secondPtr = secondPtr.next;
-        }
-        secondPtr.next = secondPtr.next.next;
-        return dummy.next;
     }
 
     ListNode createListNode(int num) {
@@ -137,6 +45,228 @@ public class LinkedListQuestion {
         }
         return headNode;
     }
+
+    boolean assertLinkedList(ListNode head, int... num) {
+        ListNode current = head;
+        for (int n : num) {
+            if (current == null)
+                return false;
+            if (current.val != n)
+                return false;
+            current = current.next;
+        }
+        return current == null;
+    }
+
+    /**
+     * Delete Node in a Linked List
+     * There is a singly-linked list head and we want to delete a node node in it.
+     * You are given the node to be deleted node. You will not be given access to the first
+     * node of head.
+     * All the values of the linked list are unique, and it is guaranteed that the given node
+     * node is not the last node in the linked list.
+     * Delete the given node. Note that by deleting the node, we do not mean removing it from memory.
+     * We mean: The value of the given node should not exist in the linked list.
+     * The number of nodes in the linked list should decrease by one.
+     * All the values before node should be in the same order.
+     * All the values after node should be in the same order.
+     * <p>
+     * Input: head = [4,5,1,9], node = 5
+     * Output: [4,1,9]
+     * Explanation: You are given the second node with value 5, the linked list should become
+     * 4 -> 1 -> 9 after calling your function.
+     * https://leetcode.com/problems/delete-node-in-a-linked-list/description/
+     */
+    @Test
+    void testDeleteNode() {
+        ListNode head = createListNode(4, 5, 1, 9);
+        deleteNode(head.next);
+        Assertions.assertThat(head.next.val).isEqualTo(1);
+        Assertions.assertThat(head.next.next.val).isEqualTo(9);
+    }
+
+    /**
+     * 1. Copy the val of the next node of the deleting node to the deleting node
+     * 2. Set the next pointer of the deleting node to the next node of the deleting node
+     * 3. Set the next pointer of the next node of the deleting node to null
+     * Step 1: 1 -> 2 -> 3 -> 4 (delete node 2)
+     * Step 2: 1 -> 3 -> 3 -> 4
+     * Step 3: 1 -> 3 -> 4,   3 -> null
+     * <p>
+     * Time Complexity: O(1)
+     * Space Complexity: O(1)
+     *
+     * @param node - The node which will be deleted from the list
+     */
+    void deleteNode(ListNode node) {
+        ListNode nextNode = node.next;
+        node.val = nextNode.val;
+        node.next = nextNode.next;
+        nextNode.next = null;
+    }
+
+    /**
+     * Remove Linked List Elements
+     * Given the head of a linked list and an integer val, remove all the nodes of the
+     * linked list that has Node.val == val, and return the new head.
+     * <p>
+     * Input: head = [1,2,6,3,4,5,6], val = 6
+     * Output: [1,2,3,4,5]
+     * <p>
+     * Input: head = [], val = 1
+     * Output: []
+     * <p>
+     * Input: head = [7,7,7,7], val = 7
+     * Output: []
+     * https://leetcode.com/problems/remove-linked-list-elements/description/
+     */
+    @Test
+    void testRemoveElements() {
+        ListNode headNode = createListNode(1, 2, 6, 3, 4, 5, 6);
+        ListNode head = removeElementsTwoPtr(headNode, 6);
+        Assertions.assertThat(assertLinkedList(head, 1, 2, 3, 4, 5)).isTrue();
+        headNode = createListNode(7, 7, 7, 7);
+        head = removeElementsTwoPtr(headNode, 7);
+        Assertions.assertThat(head).isNull();
+        headNode = createListNode(1, 2, 6, 3, 4, 5, 6);
+        head = removeElementsUseOnePtr(headNode, 6);
+        Assertions.assertThat(assertLinkedList(head, 1, 2, 3, 4, 5)).isTrue();
+        headNode = createListNode(7, 7, 7, 7);
+        head = removeElementsUseOnePtr(headNode, 7);
+        Assertions.assertThat(head).isNull();
+    }
+
+    /**
+     * First add dummy node before the head, then use Two pointers(p1: head, p2: dummy), we use
+     * p1 to search for deleting node until it becomes null. When p1 is on the deleting node,
+     * set p2.next to p1.next, i.e. deletion. Otherwise, move p2 to p1 position. Cuz there may
+     * be multiple deleting nodes in a row, so we don't move p2 after each deletion. We only move
+     * p2 to p1 when p1 is not a deleting node, so after we move p1 at the end of iteration,
+     * p2 will be at the previous node of the p1 in the beginning of next iteration.
+     * <p>
+     * Time Complexity: O(n)
+     * Space Complexity: O(1)
+     */
+    ListNode removeElementsTwoPtr(ListNode head, int val) {
+        // Sentinel nodes is needed and its main purpose is to standardize the situation, for example,
+        // make linked list to be never empty and never headless and hence
+        // simplify insert and delete. This is important when deleting node(s) are at head
+        ListNode dummy = new ListNode(-1);
+        dummy.next = head;
+        // Use p1 to search for deleting node
+        ListNode p1 = head;
+        // We want to keep p2 at the node before the deleting node, that's why p2 starting position is one
+        // node behind. So when p1 is on a deleting node, we can perform deletion. p2 is ONLY moved when p1 is on the non-deleting node
+        ListNode p2 = dummy;
+        while (p1 != null) {
+            if (p1.val == val) {
+                // p1 is on the deleting node, so perform node deletion, but we do NOT move p2
+                p2.next = p1.next;
+            } else {
+                // p1 is not on the deleting node, so move p2 to p1 position. p1 will move later, so we
+                // can maintain the desired relative position of p1 and p2,i.e. p2 is at the previous node
+                // of a potential deleting node in the next iteration.
+                p2 = p1;
+            }
+            p1 = p1.next;
+        }
+        return dummy.next;
+    }
+
+    /**
+     * First add dummy node before the head, then use a ptr to iterate from dummy node.
+     * while current != null && current.next != null, if the current.next node is deleting
+     * node, cuz there can be multiple deleting nodes in a row, we need to iteratively
+     * find the first non-deleting node (or null if remaining are deleting nodes). Then
+     * we set the current.next to the non-deleting node, then move the ptr.
+     * Time Complexity: O(n)
+     * Space Complexity: O(1)
+     */
+    ListNode removeElementsUseOnePtr(ListNode head, int val) {
+        ListNode dummy = new ListNode(-1);
+        dummy.next = head;
+        ListNode current = dummy;
+        // let current node last valid position at the node before tail node
+        while (current != null && current.next != null) {
+            if (current.next.val == val) {
+                ListNode newNext = current.next.next;
+                // We want a non-deleting node as the newNext, so we need to keep searching
+                // This is for the use case that there are multiple deleting nodes in a row.
+                while (newNext != null && newNext.val == val) {
+                    newNext = newNext.next;
+                }
+                current.next.next = null;
+                current.next = newNext;
+            }
+            current = current.next;
+        }
+        return dummy.next;
+    }
+
+    /**
+     * Remove Nth Node From End of List
+     * Given the head of a linked list, remove the nth node from the end of
+     * the list and return its head.
+     * <p>
+     * Input: head = [1,2,3,4,5], n = 2
+     * Output: [1,2,3,5]
+     * <p>
+     * Input: head = [1], n = 1
+     * Output: []
+     * <p>
+     * Input: head = [1,2], n = 1
+     * Output: [1]
+     * <p>
+     * https://leetcode.com/problems/remove-nth-node-from-end-of-list/description/
+     */
+    @Test
+    void testRemoveNthFromEnd() {
+        ListNode headNode = createListNode(1, 2, 3, 45);
+        ListNode head = removeNthFromEnd(headNode, 2);
+        Assertions.assertThat(head.val).isEqualTo(1);
+    }
+
+    /**
+     * Use Two pointers to iterate the list. We first need to create dummyNode before the head and
+     * let both ptr1 and ptr2 start from there. While ptr1 is not null, we move ptr1 forward, and
+     * increment a gapCount, we will start to move ptr2 when gapCount == n+1, which means we maintain
+     * n nodes between ptr1 and ptr2. Therefore, when loops ends, ptr2 sits at the node before the nth
+     * deleting node from the end. Then we update the ptr2 next pointer to finish deletion.
+     * <p>
+     * Observation:
+     * 1. When it comes to deleting node, always consider adding a dummy node before the head first,
+     * otherwise we will need more edge case check when deleting the head especially a single node list
+     * 2. When deleting the node, all we need is to find the node before the deleting node.
+     * 3. Cuz it is top N from the end, we will need ptr1 fall out of tail. So we can have p2 to delete
+     * the tail node when n=1
+     * <p>
+     * Time complexity : O(L)
+     * Space complexity : O(1)
+     */
+    ListNode removeNthFromEnd(ListNode head, int n) {
+        ListNode dummyNode = new ListNode(-1);
+        // Use dummyNode is necessary otherwise it is hard to delete the head in the single node list
+        dummyNode.next = head;
+        ListNode p1 = dummyNode;
+        ListNode p2 = dummyNode;
+        int gap = 0;
+        // We let p1 move beyond the tail in the end, so when deleting the tail, p2 will sit before tail node
+        while (p1 != null) {
+            p1 = p1.next;
+            if (gap == n + 1)
+                // We need n nodes apart between, so p1 needs to move n + 1 times first
+                // then we can move p1 and p2 together
+                p2 = p2.next;
+            else
+                gap++;
+        }
+        // Now p2 is at the previous node of deleting node, so update the next to its next.next
+        ListNode newNext = p2.next.next;
+        p2.next.next = null;
+        p2.next = newNext;
+        return dummyNode.next;
+    }
+
 
     /**
      * Reverse Linked List

@@ -1,6 +1,7 @@
 package playground;
 
 import javafx.util.Pair;
+import org.assertj.core.data.Index;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -642,4 +643,207 @@ public class Matrix {
         }
         return -1;
     }
+
+    /**
+     * Sparse Matrix Multiplication
+     * Given two sparse matrices mat1 of size m x k and mat2 of size k x n, return the result of
+     * mat1 x mat2. You may assume that multiplication is always possible.
+     * <p>
+     * Matrix multiplication formula:
+     * Matrix A: [a b c]
+     * [d e f]
+     * <p>
+     * Matrix B: [1 2]
+     * [3 4]
+     * [5 6]
+     * <p>
+     * Matrix C = A x B
+     * [a+3b+5c  2a+4b+6c]
+     * [d+3e+5f  2d+4e+6f]
+     * <p>
+     * Product of matrix A and B has the number of rows from A
+     * and the number of columns from B, i.e. rowA x colB.
+     * <p>
+     * Input: mat1 = [[1,0,0],[-1,0,3]], mat2 = [[7,0,0],[0,0,0],[0,0,1]]
+     * Output: [[7,0,0],[-7,0,3]]
+     * <p>
+     * Input: mat1 = [[0]], mat2 = [[0]]
+     * Output: [[0]]
+     * <p>
+     * https://leetcode.com/problems/sparse-matrix-multiplication/description/
+     */
+    @Test
+    void testMultiply() {
+        int[][] matrix1 = {
+                {1, 0, 0},
+                {-1, 0, 3},
+                {0, 0, 0}
+        };
+        int[][] matrix2 = {
+                {7, 0, 0},
+                {0, 0, 0},
+                {0, 0, 1}
+        };
+        assertThat(multiply(matrix1, matrix2)).contains(new int[]{7, 0, 0}, Index.atIndex(0));
+        assertThat(multiply(matrix1, matrix2)).contains(new int[]{-7, 0, 3}, Index.atIndex(1));
+        assertThat(multiplyBruteForce(matrix1, matrix2)).contains(new int[]{7, 0, 0}, Index.atIndex(0));
+        assertThat(multiplyBruteForce(matrix1, matrix2)).contains(new int[]{-7, 0, 3}, Index.atIndex(1));
+        assertThat(multiplyOpt(matrix1, matrix2)).contains(new int[]{7, 0, 0}, Index.atIndex(0));
+        assertThat(multiplyOpt(matrix1, matrix2)).contains(new int[]{-7, 0, 3}, Index.atIndex(1));
+    }
+
+    /**
+     * Implement the matrix multiplication rule directly.
+     * Iterate each cell in the final product matrix, and apply the rule to compute the sum of
+     * product of from the cells at matrix1 and matrix2.
+     * <p>
+     * Time complexity: O(m⋅k⋅n).
+     * m, number of rows in mat1
+     * n, number of columns in mat2
+     * k, number of columns in mat1
+     * <p>
+     * Space complexity: O(1).
+     */
+    int[][] multiplyBruteForce(int[][] mat1, int[][] mat2) {
+        // mat1 is size m × k, mat2 is size k × n, product of mat1⋅mat2 is size m × n.
+        int m = mat1.length, k = mat1[0].length; // == mat2.length
+        int n = mat2[0].length;
+        // Product matrix has the number of rows from A and the number of columns from B, i.e. rowA x colB.
+        int[][] prod = new int[m][n];
+        for (int r1 = 0; r1 < m; r1++) { // iterate rows of m1
+            for (int c2 = 0; c2 < n; c2++) { // iterate cols of m2
+                int val = 0;
+                for (int c1 = 0; c1 < k; c1++) { // iterate cols of m1, i.e. rows of m2
+                    // loop each number on the col c1 at matrix 1, and times the corresponding row at col c2 at matrix 2
+                    val += mat1[r1][c1] * mat2[c1][c2];
+                }
+                prod[r1][c2] = val;
+            }
+        }
+        return prod;
+    }
+
+    /**
+     * The key difference of this implementation is instead of loop each number on the col at matrix 1
+     * for a given row, and times the corresponding row at the col at matrix 2, for this new version,
+     * the idea is for a given cell [r][c] at matrix 1, we first iterate the cell [c][0...n-1] at
+     * matrix 2, and compute the product and store at the product matrix. However, we only have partial
+     * at this moment. We still need to iterate the rest of cell at the same row in matrix 1, so the
+     * their computed will be added to the existing product to be complete. The advantage of doing this
+     * is if the cell at matrix 1 is 0, there is no need to continue to iterate the matrix 2, cuz the
+     * computed partial product will be 0 and won't change the final product value even if added.
+     * <p>
+     * For example:
+     * Matrix A: [a b c]
+     * [d e f]
+     * <p>
+     * Matrix B: [1 2]
+     * [3 4]
+     * [5 6]
+     * <p>
+     * The first row of the product matrix will be updated as the following sequence (a, b, c > 0)
+     * [a⋅1  a⋅2]
+     * [a⋅1 + b⋅3   a⋅2 + b⋅4]
+     * [a⋅1 + b⋅3 + c⋅5   a⋅2 + b⋅4 + c⋅6]
+     * <p>
+     * In the case of b = 0, then the algo will skip it and won't generate b⋅3 and b⋅4
+     * Time complexity: O(m⋅k⋅n).
+     * m, number of rows in mat1
+     * n, number of columns in mat2
+     * k, number of columns in mat1
+     * <p>
+     * Space complexity: O(1).
+     */
+    int[][] multiply(int[][] mat1, int[][] mat2) {
+        // mat1 is size m × k, mat2 is size k × n, product of mat1⋅mat2 is size m × n.
+        int m = mat1.length, k = mat1[0].length; // == mat2.length
+        int n = mat2[0].length;
+        // Product matrix has the number of rows from A and the number of columns from B, i.e. rowA x colB.
+        int[][] prod = new int[m][n];
+
+        for (int r1 = 0; r1 < m; r1++) { // iterate rows of m1
+            for (int c1 = 0; c1 < k; c1++) { // iterate cols of m1
+                if (mat1[r1][c1] != 0) {
+                    for (int c2 = 0; c2 < n; c2++) { // iterate cols of m2
+                        if (mat2[c1][c2] != 0)
+                            prod[r1][c2] += mat1[r1][c1] * mat2[c1][c2];
+                    }
+                }
+            }
+        }
+        return prod;
+    }
+
+    /**
+     * This approach is for the follow-up question:
+     * what if the matrix is too big to store in the memory, but there are only a few non-zero elements.
+     * Use List of Lists to store the non-zero cell data for the matrix. The outer list is rows of
+     * the matrix, and the inner list is the pairs of (non-zero cell value, columnIndex) at the
+     * given row in the matrix. We use the same algo as the Approach 1, but two inner loop is over
+     * the matrix 1 and matrix 2 map.
+     * For each row in mat1, iterate over all elements from the map1 from that row. These represent
+     * the non-zero elements. Then iterate the map2 for the given row(the col val of the map1 element)
+     * and compute the product and add to the ans[mat1Row][mat2Col]
+     * <p>
+     * Time complexity: O(m⋅k⋅n).
+     * m, number of rows in mat1
+     * n, number of columns in mat2
+     * k, number of columns in mat1
+     * <p>
+     * Space complexity: O(m⋅k+k⋅n).
+     */
+    int[][] multiplyOpt(int[][] mat1, int[][] mat2) {
+        int m = mat1.length;
+        int k = mat1[0].length;
+        int n = mat2[0].length;
+
+        // Store the non-zero values of each matrix.
+        var A = compressMatrix(mat1);
+        var B = compressMatrix(mat2);
+
+        int[][] ans = new int[m][n];
+
+        for (int mat1Row = 0; mat1Row < m; ++mat1Row) {
+            // Iterate on all current 'row' non-zero elements of mat1.
+            for (Pair<Integer, Integer> mat1Element : A.get(mat1Row)) {
+                int element1 = mat1Element.getKey();
+                int mat1Col = mat1Element.getValue();
+
+                // Multiply and add all non-zero elements of mat2
+                // where the row is equal to col of current element of mat1.
+                for (Pair<Integer, Integer> mat2Element : B.get(mat1Col)) {
+                    int element2 = mat2Element.getKey();
+                    int mat2Col = mat2Element.getValue();
+                    ans[mat1Row][mat2Col] += element1 * element2;
+                }
+            }
+        }
+
+        return ans;
+    }
+
+    /**
+     * Turn a matrix into a List of list
+     * The outer list is rows of the matrix.
+     * The inner list is the pairs of (non-zero cell value, columnIndex) at the given row in the matrix
+     */
+    List<List<Pair<Integer, Integer>>> compressMatrix(int[][] matrix) {
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+
+        List<List<Pair<Integer, Integer>>> compressedMatrix = new ArrayList<>();
+
+        for (int row = 0; row < rows; row++) {
+            List<Pair<Integer, Integer>> currRow = new ArrayList<>();
+            for (int col = 0; col < cols; ++col) {
+                if (matrix[row][col] != 0) {
+                    // (value, columnIdx) in the list
+                    currRow.add(new Pair<>(matrix[row][col], col));
+                }
+            }
+            compressedMatrix.add(currRow);
+        }
+        return compressedMatrix;
+    }
+
 }

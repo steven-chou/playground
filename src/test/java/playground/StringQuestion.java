@@ -2260,4 +2260,108 @@ public class StringQuestion {
         }
         return false;
     }
+
+    /**
+     * Is Subsequence
+     * Given two strings s and t, return true if s is a subsequence of t, or false
+     * otherwise.
+     * <p>
+     * A subsequence of a string is a new string that is formed from the original
+     * string by deleting some (can be none) of the characters without disturbing
+     * the relative positions of the remaining characters. (i.e., "ace" is a
+     * subsequence of "abcde" while "aec" is not).
+     * <p>
+     * <p>
+     * Input: s = "abc", t = "ahbgdc"
+     * Output: true
+     * <p>
+     * Input: s = "axc", t = "ahbgdc"
+     * Output: false
+     * <p>
+     * Follow up: Suppose there are lots of incoming s, say s1, s2, ..., sk where
+     * k >= 109, and you want to check one by one to see if t has its subsequence.
+     * In this scenario, how would you change your code?
+     * <p>
+     * https://leetcode.com/problems/is-subsequence/description/
+     */
+    @Test
+    void testIsSubsequence() {
+        assertThat(isSubsequence("abc", "ahbgdc")).isTrue();
+        assertThat(isSubsequence("axc", "ahbgdc")).isFalse();
+        assertThat(isSubsequenceII("abc", "ahbgdc")).isTrue();
+        assertThat(isSubsequenceII("axc", "ahbgdc")).isFalse();
+    }
+
+    /**
+     * Use two pointers, sPtr and tPtr, from the beginning of str s and t.
+     * While sPtr and tPtr both are in-bound, if char of sPtr == tPtr, i.e. match is
+     * found, so we advance sPtr. Otherwise, we advance tPtr regardless.
+     * The loop ends when either one ptr is out bound. Finally, we return true if
+     * sPtr == s.length(), which means we scan the whole str s and found all matches.
+     * <p>
+     * Time Complexity: O(T), T is length of target str
+     * Space Complexity:: O(1)
+     */
+    boolean isSubsequence(String s, String t) {
+        if (s.isEmpty())
+            return true;
+        if (s.length() > t.length())
+            return false;
+        int sPtr = 0, tPtr = 0;
+        while (sPtr < s.length() && tPtr < t.length()) {
+            if (s.charAt(sPtr) == t.charAt(tPtr)) {
+                sPtr++; // Move sPtr only when there is a match found on t
+            }
+            tPtr++; // Move tPtr regardless
+        }
+        // We found all s in t only when sPtr has visited all char of s
+        return sPtr == s.length();
+    }
+
+    /**
+     * This is for the follow up question.
+     * We first build the charToIndices Map for the str t.
+     * We use currentMatchIdxOnStrT to track the current index position of the matched subsequence
+     * on str T so far.
+     * Iterate each char of str s. If char isn't found at map, return false.
+     * Otherwise, iterate the associated index list, if the currentMatchIdxOnStrT < idx, we can
+     * use it in our matching subsequence, so update currentMatchIdxOnStrT to it and break the
+     * inner loop. If we don't find any valid.
+     * After iterating all chars of s, return true.
+     * <p>
+     * <p>
+     * Time Complexity: O(T + S⋅T).
+     * O(T) to build the map
+     * O(S⋅T) to loop up the valid index on T of each char of S
+     * <p>
+     * Space Complexity: O(T)
+     */
+    boolean isSubsequenceII(String s, String t) {
+        Map<Character, List<Integer>> charToIndices = new HashMap<>();
+        for (int i = 0; i < t.length(); i++) {
+            char c = t.charAt(i);
+            charToIndices.computeIfAbsent(c, k -> new ArrayList<>()).add(i);
+        }
+        int currentMatchIdxOnStrT = -1;
+        for (char c : s.toCharArray()) {
+            if (!charToIndices.containsKey(c))
+                // T doesn't have this char
+                return false;
+            // Now check if the same char on T is usable
+            boolean foundMatch = false;
+            for (Integer idx : charToIndices.get(c)) {
+                if (currentMatchIdxOnStrT < idx) {
+                    // We use currentMatchIdxOnStrT to keep track of the current index position of the
+                    // matched subsequence on str T so far. So idx is valid only if it is after the currentMatchIdxOnStrT
+                    currentMatchIdxOnStrT = idx;
+                    foundMatch = true;
+                    break;
+                }
+            }
+            if (!foundMatch)
+                return false;
+        }
+        // We have scanned all chars of str s
+        return true;
+    }
 }
