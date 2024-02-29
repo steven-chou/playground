@@ -846,4 +846,166 @@ public class Matrix {
         return compressedMatrix;
     }
 
+    /**
+     * Game of Life
+     * According to Wikipedia's article: "The Game of Life, also known simply as Life, is a cellular
+     * automaton devised by the British mathematician John Horton Conway in 1970."
+     * <p>
+     * The board is made up of an m x n grid of cells, where each cell has an initial state: live
+     * (represented by a 1) or dead (represented by a 0). Each cell interacts with its eight neighbors
+     * (horizontal, vertical, diagonal) using the following four rules (taken from the above Wikipedia
+     * article):
+     * <p>
+     * Any live cell with fewer than two live neighbors dies as if caused by under-population.
+     * Any live cell with two or three live neighbors lives on to the next generation.
+     * Any live cell with more than three live neighbors dies, as if by over-population.
+     * Any dead cell with exactly three live neighbors becomes a live cell, as if by reproduction.
+     * The next state is created by applying the above rules simultaneously to every cell in the current
+     * state, where births and deaths occur simultaneously. Given the current state of the m x n grid
+     * board, return the next state.
+     * <p>
+     * Input: board = [[0,1,0],[0,0,1],[1,1,1],[0,0,0]]
+     * Output: [[0,0,0],[1,0,1],[0,1,1],[0,1,0]]
+     * <p>
+     * Input: board = [[1,1],[1,0]]
+     * Output: [[1,1],[1,1]]
+     * <p>
+     * Follow up:
+     * <p>
+     * Could you solve it in-place? Remember that the board needs to be updated simultaneously:
+     * You cannot update some cells first and then use their updated values to update other cells.
+     * <p>
+     * In this question, we represent the board using a 2D array. In principle, the board is infinite,
+     * which would cause problems when the active area encroaches upon the border of the array (i.e.,
+     * live cells reach the border). How would you address these problems?
+     * <p>
+     * https://leetcode.com/problems/game-of-life/description/
+     */
+    @Test
+    void testGameOfLife() {
+        int[][] grid = {
+                {0, 1, 0},
+                {0, 0, 1},
+                {1, 1, 1},
+                {0, 0, 0}
+        };
+        gameOfLife(grid);
+        assertThat(grid).contains(new int[]{0, 0, 0}, Index.atIndex(0));
+        assertThat(grid).contains(new int[]{1, 0, 1}, Index.atIndex(1));
+        assertThat(grid).contains(new int[]{0, 1, 1}, Index.atIndex(2));
+        assertThat(grid).contains(new int[]{0, 1, 0}, Index.atIndex(3));
+    }
+
+    /**
+     * First create a getLiveNeighborCount method to return the total of live cells at 8 neighbors
+     * for a given cell. It iterates 8 directions from a cell and sum up the count of live cells.
+     * We create a changedState boolean grid to track of the cells whose state will be changed.
+     * Iterate all cells and get the total neighbor live cells and apply the different rule to the
+     * current live and dead cell respectively and set the corresponding cell in the changedState
+     * grid if so. Finally, iterate the changedState grid and update the board for the cells marked.
+     * <p>
+     * Time complexity: O(m⋅n)
+     * Space complexity: O(m⋅n)
+     */
+    void gameOfLife(int[][] board) {
+        // Track the cells whose state will be flipped
+        boolean[][] changedState = new boolean[board.length][board[0].length];
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                int count = getLiveNeighborCount(i, j, board);
+                if (board[i][j] == 1) { // original live cell
+                    if (count < 2 || count > 3) {
+                        changedState[i][j] = true;
+                    }
+                } else { // original dead cell
+                    if (count == 3) {
+                        changedState[i][j] = true;
+                    }
+                }
+            }
+        }
+        // Update the grid using the changedState
+        for (int i = 0; i < changedState.length; i++) {
+            for (int j = 0; j < changedState[i].length; j++) {
+                if (changedState[i][j]) {
+                    board[i][j] = board[i][j] == 1 ? 0 : 1;
+                }
+            }
+        }
+    }
+
+    private int getLiveNeighborCount(int row, int col, int[][] board) {
+        int liveCount = 0;
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1},
+                {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+        // Iterate 8 adjacent cells
+        for (int[] dir : dirs) {
+            int r = row + dir[0];
+            int c = col + dir[1];
+            if (r >= 0 && r < board.length && c >= 0 && c < board[0].length) {
+                liveCount += board[r][c];
+            }
+        }
+        return liveCount;
+    }
+
+    static final int TO_LIVE = 2, TO_DEAD = -1;
+
+    /**
+     * For the follow-up question that not using extra space, we define two custom values,
+     * TO_LIVE = 2, TO_DEAD = -1, and update the board when the corresponding rule is satisfied.
+     * getLiveNeighborCount method should take those into account to use the original value when
+     * counting the live cells. In the end, iterate the board again and update the cells w/ those
+     * two custom values to the correct new value.
+     * Time complexity: O(m⋅n)
+     * Space complexity: O(1)
+     */
+    void gameOfLifeInPlace(int[][] board) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                int count = getLiveNeighborCountII(i, j, board);
+                if (board[i][j] == 1) { // original live cell
+                    if (count < 2 || count > 3) {
+                        board[i][j] = TO_DEAD;
+                    }
+                } else { // original dead cell
+                    if (count == 3) {
+                        board[i][j] = TO_LIVE;
+                    }
+                }
+            }
+        }
+        // Update the grid using the changedState
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                if (board[i][j] == TO_LIVE) {
+                    board[i][j] = 1;
+                }
+                if (board[i][j] == TO_DEAD) {
+                    board[i][j] = 0;
+                }
+            }
+        }
+    }
+
+    private int getLiveNeighborCountII(int row, int col, int[][] board) {
+        int liveCount = 0;
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1},
+                {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+        // Iterate 8 adjacent cells
+        for (int[] dir : dirs) {
+            int r = row + dir[0];
+            int c = col + dir[1];
+            if (r >= 0 && r < board.length && c >= 0 && c < board[0].length) {
+                int val = board[r][c];
+                if (val == TO_DEAD)
+                    val = 1;
+                else if (val == TO_LIVE) {
+                    val = 0;
+                }
+                liveCount += val;
+            }
+        }
+        return liveCount;
+    }
 }

@@ -2210,4 +2210,89 @@ public class SortingSearching {
         return total;
     }
 
+    /**
+     * Arranging Coins
+     * You have n coins and you want to build a staircase with these coins. The staircase consists
+     * of k rows where the ith row has exactly i coins. The last row of the staircase may be incomplete.
+     * <p>
+     * Given the integer n, return the number of complete rows of the staircase you will build.
+     * <p>
+     * Input: n = 5
+     * Output: 2
+     * Explanation: Because the 3rd row is incomplete, we return 2.
+     * <p>
+     * Input: n = 8
+     * Output: 3
+     * Explanation: Because the 4th row is incomplete, we return 3.
+     * <p>
+     * https://leetcode.com/problems/arranging-coins/description/
+     */
+    @Test
+    void testArrangeCoins() {
+        assertThat(arrangeCoins(1)).isEqualTo(1);
+        assertThat(arrangeCoins(2)).isEqualTo(1);
+        assertThat(arrangeCoins(5)).isEqualTo(2);
+        assertThat(arrangeCoins(8)).isEqualTo(3);
+        assertThat(arrangeCoins(2147483647)).isEqualTo(65535);
+        assertThat(arrangeCoinsWithReduceSearchSpace(6)).isEqualTo(3);
+    }
+
+    /**
+     * Use the Find Last True binary search template. The search space is the ith row of
+     * staircase, i = 1...n (left: 1, right: n) The monotonic condition is the total coins
+     * at the ith rows <= n. Once we get the mid, this is computed as mid * (mid + 1) / 2.
+     * <p>
+     * Note:
+     * 1. LC test case has n = INT_MAX, so we can't make right point to invalid value
+     * otherwise it will overflow. However, only when n <= 2, it can be in the valid value
+     * range. But fortunately the while condition is false too, so the answer is still
+     * correct.
+     * <p>
+     * 2. In fact, when n > 3, we can use n/2 as the upper bound of ith staircase, cuz the
+     * answer will always have the total coins < n/2. However, we will need to write the
+     * separate condition for n <= 1 (return n), and n <= 3 (return n == 3 ? 2 : 1).
+     * <p>
+     * Time Complexity: O(log(N))
+     * Space Complexity: O(1)
+     */
+    int arrangeCoins(int n) {
+        long left = 1, right = n;
+        while (left + 1 < right) {
+            long mid = left + (right - left) / 2;
+            long coinTotal = mid * (mid + 1) / 2;
+
+            if (coinTotal <= (long) n) {
+                left = mid;
+            } else {
+                right = mid;
+            }
+        }
+        return (int) left;
+    }
+
+    int arrangeCoinsWithReduceSearchSpace(int n) {
+        // These two conditions are edge cases, cuz we can't use n/2 + 1 as the right bound
+        // to perform binary search
+        if (n <= 1) {
+            return n;
+        }
+        if (n <= 3) {
+            return n == 3 ? 2 : 1;
+        }
+        // For n coins, it mostly needs less than n/2 staircase to hold them. Plus 1 cuz we need to make the right
+        // invalid when the ith row fit n coins completely. Left needs to start at the 2nd row cuz besides the
+        // edge case check, for n > 4, the valid row starts from the 2nd
+        long left = 2, right = n / 2 + 1;
+        while (left + 1 < right) {
+            long mid = left + (right - left) / 2;
+            long coinTotal = mid * (mid + 1) / 2;
+
+            if (coinTotal <= (long) n) {
+                left = mid;
+            } else {
+                right = mid;
+            }
+        }
+        return (int) left;
+    }
 }

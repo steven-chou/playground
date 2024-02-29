@@ -22,23 +22,9 @@ import java.util.stream.Collectors;
  *     result.set(result.intValue() + 2));
  *     or result.getAndIncrement();
  *     or result.getAndAdd(10)
- *   3.Backtracking template
- *     def backtrack(candidate):
- *       if find_solution(candidate):
- *          output(candidate)
- *          return
- *       # iterate all possible candidates.
- *       for next_candidate in list_of_candidates:
- *          if is_valid(next_candidate):
- *             # try this partial candidate solution
- *             place(next_candidate)
- *             # given the candidate, explore further.
- *             backtrack(next_candidate)
- *             # backtrack
- *             remove(next_candidate)
  */
 @Slf4j
-public class Recursion {
+public class Backtracking {
     /**
      * Combinations
      * Given two integers n and k, return all possible combinations of k numbers out
@@ -1243,4 +1229,100 @@ public class Recursion {
             }
         }
     }
+
+    /**
+     * Palindrome Partitioning
+     * Given a string s, partition s such that every substring of the partition is a palindrome.
+     * Return all possible palindrome partitioning of s.
+     * <p>
+     * Input: s = "aab"
+     * Output: [["a","a","b"],["aa","b"]]
+     * <p>
+     * Input: s = "a"
+     * Output: [["a"]]
+     * <p>
+     * https://leetcode.com/problems/palindrome-partitioning/description/
+     */
+    @Test
+    void testIsPalindrome() {
+        Assertions.assertThat(partition("aab")).containsExactly(List.of("a", "a", "b"), List.of("aa", "b"));
+        Assertions.assertThat(partition("a")).containsExactly(List.of("a"));
+    }
+
+    /**
+     * In the recursive method, for the currentStr generated from the startIdx, we try to partition
+     * the currentStr w/ prefix-length i, i = 1...currentStr.length, if the firstPartSubStr is
+     * palindrome, add firstPartSubStr to the currentPartitionSubStr list and make recursive call
+     * w/ (startIdx + i) to explore the other partition further. We remove the firstPartSubStr
+     * from the currentPartitionSubStr before backtracking.
+     * We collect the final solution when startIdx == str.length(), which means the last partitioning
+     * made nothing left in the str.
+     * <p>
+     * Observation:
+     * 1. A valid solution/path is we partitioned the str one or multiple times and each partitioned
+     * substring is palindrome.
+     * <p>
+     * 2. We first try partitioning the str, if the first part is palindrome, it is worth exploring
+     * the other part further. So we keep collecting the valid first part substring after partition,
+     * once we reach to a point that nothing left in the str to partition. It means we have done and
+     * all substring we collected is a valid result.
+     * <p>
+     * Time Complexity : O(N⋅2^n), where N is the length of string s.
+     * This is the worst-case time complexity when all the possible substrings are palindrome.
+     * For each letter in the input string, we can either include it as a string in the first
+     * partition. With those two choices, the total number of operations is 2^n.
+     * We also need O(n) to generate substring and check if it is a palindrome. Hence, O(N⋅2^n).
+     * <p>
+     * Space Complexity : O(n)
+     * The height of the state-space tree
+     */
+    List<List<String>> partition(String s) {
+        List<List<String>> result = new ArrayList<>();
+        findPalindromeSubStr(0, s, new ArrayList<>(), result);
+        return result;
+    }
+
+    private void findPalindromeSubStr(int startIdx, String str, List<String> currentPartitionSubStr, List<List<String>> result) {
+        if (startIdx == str.length()) {
+            // This means after the last partitioning, there is nothing left in the str needed to be considered.
+            // At this point, all the partition substring we made on the str at this path are all palindrome, so
+            // add it to the result.
+            result.add(new ArrayList<>(currentPartitionSubStr));
+            return;
+        }
+        // startIdx is the starting index used for getting the substring from the original input str
+        // currentStr will be the string we will try partitioning.
+        String currentStr = str.substring(startIdx);
+        // Try to partition the currentStr w/ prefix-length i, i = 1...currentStr.length
+        // Ex, given "abc", we want to try [a, bc], [ab, c], [abc]
+        for (int i = 1; i <= currentStr.length(); i++) {
+            // Get the substr of the first partition
+            String firstPartSubStr = currentStr.substring(0, i);
+            // We need to first check if firstPartSubStr is palindrome, if not, no point to explore the
+            // second partition further
+            if (isPalindrome(firstPartSubStr)) {
+                // firstPartSubStr is valid, so we add it to currentPartitionSubStr
+                currentPartitionSubStr.add(firstPartSubStr);
+                // now we explore the 2nd partition, we need to pass "startIdx + i" as the startIdx to the next
+                // recursion call. Cuz startIdx at the current node/substring is the offset at the original input str
+                // and i is the offset at the current substring. Hence, we need to sum them up to construct the correct
+                // substring in the next recursion level.
+                findPalindromeSubStr(startIdx + i, str, currentPartitionSubStr, result);
+                // remove the firstPartSubStr before backtracking
+                currentPartitionSubStr.remove(currentPartitionSubStr.size() - 1);
+            }
+        }
+    }
+
+    private boolean isPalindrome(String str) {
+        int start = 0, end = str.length() - 1;
+        while (start < end) {
+            if (str.charAt(start) != str.charAt(end))
+                return false;
+            start++;
+            end--;
+        }
+        return true;
+    }
+
 }
