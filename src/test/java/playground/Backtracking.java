@@ -192,6 +192,8 @@ public class Backtracking {
             return;
         } else if (remain < 0)
             return;
+        // Iterate from the start, so when we recurse to the next level, the candidates will be numbers in the list
+        // from the candidate number at previous level, i.e. i, so we can avoid generating duplicate combination
         for (int i = start; i < candidates.length; i++) {
             tmp.add(candidates[i]);
             findCombinationSum(remain - candidates[i], i, tmp, results, candidates);
@@ -250,12 +252,18 @@ public class Backtracking {
      * a number is chosen as a candidate in the combination, it will not appear again as a candidate later.
      * <p>
      * Algo:
-     * 1. To addrress the two items above, we need to first build a number to count map and then convert
+     * 1. 1. To address the two items above, we need to first build a number to count map and then convert
      * it to a List of Pair(number, count), so we can control how to iterate it during the recursion using index.
-     * Because we have group the same number using count, this solves the duplication issue in the output.
+     * Because we have group the same number using count, when we iterate it at one level, it guarantees
+     * that no duplicate number candidates. So we avoid generate the same combination in the end.
      * <p>
      * 2. Before we do the recursive call for the next level, we need to check if the count is not zero. If so,
      * decrement the count and use the same start index and updated remain to make the call.
+     * <p>
+     * Note:
+     * Alternative solution is first sort the array In the recursive method, when iterating the array, the candidate number at
+     * that level should be unique or we will create duplicate combination in the end. Cuz we sort the array, if current idx
+     * is bigger than start and the current number is the same as the previous one, we skip it.
      * <p>
      * Time Complexity: O(2^N)
      * In the worst case, our algorithm will exhaust all possible combinations from the input array.
@@ -288,10 +296,14 @@ public class Backtracking {
                 results.add(new ArrayList<>(tmp));
             return;
         }
+        // numCountLists guarantee that we have unique number candidates at one level
         for (int i = start; i < numCountLists.size(); i++) {
+            // The reason we iterate the numCountLists is cuz at one level, we want to consider a number ONLY once.
+            // Otherwise, duplicate number will create the same branch and lead to the duplicate combination.
+            // However, the remaining duplicate number should still be valid candidate at the next level(s)
             SimpleEntry<Integer, Integer> numCount = numCountLists.get(i);
             if (numCount.getValue() == 0)
-                // If number count is exhausted, move to the next one
+                // If number count is exhausted, it is not a candidate anymore, so move to the next one
                 continue;
             tmp.add(numCount.getKey());
             numCount.setValue(numCount.getValue() - 1);
@@ -300,6 +312,86 @@ public class Backtracking {
             // undo the changes for backtracking
             tmp.remove(tmp.size() - 1);
             numCount.setValue(numCount.getValue() + 1);
+        }
+    }
+
+    /**
+     * Combination Sum III
+     * Find all valid combinations of k numbers that sum up to n such that the following
+     * conditions are true:
+     * <p>
+     * Only numbers 1 through 9 are used.
+     * Each number is used at most once.
+     * Return a list of all possible valid combinations. The list must not contain the
+     * same combination twice, and the combinations may be returned in any order.
+     * <p>
+     * Input: k = 3, n = 7
+     * Output: [[1,2,4]]
+     * Explanation:
+     * 1 + 2 + 4 = 7
+     * There are no other valid combinations.
+     * <p>
+     * Input: k = 3, n = 9
+     * Output: [[1,2,6],[1,3,5],[2,3,4]]
+     * Explanation:
+     * 1 + 2 + 6 = 9
+     * 1 + 3 + 5 = 9
+     * 2 + 3 + 4 = 9
+     * There are no other valid combinations.
+     * <p>
+     * https://leetcode.com/problems/combination-sum-iii/description/
+     */
+    @Test
+    void testCombinationSum3() {
+        Assertions.assertThat(combinationSum3(3, 7))
+                .containsOnly(List.of(1, 2, 4));
+        Assertions.assertThat(combinationSum3(3, 9))
+                .containsOnly(List.of(1, 2, 6), List.of(1, 3, 5), List.of(2, 3, 4));
+    }
+
+    /**
+     * Recursively taking one number from candidates list (startIdx - 9) at each step. We
+     * maintain a remain var to track how many we still need to reach the target sum and
+     * pass it along w/ a start index(i+1) and the remain (remain-1) to the next level
+     * and undo changes before backtrack. The recursion returns when remain < 0 or
+     * path.size() > k. We get the solution when remain == 0 && path.size() == k
+     * <p>
+     * <p>
+     * Similar to the combination sum 1 problem besides the following key points
+     * 1. The number can't be reused in the combination, therefore, when recurse to the next
+     * level, we need to start at the next number in the list.
+     * <p>
+     * <p>
+     * Time Complexity: O(k⋅9!/(k!⋅(9-k)!)
+     * Total combination is C(9,k), so it will be O(9!/(k!⋅(9-k)!) number of explorations
+     * We need O(k) to copy the combination to the final answer list for each last step
+     * <p>
+     * Space Complexity: O(k)
+     * The list to hold the current combination (k-length) and the height of recursion
+     * is k
+     */
+    List<List<Integer>> combinationSum3(int k, int n) {
+        List<List<Integer>> ans = new ArrayList<>();
+        dfs(1, k, n, new ArrayList<>(), ans);
+        return ans;
+    }
+
+    private void dfs(int start, int maxCount, int remain, List<Integer> path, List<List<Integer>> ans) {
+        if (remain < 0 || path.size() > maxCount) {
+            return;
+        }
+
+        if (remain == 0 && path.size() == maxCount) {
+            ans.add(new ArrayList<>(path));
+            return;
+        }
+        // Iterate from the start, so when we recurse to the next level, the candidates will be numbers in the list
+        // after the candidate number at previous level, i.e. i+1, so we can avoid generating duplicate combination
+        for (int i = start; i <= 9; i++) {
+            path.add(i);
+            // Next level will iterate from the next number after current i.
+            dfs(i + 1, maxCount, remain - i, path, ans);
+            path.remove(path.size() - 1);
         }
     }
 
@@ -627,7 +719,7 @@ public class Backtracking {
      * Loop through these letters. For each letter, add the letter to our current tempStr, and call backtrack again, but
      * move on to the next digit by incrementing index by 1. Then remove the letter from tempStr for the backtracking.
      * <p>
-     * Time Complexity: O(4^n n)
+     * Time Complexity: O(4^n⋅n)
      * -- n is the length of digits. Note that 4 in this expression is referring to the maximum value length in the
      * hash map, and not to the length of the input.
      * -- For each combination, it costs up to n to build the combination.

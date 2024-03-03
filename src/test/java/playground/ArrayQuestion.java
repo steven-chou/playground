@@ -3037,18 +3037,24 @@ public class ArrayQuestion {
      * <p>
      * Input: nums = [1,2,3], k = 3
      * Output: 2
-     * <p>
+     * Constraints:
+     * -1000 <= nums[i] <= 1000
+     * -10^7 <= k <= 10^7
      * https://leetcode.com/problems/subarray-sum-equals-k/description/
      */
     @Test
     void testSubarraySum() {
         assertThat(subarraySum(new int[]{1, 1, 1}, 2)).isEqualTo(2);
         assertThat(subarraySum(new int[]{1, 2, 3}, 3)).isEqualTo(2);
+        assertThat(subarraySum(new int[]{-1, -1, 1}, 0)).isEqualTo(1);
+        assertThat(subarraySum(new int[]{1, 5, 3, -3, 2, 4}, 6)).isEqualTo(4);
     }
 
     /**
-     * Iterate the array and use a Map to store the current prefix sum and count so far. We check if the current prefix
-     * sum - k can be found in the Map, if so, add its count to the result.
+     * We use a Map prefixSumToCount to help us find the number of sub-arrays ending with the
+     * current number that sum to k. We iterate the array and compute its prefix sum, if the
+     * (current prefix sum - k) is found in the prefixSumToCount Map, add its count to the
+     * result. Then increment the count of currentPrefixSum in the prefixSumToCount map.
      * <p>
      * Observation
      * 1. If we use the brute force approach, we can iterate each number, and for each number, we start from next number
@@ -3062,11 +3068,15 @@ public class ArrayQuestion {
      * sum[i] − sum[j] = k
      * <p>
      * To generalize this. If we can find a sum[j] such that sum[i] − k = sum[j], then we find a eligible sub-array.
+     * However, since the number can be negative, it is possible multiple sum[j] exists cuz multiple negative
+     * and positive numbers cancel each other then has the same prefix sum.
      * For the first case, we can always assume a sum[j] equal to 0 always exists.
      * <p>
      * Algo:
-     * 1. We use a HashMap to store the prefixSum to its count/number of occurrences. We first insert the (prefixSum: 0, count: 1)
-     * into the map to cover the first case.
+     * 1. We use a HashMap to store the prefixSum to its count/number of occurrences. We first insert the
+     * (prefixSum: 0, count: 1) into the map to cover the first case. As we said earlier, it is possilbe different
+     * sub-arrays has the same prefix sum cuz the number can be negative, e.g. [1, 5, 3, -3, 2, 4] (k=6)
+     * Therefore, we need to keep the count.
      * <p>
      * 2. Iterate the array and for each number,
      * - Accumulate the current sum
@@ -3086,14 +3096,156 @@ public class ArrayQuestion {
         prefixSumToCount.put(0, 1);
         for (int num : nums) {
             currentPrefixSum += num;
-            int complementPrefixSum = currentPrefixSum - k;
-            // Check if we have a prefix sum that makes currentPrefixSum + complementPrefixSum = k
-            if (prefixSumToCount.containsKey(complementPrefixSum))
-                result += prefixSumToCount.get(complementPrefixSum);
+            // if currentPrefixSum - k exists in map, then there are some sub-array(s) ending with the
+            // current num that sum to k.
+            result += prefixSumToCount.getOrDefault(currentPrefixSum - k, 0);
+
             // Update the count of the currentPrefixSum in the map
             prefixSumToCount.put(currentPrefixSum, prefixSumToCount.getOrDefault(currentPrefixSum, 0) + 1);
         }
         return result;
+    }
+
+    /**
+     * Continuous Subarray Sum
+     * Given an integer array nums and an integer k, return true if nums has a
+     * good subarray or false otherwise.
+     * <p>
+     * A good subarray is a subarray where:
+     * <p>
+     * its length is at least two, and
+     * the sum of the elements of the subarray is a multiple of k.
+     * Note that:
+     * <p>
+     * A subarray is a contiguous part of the array.
+     * An integer x is a multiple of k if there exists an integer n such that
+     * x = n * k.
+     * 0 is always a multiple of k.
+     * <p>
+     * Constraints:
+     * 0 <= nums[i] <= 10^9
+     * 1 <= k <= 2^31 - 1
+     * number can be duplicate.
+     * <p>
+     * Input: nums = [23,2,4,6,7], k = 6
+     * Output: true
+     * Explanation: [2, 4] is a continuous subarray of size 2 whose elements
+     * sum up to 6.
+     * <p>
+     * Input: nums = [23,2,6,4,7], k = 6
+     * Output: true
+     * Explanation: [23, 2, 6, 4, 7] is an continuous subarray of size 5 whose
+     * elements sum up to 42.
+     * 42 is a multiple of 6 because 42 = 7 * 6 and 7 is an integer.
+     * <p>
+     * Input: nums = [23,2,6,4,7], k = 13
+     * Output: false
+     * <p>
+     * https://leetcode.com/problems/continuous-subarray-sum/description/
+     */
+    @Test
+    void testCheckSubarraySum() {
+        assertThat(checkSubarraySum(new int[]{23, 2, 4, 6, 7}, 6)).isTrue();
+        assertThat(checkSubarraySum(new int[]{23, 2, 6, 4, 7}, 6)).isTrue();
+        assertThat(checkSubarraySum(new int[]{23, 2, 6, 4, 7}, 13)).isFalse();
+        assertThat(checkSubarraySum(new int[]{5, 0, 0, 0}, 3)).isTrue();
+        assertThat(checkSubarraySum(new int[]{1, 1000000000}, 1)).isTrue();
+    }
+
+    /**
+     * We use a Map prefixRemainderToFirstIdx to help us find the previous number whose
+     * prefixSum % k is equal to the current number's and the size of sub-array.
+     * We need to first put the {0, -1} in the map to handles the edge case wherein the
+     * prefixSum itself is a multiple of k from the beginning of the array.
+     * We iterate the array and compute its prefix sum and the remainder (prefixSum % k).
+     * If the remainder exists in the map and the idx difference >= 2, we found a good
+     * sub-array.
+     * We store the remainder and current index ONLY if NOT already present in the map.
+     * <p>
+     * Observation:
+     * 1. Although the problem seems to be similar to the problem "Subarray Sum Equals K", we
+     * can't use the same approach to save each prefixSum in the map and look up the answer
+     * w/ currentPrefixSum - k. Cuz we are looking for multiple of k, when k is very small and
+     * current prefixSum is very big, if we try all multiple of k, it will exceed the time limit.
+     * <p>
+     * 2. We can utilize the properties of modular arithmetic. The key observation here is that
+     * if the sum of a subarray nums[i:j] (where i < j) is a multiple of k, then the prefixSum
+     * of sum[0:i-1] and sum[0:j] will have the same remainder when divided by k. This stems
+     * from the fact that if (sum[0:j] - sum[0:i-1]) is a multiple of k, then
+     * (sum[0:j] % k) = (sum[0:i-1] % k).
+     * <p>
+     * 3. Another edge case we need to take care is sub-array of sum equal to zero, i.e. k * 0.
+     * So a when we have an array like [1, 0, 0], the prefix sum and remainder will be the same
+     * at each index, so we should only store one remainder and index in the map when we see it
+     * at the first time, otherwise, we won't be able to find the sub-array with consecutive 0.
+     * <p>
+     * Time complexity : O(n)
+     * Space complexity : O(n)
+     */
+    boolean checkSubarraySum(int[] nums, int k) {
+        Map<Integer, Integer> prefixRemainderToFirstIdx = new HashMap<>();
+        // To handle the case when subarray starts from index 0
+        prefixRemainderToFirstIdx.put(0, -1);
+        int prefixSum = 0;
+        for (int i = 0; i < nums.length; i++) {
+            prefixSum += nums[i];
+            int remainder = prefixSum % k;
+            // If the remainder is already in the map and the subarray is of size at least 2
+            if (prefixRemainderToFirstIdx.containsKey(remainder)
+                    && i - prefixRemainderToFirstIdx.get(remainder) >= 2)
+                return true;
+            // Put the remainder and index in the map if not already present
+            prefixRemainderToFirstIdx.putIfAbsent(remainder, i);
+        }
+        return false;
+    }
+
+    /**
+     * Minimum Size Subarray Sum
+     * Given an array of positive integers nums and a positive integer target, return the
+     * minimal length of a subarray whose sum is greater than or equal to target. If there
+     * is no such subarray, return 0 instead.
+     * <p>
+     * Input: target = 7, nums = [2,3,1,2,4,3]
+     * Output: 2
+     * Explanation: The subarray [4,3] has the minimal length under the problem constraint.
+     * <p>
+     * Input: target = 4, nums = [1,4,4]
+     * Output: 1
+     * <p>
+     * Input: target = 11, nums = [1,1,1,1,1,1,1,1]
+     * Output: 0
+     * <p>
+     * https://leetcode.com/problems/minimum-size-subarray-sum/description/
+     */
+    @Test
+    void testMinSubArrayLen() {
+        assertThat(minSubArrayLen(7, new int[]{2, 3, 1, 2, 4, 3})).isEqualTo(2);
+        assertThat(minSubArrayLen(4, new int[]{1, 4, 4})).isEqualTo(1);
+        assertThat(minSubArrayLen(11, new int[]{1, 1, 1, 1, 1, 1, 1, 1})).isEqualTo(0);
+    }
+
+    /**
+     * Use sliding window (left:0, right:0) to iterate the array. For each number,
+     * add it to the sum, while sum >= target, we update the minWinSize with current
+     * window size if so, then start to shrink the window, i.e. advance left ptr,
+     * until the window is invalid. After the loops ends, return the minWinWinSize.
+     * <p>
+     * Time complexity: O(n)
+     * Space complexity: O(1)
+     */
+    int minSubArrayLen(int target, int[] nums) {
+        int minWinSize = Integer.MAX_VALUE;
+        int sum = 0;
+        for (int left = 0, right = 0; right < nums.length; right++) {
+            sum += nums[right];
+            while (sum >= target && left <= right) { // valid window condition
+                minWinSize = Math.min(minWinSize, right - left + 1);
+                // Shrink the window until it is not valid anymore
+                sum -= nums[left++];
+            }
+        }
+        return minWinSize == Integer.MAX_VALUE ? 0 : minWinSize;
     }
 
     /**
