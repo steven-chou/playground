@@ -2364,4 +2364,98 @@ public class StringQuestion {
         // We have scanned all chars of str s
         return true;
     }
+
+    /**
+     * Shortest Way to Form String
+     * A subsequence of a string is a new string that is formed from the original string by
+     * deleting some (can be none) of the characters without disturbing the relative positions
+     * of the remaining characters. (i.e., "ace" is a subsequence of "abcde" while "aec" is not).
+     * <p>
+     * Given two strings source and target, return the minimum number of subsequences of
+     * source such that their concatenation equals target. If the task is impossible, return -1.
+     * <p>
+     * Input: source = "abc", target = "abcbc"
+     * Output: 2
+     * Explanation: The target "abcbc" can be formed by "abc" and "bc", which are subsequences
+     * of source "abc".
+     * <p>
+     * Input: source = "abc", target = "acdbc"
+     * Output: -1
+     * Explanation: The target string cannot be constructed from the subsequences of source
+     * string due to the character "d" in target string.
+     * <p>
+     * Input: source = "xyz", target = "xzyxz"
+     * Output: 3
+     * Explanation: The target string can be constructed as follows "xz" + "y" + "xz".
+     * <p>
+     * https://leetcode.com/problems/shortest-way-to-form-string/description/
+     */
+    @Test
+    void testShortestWay() {
+        assertThat(shortestWay("abc", "abcbc")).isEqualTo(2);
+        assertThat(shortestWay("xyz", "xzyxz")).isEqualTo(3);
+        assertThat(shortestWay("aaaaa", "aaaaaaaaaaaaa")).isEqualTo(3);
+        assertThat(shortestWay("abcd", "dcba")).isEqualTo(4);
+    }
+
+    /**
+     * Use two pointers, sPtr and tPtr, to check the char on source and target. We have an outer
+     * loop when tPtr is within the target. Then we set sPtr to 0, and a boolean flag to false.
+     * While sPtr and tPtr both are in-bound, if char of sPtr == tPtr, i.e. match is found, so we
+     * set the found flag to true and advance sPtr. Otherwise, we advance tPtr regardless.
+     * The loop ends when either one ptr is out bound. If found is set to false, it means we didn't
+     * have a matched char at the source. Otherwise, we increment the count regardless to try to
+     * search in the source one more time.
+     * <p>
+     * Note: The outer loop condition and the boolean flag are the key to let us iterate the source
+     * string exactly one more time even when the target char is not found.
+     * <p>
+     * Observation:
+     * 1. This problem is an extension of the "Is Subsequence" problem. The only difference is that
+     * once the source string is exhausted, we will start again from the beginning of the source
+     * string. In other words, for each char at the target, we want to check every char at the source
+     * once before returning -1. And we also need to keep track of the number of rounds of iterating
+     * the source.
+     * <p>
+     * 2. We are trying to cover as much of the target string as possible with the source string.
+     * In other words, from one iteration of the source string, we are trying to extract as many
+     * characters as we can to cover the target string. If we are not able to cover the target
+     * string with one iteration of the source string, we will try to cover it with two copies
+     * of the source string. We declare the target can't be found from the source after a
+     * "full" scan of the source.
+     * <p>
+     * Time complexity: O(S⋅T), where T is length of target and S is length of source
+     * In the worst case like S:"abcd", T:"dcba", each char at T needs one scan of
+     * S to match it.
+     * Space complexity: O(1)
+     */
+    int shortestWay(String source, String target) {
+        int count = 0;
+        int tPtr = 0;
+        // If the char of tPtr can't be matched the source at the first time (inner loop), we want to try the source
+        // one more time from the beginning to see if any chars before the last sPtr we used to start the search will
+        // work, i.e. we want to try all char at source at least one, before return -1. The condition used at the outer
+        // loop is not very intuitive, but the "found" flag will make sure the char that doesn't exist at the target
+        // will always return -1 after we iterate the source from the beginning.
+        while (tPtr < target.length()) {
+            int sPtr = 0;
+            boolean found = false;
+            while (sPtr < source.length() && tPtr < target.length()) {
+                if (source.charAt(sPtr) == target.charAt(tPtr)) {
+                    // When we find a matched char in the source, don't break the loop. Just set the found flag
+                    // and advance both sPtr and tPtr to see we can use the remaining char at the source to find
+                    // more match
+                    found = true;
+                    tPtr++;
+                }
+                sPtr++;
+            }
+            if (!found)
+                // "found" is false only if we have iterated all chars at source and still can't find the target char
+                return -1;
+            count++; // We only increment the count after the inner loop terminates
+        }
+        return count;
+    }
+
 }

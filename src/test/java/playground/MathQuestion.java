@@ -1,6 +1,5 @@
 package playground;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -41,19 +40,34 @@ public class MathQuestion {
 
     /**
      * Fizz Buzz
+     * Given an integer n, return a string array answer (1-indexed) where:
+     * answer[i] == "FizzBuzz" if i is divisible by 3 and 5.
+     * answer[i] == "Fizz" if i is divisible by 3.
+     * answer[i] == "Buzz" if i is divisible by 5.
+     * answer[i] == i (as a string) if none of the above conditions are true.
+     * <p>
+     * Input: n = 5
+     * Output: ["1","2","Fizz","4","Buzz"]
+     * <p>
+     * Input: n = 5
+     * Output: ["1","2","Fizz","4","Buzz"]
+     * <p>
+     * Input: n = 15
+     * Output: ["1","2","Fizz","4","Buzz","Fizz","7","8","Fizz","Buzz","11",
+     * "Fizz","13","14","FizzBuzz"]
      * https://leetcode.com/problems/fizz-buzz/description/
      */
     @Test
     void testFizzBuzz() {
-        int input = -3120;
-        //int d;
-        int num = input < 0 ? Math.abs(input) : input;
-        while (num > 9) {
-            num /= 10;
-        }
-        System.out.println(num);
+//        int input = -3120;
+//        //int d;
+//        int num = input < 0 ? Math.abs(input) : input;
+//        while (num > 9) {
+//            num /= 10;
+//        }
+//        System.out.println(num);
         List<String> output = fizzBuzz(5);
-        Assertions.assertThat(output).containsExactly("1", "2", "Fizz", "4", "Buzz");
+        assertThat(output).containsExactly("1", "2", "Fizz", "4", "Buzz");
     }
 
     /**
@@ -232,31 +246,51 @@ public class MathQuestion {
 
     /**
      * Count Primes
+     * Given an integer n, return the number of prime numbers that are strictly
+     * less than n.
+     * <p>
+     * Input: n = 10
+     * Output: 4
+     * Explanation: There are 4 prime numbers less than 10, they are 2, 3, 5, 7.
+     * <p>
+     * Input: n = 0
+     * Output: 0
+     * <p>
+     * Input: n = 1
+     * Output: 0
      * https://leetcode.com/problems/count-primes/editorial/
      */
     @Test
     void testCountPrimes() {
-        Assertions.assertThat(countPrimes(10)).isEqualTo(4);
+        assertThat(countPrimes(10)).isEqualTo(4);
     }
 
     /**
      * Sieve of Eratosthenes algo
-     * 1. Create a list of consecutive integers from 2 through n: (2, 3, 4, ..., n).
-     * 2. Let p be the variable we use in the outer loop that iterates from 2 to square root n. Initially, let p equal 2, the smallest prime number.
-     * 3. Enumerate the multiples of p by counting in increments of p from p*p to n, and mark them in the list (these will be p*p, p*p + p, p*p + 2*p, ...; p itself should be prime).
-     * 4. Find the smallest number in the list greater than p that is not marked. If there was no such number, stop. Otherwise, let p now equal this new number (which is the next prime), and repeat from step 3.
-     * When the algorithm terminates, all of the remaining numbers that are not marked are prime.
+     * 1. Create an n-sized boolean array filled with false as default value.
+     * 2. Iterate from 2 to square root n.
+     * 3. For each number, p, if it is not marked as true in the array, iterate from p*p until less than n by
+     * -  increments of p, and mark them true in the boolean array. (these will be p*p, p*p + p, p*p + 2*p, ...; p
+     * -  itself should be prime).
+     * 4. Loop the boolean array and count all false.
+     * https://zh.wikipedia.org/wiki/%E5%9F%83%E6%8B%89%E6%89%98%E6%96%AF%E7%89%B9%E5%B0%BC%E7%AD%9B%E6%B3%95
+     * Time Complexity:  O(n log log n)
+     * https://stackoverflow.com/questions/2582732/time-complexity-of-sieve-of-eratosthenes-algorithm/2582776#2582776
+     * Space Complexity: O(n)
      */
     int countPrimes(int n) {
-        if (n <= 2) // Checking 0 & 1
+        if (n <= 2) // Checking 0 & 1. 1 is not prime
             return 0;
         boolean[] composites = new boolean[n]; // true: composite, false: prime
-        for (int i = 2; i <= (int) Math.sqrt(n); i++) { // loop ends at square root of n
-            if (!composites[i]) {
-                // Mark all the multiples of i as true
-                // The first index to be flipped to true is i*i
-                for (int j = i * i; j < n; j += i) {
-                    composites[j] = true;
+        // loop ends at square root of n
+        // Ex: n is not prime. n = a * b, a <= b
+        // --> a <= sqrt(n). So we only need to search up to the sqrt(n)
+        for (int p = 2; p <= (int) Math.sqrt(n); p++) {
+            if (!composites[p]) {
+                // Mark all the multiples of p as true
+                // Starting from p^2, as all the smaller multiples of p will have already been marked at that point
+                for (int i = p * p; i < n; i += p) {
+                    composites[i] = true;
                 }
             }
         }
@@ -276,7 +310,7 @@ public class MathQuestion {
      */
     @Test
     void testIsPowerOfThree() {
-        Assertions.assertThat(isPowerOfThree(27)).isTrue();
+        assertThat(isPowerOfThree(27)).isTrue();
     }
 
     /**
@@ -335,7 +369,8 @@ public class MathQuestion {
      */
     @Test
     void testRomanToInt() {
-        Assertions.assertThat(romanToInt("III")).isEqualTo(3);
+        assertThat(romanToInt("III")).isEqualTo(3);
+        assertThat(romanToIntOpt("MCMXCIV")).isEqualTo(1994);
     }
 
     static Map<String, Integer> values = new HashMap<>();
@@ -385,6 +420,42 @@ public class MathQuestion {
     }
 
     /**
+     * Iterate from the end of str. Use prev var(init: 0) to keep track of the last number
+     * we see. For each char, use the switch case for the 7 roman to int to get the corresponding
+     * current number. If num < prev, subtract the num from the current answer, otherwise,
+     * add it to the answer. Finally, update prev to current num.
+     * <p>
+     * Time Complexity: O(1). Space Complexity: O(1)
+     */
+    int romanToIntOpt(String s) {
+        int answer = 0, prev = 0;
+
+        for (int i = s.length() - 1; i >= 0; i--) {
+            int num = switch (s.charAt(i)) {
+                case 'M' -> 1000;
+                case 'D' -> 500;
+                case 'C' -> 100;
+                case 'L' -> 50;
+                case 'X' -> 10;
+                case 'V' -> 5;
+                case 'I' -> 1;
+                default -> throw new IllegalStateException("Unexpected value: " + s.charAt(i));
+            };
+            // If one symbol is less than the symbol at its right, then it is used to subtract it from its right.
+            // For example "LVIII", no symbol is less than its right; all sysmbols are used as +. But in this example,
+            // "MCMXCIV" C is less than M (second M from left), and X is less than C. So they are used to subtract C
+            // from M and X from C respectively.
+            if (num < prev) {
+                answer -= num;
+            } else {
+                answer += num;
+            }
+            prev = num;
+        }
+        return answer;
+    }
+
+    /**
      * Integer to Roman
      * Roman numerals are represented by seven different symbols: I, V, X, L, C, D and M.
      * <p>
@@ -426,7 +497,7 @@ public class MathQuestion {
      */
     @Test
     void testIntToRoman() {
-        Assertions.assertThat(intToRoman(58)).isEqualTo("LVIII");
+        assertThat(intToRoman(58)).isEqualTo("LVIII");
     }
 
     private static final int[] vals = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
@@ -475,8 +546,8 @@ public class MathQuestion {
      */
     @Test
     void testNumberToWords() {
-        Assertions.assertThat(numberToWords(123)).isEqualTo("One Hundred Twenty Three");
-        Assertions.assertThat(numberToWords(12345)).isEqualTo("Twelve Thousand Three Hundred Forty Five");
+        assertThat(numberToWords(123)).isEqualTo("One Hundred Twenty Three");
+        assertThat(numberToWords(12345)).isEqualTo("Twelve Thousand Three Hundred Forty Five");
     }
 
     private final String[] LESS_THAN_20 = {"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
@@ -546,9 +617,9 @@ public class MathQuestion {
      */
     @Test
     void testIsHappy() {
-        Assertions.assertThat(isHappy(19)).isTrue();
-        Assertions.assertThat(isHappy(2)).isFalse();
-        Assertions.assertThat(isHappyUseCycleFinding(19)).isTrue();
+        assertThat(isHappy(19)).isTrue();
+        assertThat(isHappy(2)).isFalse();
+        assertThat(isHappyUseCycleFinding(19)).isTrue();
     }
 
     /**
@@ -626,8 +697,8 @@ public class MathQuestion {
      */
     @Test
     void testTrailingZeroes() {
-        Assertions.assertThat(trailingZeroes(3)).isEqualTo(0);
-        Assertions.assertThat(trailingZeroes(5)).isEqualTo(1);
+        assertThat(trailingZeroes(3)).isEqualTo(0);
+        assertThat(trailingZeroes(5)).isEqualTo(1);
     }
 
     /**
@@ -683,8 +754,8 @@ public class MathQuestion {
      */
     @Test
     void testMyPow() {
-        Assertions.assertThat(myPowRecursive(2, 10)).isEqualTo(1024.00000);
-        Assertions.assertThat(myPowIterative(2, 5)).isEqualTo(32.0);
+        assertThat(myPowRecursive(2, 10)).isEqualTo(1024.00000);
+        assertThat(myPowIterative(2, 5)).isEqualTo(32.0);
     }
 
     /**
@@ -794,15 +865,15 @@ public class MathQuestion {
      */
     @Test
     void testMySqrt() {
-        Assertions.assertThat(mySqrt(4)).isEqualTo(2);
-        Assertions.assertThat(mySqrt(8)).isEqualTo(2);
-        Assertions.assertThat(mySqrt(2)).isEqualTo(1);
-        Assertions.assertThat(mySqrtWithTemplate(4)).isEqualTo(2);
-        Assertions.assertThat(mySqrtWithTemplate(8)).isEqualTo(2);
-        Assertions.assertThat(mySqrtWithTemplate(2)).isEqualTo(1);
-        Assertions.assertThat(mySqrtWithTemplate(1)).isEqualTo(1);
-        Assertions.assertThat(mySqrtWithTemplate(0)).isEqualTo(0);
-        Assertions.assertThat(mySqrtWithTemplate(2147483647)).isEqualTo(46340);
+        assertThat(mySqrt(4)).isEqualTo(2);
+        assertThat(mySqrt(8)).isEqualTo(2);
+        assertThat(mySqrt(2)).isEqualTo(1);
+        assertThat(mySqrtWithTemplate(4)).isEqualTo(2);
+        assertThat(mySqrtWithTemplate(8)).isEqualTo(2);
+        assertThat(mySqrtWithTemplate(2)).isEqualTo(1);
+        assertThat(mySqrtWithTemplate(1)).isEqualTo(1);
+        assertThat(mySqrtWithTemplate(0)).isEqualTo(0);
+        assertThat(mySqrtWithTemplate(2147483647)).isEqualTo(46340);
     }
 
     /**
@@ -869,8 +940,8 @@ public class MathQuestion {
      */
     @Test
     void testTitleToNumber() {
-        Assertions.assertThat(titleToNumber("A")).isEqualTo(1);
-        Assertions.assertThat(titleToNumberLeftToRight("AB")).isEqualTo(28);
+        assertThat(titleToNumber("A")).isEqualTo(1);
+        assertThat(titleToNumberLeftToRight("AB")).isEqualTo(28);
     }
 
     /**
@@ -950,8 +1021,8 @@ public class MathQuestion {
      */
     @Test
     void testDivide() {
-        Assertions.assertThat(divide(10, 3)).isEqualTo(3);
-        Assertions.assertThat(divide(7, -3)).isEqualTo(-2);
+        assertThat(divide(10, 3)).isEqualTo(3);
+        assertThat(divide(7, -3)).isEqualTo(-2);
     }
 
     int divide(int dividend, int divisor) {
@@ -988,8 +1059,8 @@ public class MathQuestion {
      */
     @Test
     void testEvalRPN() {
-        Assertions.assertThat(evalRPN(new String[]{"2", "1", "+", "3", "*"})).isEqualTo(9);
-        Assertions.assertThat(evalRPN(new String[]{"4", "13", "5", "/", "+"})).isEqualTo(6);
+        assertThat(evalRPN(new String[]{"2", "1", "+", "3", "*"})).isEqualTo(9);
+        assertThat(evalRPN(new String[]{"4", "13", "5", "/", "+"})).isEqualTo(6);
     }
 
     /**
@@ -1067,7 +1138,7 @@ public class MathQuestion {
      */
     @Test
     void testCalculatorII() {
-        Assertions.assertThat(calculateII("3+5 / 2*2-1")).isEqualTo(6);
+        assertThat(calculateII("3+5 / 2*2-1")).isEqualTo(6);
     }
 
     /**
@@ -1192,8 +1263,8 @@ public class MathQuestion {
      */
     @Test
     void testCalculatorI() {
-        Assertions.assertThat(calculateI("6-(2+3)+1")).isEqualTo(2);
-        Assertions.assertThat(calculateI("(1+(4+5+2)-3)+(6+8)")).isEqualTo(23);
+        assertThat(calculateI("6-(2+3)+1")).isEqualTo(2);
+        assertThat(calculateI("(1+(4+5+2)-3)+(6+8)")).isEqualTo(23);
     }
 
     /**
@@ -1326,9 +1397,9 @@ public class MathQuestion {
      */
     @Test
     void testCalculatorIII() {
-        Assertions.assertThat(calculateIII("6-(2+3)+1")).isEqualTo(2);
-        Assertions.assertThat(calculateIII("(1+(4+5+2)-3)+(6+8)")).isEqualTo(23);
-        Assertions.assertThat(calculateIII("2*(5+5*2)/3+(6/2+8)")).isEqualTo(21);
+        assertThat(calculateIII("6-(2+3)+1")).isEqualTo(2);
+        assertThat(calculateIII("(1+(4+5+2)-3)+(6+8)")).isEqualTo(23);
+        assertThat(calculateIII("2*(5+5*2)/3+(6/2+8)")).isEqualTo(21);
     }
 
     /**

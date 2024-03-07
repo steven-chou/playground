@@ -342,8 +342,10 @@ public class SortingSearching {
     }
 
     /**
-     * Iterate array and create numberToFrequency Map, then put each number to the corresponding slot at the frequency array
-     * (each array index is a List and contains the number(s) w/ the frequency number equal to the index)
+     * Iterate array and create numberToFrequency Map, then put each number to the corresponding
+     * slot at the frequency array (each array index is a List and contains the number(s) w/ the
+     * frequency number equal to the index). Then iterate from the end of frequency array to add
+     * all number to the list. Finally, return the first k items in the list.
      * 1. Iterate the array and build the number -> count map.
      * 2. Create a "bucket" array with the length (input array length + 1), which has List<Integer> for each slot.
      * 3. We use the bucket index to represent the possible count, and put the number from the map into the list
@@ -439,6 +441,7 @@ public class SortingSearching {
         }
         return list;
     }
+
 
     /**
      * Iterate the array and build strToCount Map, then put every (k, v) pair to the MinHeap,
@@ -1581,6 +1584,7 @@ public class SortingSearching {
     @Test
     void testFindDuplicate() {
         Assertions.assertThat(findDuplicate(new int[]{1, 3, 4, 2, 2})).isEqualTo(2);
+        Assertions.assertThat(findDuplicateBinarySearch(new int[]{1, 3, 4, 2, 2})).isEqualTo(2);
     }
 
     /**
@@ -1609,32 +1613,65 @@ public class SortingSearching {
      * Phase 1: hare = nums[nums[hare]] is twice as fast as tortoise = nums[tortoise], the loop terminates when
      * two meet.
      * <p>
-     * Phase 2: Reset the tortoise to the starting position and let hare move at the speed of tortoise:
+     * Phase 2: Reset the tortoise (slow) to the starting position and let hare (fast) move at the speed of tortoise:
      * tortoise = nums[tortoise], hare = nums[hare], the hare starts from the previous intersection point.
      * Start the same loop until they meet again. Where they meet each other is the cycle entrance, return
      * either tortoise or hare.
      * <p>
      * Time Complexity: O(n)
-     * <p>
      * Space Complexity: O(1)
      */
     int findDuplicate(int[] nums) {
         // Find the intersection point of the two runners.
-        int tortoise = nums[0];
-        int hare = nums[0];
+        int slow = nums[0];
+        int fast = nums[0];
         do {
             // Phase 1: Find the first intersection point(This is NOT the cycle entrance)
-            tortoise = nums[tortoise]; // move to the node/element w/ the index the same as the current element
-            hare = nums[nums[hare]]; // move to two elements as the same way above
-        } while (tortoise != hare);
+            slow = nums[slow]; // move to the node/element w/ the index the same as the current element
+            fast = nums[nums[fast]]; // move to two elements as the same way above
+        } while (slow != fast);
 
         // Phase 2: Find the true cycle entrance
-        tortoise = nums[0];
-        while (tortoise != hare) {
-            tortoise = nums[tortoise];
-            hare = nums[hare];
+        slow = nums[0];
+        while (slow != fast) {
+            slow = nums[slow];
+            fast = nums[fast];
         }
-        return hare;
+        return fast;
+    }
+
+    /**
+     * Use the Find-First-True binary search template. The search space is
+     * (left: 0, right: nums.length - 1). The condition is For the given number, the count
+     * of numbers less than or equal to it, exceeds the number itself.
+     * Ex: [4,6,4,2,1,4,3,5], n = 7
+     * count(1,2,3,4,5,6,7) = (1,2,3,6,7,8,8). Using the defined condition, we have
+     * (F, F, F, T, T, T, T).
+     * We can see that all numbers greater or equal to the duplicate number, their count
+     * exceed the number itself.
+     * <p>
+     * Time Complexity: O(n⋅log n)
+     * Space Complexity: O(1)
+     */
+    int findDuplicateBinarySearch(int[] nums) {
+        int left = 0, right = nums.length - 1;
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            int lessThanEqualToNumCount = 0;
+            for (int n : nums) {
+                if (n <= mid) {
+                    // Count the number that are <= mid
+                    lessThanEqualToNumCount++;
+                }
+            }
+            // Numbers greater than the duplicate number (included) all satisfy this condition
+            if (lessThanEqualToNumCount > mid) {
+                right = mid;
+            } else {
+                left = mid;
+            }
+        }
+        return right;
     }
 
     /**

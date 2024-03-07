@@ -1719,4 +1719,214 @@ public class GraphQuestion {
         return 0;
     }
 
+    /**
+     * Possible Bipartition
+     * We want to split a group of n people (labeled from 1 to n) into two groups of any size.
+     * Each person may dislike some other people, and they should not go into the same group.
+     * <p>
+     * Given the integer n and the array dislikes where dislikes[i] = [ai, bi] indicates that
+     * the person labeled ai does not like the person labeled bi, return true if it is possible
+     * to split everyone into two groups in this way.
+     * <p>
+     * Input: n = 4, dislikes = [[1,2],[1,3],[2,4]]
+     * Output: true
+     * Explanation: The first group has [1,4], and the second group has [2,3].
+     * <p>
+     * Input: n = 3, dislikes = [[1,2],[1,3],[2,3]]
+     * Output: false
+     * Explanation: We need at least 3 groups to divide them. We cannot put them in two groups.
+     * <p>
+     * https://leetcode.com/problems/possible-bipartition/description/
+     */
+    @Test
+    void testPossibleBipartition() {
+        int[][] dislikes = {
+                {1, 2},
+                {1, 3},
+                {2, 4}
+        };
+        Assertions.assertThat(possibleBipartition(4, dislikes)).isTrue();
+        dislikes = new int[][]{
+                {1, 2},
+                {1, 3},
+                {2, 3}
+        };
+        Assertions.assertThat(possibleBipartition(3, dislikes)).isFalse();
+    }
+
+    static final int NONE = -1, RED = 0, BLUE = 1;
+
+    /**
+     * First build the adjacent list Map for the graph to store all neighbors of each node.
+     * Then create an int (n+1)-length array (init: -1) to store the color for all nodes.
+     * {-1, RED(0), BLUE(1)}. Start to iterate the every node having color == -1. For each
+     * node, we mark it RED in the array first and add it to the queue, then start BFS.
+     * While the queue is not empty, we poll the queue and get the color of the current node.
+     * Then we iterate its neighbor nodes, if any neighbor has the same color as the current
+     * node, it means we have a cycle. Return false.
+     * Otherwise, if the neighbor is not colored yet, i.e. -1, we mark it using the opposite
+     * color and add it to the queue.
+     * <p>
+     * Observation:
+     * 1. The problem asks us to divide the given people into two groups such that no two
+     * people in the same group dislike each other. We can represent this problem in the
+     * form of a graph, with people being the nodes and disliked pairs being the edges.
+     * Our task is to figure out whether we can divide the nodes into two sets such that
+     * there aren't any edges between nodes of the same set.
+     * <p>
+     * 2. This is the classic bipartite graph algorithm. If a graph is bipartite, then it
+     * can't contain a odd-length cycle.
+     * Ex: A -> B, A -> C, B -> C.
+     * A, B, C form an odd-length cycle, so the graph can't be bipartite.
+     * <p>
+     * 3. We use two colors and start BFS traversal from every un-colored node in the graph.
+     * For each level, we use the opposite color of the current node to mark its neighboring
+     * nodes then put them in the queue. If at any point we see any neighbor node has the
+     * same color as current node, it means we have a cycle, which means these two nodes has
+     * the same parent, so they were marked the same color at the previous BFS level.
+     * And there must be an edge between these two nodes, so the other node was added to the
+     * queue earlier. Therefore, the graph can't be bipartite
+     * <p>
+     * <p>
+     * Time complexity: O(V+E)
+     * Let E be the size of dislikes and V be the number of people.
+     * Each node is only queued once, which takes O(1) time for each node.
+     * We also iterate over the edges of every node once (since we only visit each node once,
+     * we won't iterate over a node's edges multiple times), which adds O(E) time.
+     * We also need O(E) to initialize the adjacency list and O(V) to initialize the color array.
+     * <p>
+     * Space complexity: O(V+E)
+     */
+    boolean possibleBipartition(int n, int[][] dislikes) {
+        // Build the adjacent list, cuz this is undirected graph, we need to add edges(neighbor node) on both end
+        Map<Integer, List<Integer>> graph = new HashMap<>();
+        for (int[] dislike : dislikes) {
+            int node1 = dislike[0];
+            int node2 = dislike[1];
+            graph.computeIfAbsent(node1, k -> new ArrayList<>()).add(node2);
+            graph.computeIfAbsent(node2, k -> new ArrayList<>()).add(node1);
+        }
+        // Use nodeColor array to store the color of each node
+        int[] nodeColor = new int[n + 1];
+        Arrays.fill(nodeColor, NONE);
+        // Check every unmarked node in the graph
+        for (Integer node : graph.keySet()) {
+            if (nodeColor[node] == NONE) {
+                if (!colorNodesInGraph(node, graph, nodeColor))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean colorNodesInGraph(int startNode, Map<Integer, List<Integer>> graph, int[] nodeColor) {
+        Queue<Integer> queue = new ArrayDeque<>();
+        queue.offer(startNode);
+        nodeColor[startNode] = RED;
+        while (!queue.isEmpty()) {
+            int node = queue.poll();
+            int currentNodeColor = nodeColor[node];
+            for (Integer neighbor : graph.get(node)) {
+                if (nodeColor[neighbor] == currentNodeColor) {
+                    // If the neighbor has the same color as the current node, it means we have a cycle, which means
+                    // these two nodes has the same parent, so they were marked the same color at the previous BFS level.
+                    // And there must be an edge between these two nodes, so the other node was added to the queue.
+                    // Ex: A -> B, A -> C, B -> C.
+                    // A, B, C form an odd-length cycle, so the graph can't be bipartite.
+                    return false;
+                }
+                // If the neighbor node is not colored yet, color it and add it to the queue
+                int nextColor = currentNodeColor == RED ? BLUE : RED;
+                if (nodeColor[neighbor] == NONE) {
+                    nodeColor[neighbor] = nextColor;
+                    queue.offer(neighbor);
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Is Graph Bipartite?
+     * There is an undirected graph with n nodes, where each node is numbered between 0 and n - 1.
+     * You are given a 2D array graph, where graph[u] is an array of nodes that node u is adjacent to.
+     * More formally, for each v in graph[u], there is an undirected edge between node u and node v.
+     * The graph has the following properties:
+     * <p>
+     * There are no self-edges (graph[u] does not contain u).
+     * There are no parallel edges (graph[u] does not contain duplicate values).
+     * If v is in graph[u], then u is in graph[v] (the graph is undirected).
+     * The graph may not be connected, meaning there may be two nodes u and v such that there is
+     * no path between them.
+     * A graph is bipartite if the nodes can be partitioned into two independent sets A and B
+     * such that every edge in the graph connects a node in set A and a node in set B.
+     * <p>
+     * Return true if and only if it is bipartite.
+     * <p>
+     * Input: graph = [[1,2,3],[0,2],[0,1,3],[0,2]]
+     * Output: false
+     * Explanation: There is no way to partition the nodes into two independent sets such that every
+     * edge connects a node in one and a node in the other.
+     * <p>
+     * Input: graph = [[1,3],[0,2],[1,3],[0,2]]
+     * Output: true
+     * Explanation: We can partition the nodes into two sets: {0, 2} and {1, 3}.
+     * https://leetcode.com/problems/is-graph-bipartite/description/
+     */
+    @Test
+    void testIsBipartite() {
+        int[][] graph = {
+                {1, 2, 3},
+                {0, 2},
+                {0, 1, 3},
+                {0, 2}
+        };
+        Assertions.assertThat(isBipartite(graph)).isFalse();
+        graph = new int[][]{
+                {1, 3},
+                {0, 2},
+                {1, 3},
+                {0, 2}
+        };
+        Assertions.assertThat(isBipartite(graph)).isTrue();
+    }
+
+    /**
+     * Same implementation as the problem "Possible Bipartition", but this one the adjacent
+     * list of the graph is already given.
+     */
+    boolean isBipartite(int[][] graph) {
+        int[] nodeColor = new int[graph.length];
+        Arrays.fill(nodeColor, NONE);
+        for (int i = 0; i < nodeColor.length; i++) {
+            if (nodeColor[i] == NONE) {
+                if (!colorNode(i, nodeColor, graph)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean colorNode(int startNode, int[] nodeColor, int[][] graph) {
+        Queue<Integer> queue = new ArrayDeque<>();
+        queue.offer(startNode);
+        nodeColor[startNode] = RED;
+        while (!queue.isEmpty()) {
+            int node = queue.poll();
+            int currentNodeColor = nodeColor[node];
+            int nextColor = currentNodeColor == RED ? BLUE : RED;
+            for (int i = 0; i < graph[node].length; i++) {
+                int neighborNode = graph[node][i];
+                if (currentNodeColor == nodeColor[neighborNode]) {
+                    return false;
+                }
+                if (nodeColor[neighborNode] == NONE) {
+                    queue.offer(neighborNode);
+                    nodeColor[neighborNode] = nextColor;
+                }
+            }
+        }
+        return true;
+    }
 }
