@@ -1929,4 +1929,389 @@ public class GraphQuestion {
         }
         return true;
     }
+
+    /**
+     * Cheapest Flights Within K Stops
+     * There are n cities connected by some number of flights. You are given an array flights where
+     * flights[i] = [fromi, toi, pricei] indicates that there is a flight from city fromi to city
+     * toi with cost pricei.
+     * <p>
+     * You are also given three integers src, dst, and k, return the cheapest price from src to dst
+     * with at most k stops. If there is no such route, return -1.
+     * <p>
+     * Input: n = 4, flights = [[0,1,100],[1,2,100],[2,0,100],[1,3,600],[2,3,200]], src = 0,
+     * dst = 3, k = 1
+     * Output: 700
+     * Explanation:
+     * The graph is shown above.
+     * The optimal path with at most 1 stop from city 0 to 3 is marked in red and has cost 100 +
+     * 600 = 700.
+     * Note that the path through cities [0,1,2,3] is cheaper but is invalid because it uses 2 stops.
+     * <p>
+     * Input: n = 3, flights = [[0,1,100],[1,2,100],[0,2,500]], src = 0, dst = 2, k = 1
+     * Output: 200
+     * Explanation:
+     * The graph is shown above.
+     * The optimal path with at most 1 stop from city 0 to 2 is marked in red and has cost 100
+     * + 100 = 200.
+     * <p>
+     * Input: n = 3, flights = [[0,1,100],[1,2,100],[0,2,500]], src = 0, dst = 2, k = 0
+     * Output: 500
+     * Explanation:
+     * The graph is shown above.
+     * The optimal path with no stops from city 0 to 2 is marked in red and has cost 500.
+     * <p>
+     * https://leetcode.com/problems/cheapest-flights-within-k-stops/description/
+     */
+    @Test
+    void testFindCheapestPrice() {
+        int[][] flights = {
+                {0, 1, 100},
+                {1, 2, 100},
+                {2, 0, 100},
+                {1, 3, 600},
+                {2, 3, 200}
+        };
+        Assertions.assertThat(findCheapestPrice(4, flights, 0, 3, 1)).isEqualTo(700);
+        Assertions.assertThat(findCheapestPriceBellmanFord(4, flights, 0, 3, 1)).isEqualTo(700);
+    }
+
+    /**
+     * First build the Map<Integer, List<int[]>>for the graph, cityToCityFlightFare.
+     * We use an int[n] array to track the minCostFromSourceToCity, prefilled w/ INT_MAX
+     * Start the BFS by level ops, we stop the loop when we explored more than k layers.
+     * The queue contains the Pair(city, minCostToCity). For each pair polled from the
+     * queue, we iterate its flightToNextCity from the map. if the cost of the current
+     * city + the flight cost to the next city >= minCostFromSourceToCity[nextCity],
+     * we skip it. Otherwise, we update minCostFromSourceToCity[nextCity] to this cost
+     * and add this pair to the queue. Finally, return minCostFromSourceToCity[dst]
+     * or -1.
+     * <p>
+     * Time complexity: O(N+E⋅K)
+     * Let E be the number of flights and N be the number of cities.
+     * O(N) to initialize the array
+     * O(E) to initialize the map
+     * Max number of times an edge can be processed is limited by K cuz that is the
+     * number of levels. In the worst case, O(E⋅K)
+     * <p>
+     * Space complexity: O(N+E⋅K)
+     */
+    int findCheapestPrice(int n, int[][] flights, int src, int dst, int k) {
+        Map<Integer, List<int[]>> cityToCityFlightFare = new HashMap<>();
+        for (int[] i : flights)
+            cityToCityFlightFare.computeIfAbsent(i[0], value -> new ArrayList<>()).add(new int[]{i[1], i[2]});
+
+        int[] minCostFromSourceToCity = new int[n];
+        Arrays.fill(minCostFromSourceToCity, Integer.MAX_VALUE);
+        Queue<Pair<Integer, Integer>> queue = new ArrayDeque<>(); // Pair(city, minCostToCity)
+        queue.offer(new Pair<>(src, 0));
+        int stops = 0;
+        // We only do BFS for k-time layer
+        while (stops <= k && !queue.isEmpty()) {
+            int qSize = queue.size();
+            // Iterate on current level.
+            for (int i = 0; i < qSize; i++) {
+                Pair<Integer, Integer> pair = queue.poll();
+                Integer city = pair.getKey();
+                Integer cost = pair.getValue(); // The current min cost from source to this city
+                if (!cityToCityFlightFare.containsKey(city))
+                    continue;
+                for (int[] flight : cityToCityFlightFare.get(city)) {
+                    int nextCity = flight[0];
+                    int price = flight[1];
+                    if (cost + price >= minCostFromSourceToCity[nextCity])
+                        // If the cost of taking this flight to the next city is greater than other route to it,
+                        // skip this flight. W/O this part, we will get TLE on LeetCode
+                        continue;
+                    // update the min cost to the next city
+                    minCostFromSourceToCity[nextCity] = cost + price;
+                    queue.offer(new Pair<>(nextCity, minCostFromSourceToCity[nextCity]));
+                }
+            }
+            stops++;
+        }
+        return minCostFromSourceToCity[dst] == Integer.MAX_VALUE ? -1 : minCostFromSourceToCity[dst];
+    }
+
+    /**
+     * Bellman Ford's algorithm
+     * First build an int[n] array minCostFromSourceToCity, init to INT_MAX. We set
+     * minCostFromSourceToCity[src] = 0. Then we start the loop for k+1 times.
+     * In each iteration, make a copy of minCostFromSourceToCity named current and loop
+     * over all the flights(edges).
+     * For each flight, if minCostFromSourceToCity[fromCity] != Integer.MAX_VALUE,
+     * We compute the min cost of this path to the city by taking the min of current min
+     * cost to it and previous min cost to fromCity + this flight cost. Then we update
+     * current[toCity] to it.
+     * We update the minCostFromSourceToCity to the current array at the end of each
+     * iteration.
+     * Finally, eturn minCostFromSourceToCity[dst] or -1.
+     * <p>
+     * Bellman Ford's algorithm is used to find the shortest paths from the source node
+     * to all other vertices in a weighted graph. It depends on the idea that the
+     * shortest path contains at most N - 1 edges (where N is the number of nodes in
+     * the graph) because the shortest path cannot have a cycle.
+     * <p>
+     * This algorithm takes as input a directed weighted graph and a starting node.
+     * It produces all the shortest paths from the starting node to all other vertices.
+     * It initially sets the distance from the starting node to all other vertices to
+     * infinity. The distance of the starting node is set to 0. The algorithm loops
+     * through each edge N - 1 times. If it finds an edge through which the distance of
+     * a node is smaller than the previously stored value, it uses this edge and stores
+     * the new value. This is called relaxing an edge.
+     * <p>
+     * Time complexity: O((N+E)⋅K)
+     * We are iterating over all the edges K+1 times which takes O(E⋅K). At the start
+     * and end of each iteration, we also swap minCostFromSourceToCity arrays, which
+     * take O(N⋅K) time for all the iterations. This gives us a time complexity of
+     * O((N+E)⋅K)
+     * <p>
+     * Space complexity: O(N)
+     */
+    int findCheapestPriceBellmanFord(int n, int[][] flights, int src, int dst, int k) {
+        // Min cost/distance from source to all other nodes.
+        int[] minCostFromSourceToCity = new int[n];
+        Arrays.fill(minCostFromSourceToCity, Integer.MAX_VALUE);
+        minCostFromSourceToCity[src] = 0;
+
+        // Run only K+1 times since we want the shortest distance in K hops, i.e. K+1 edges
+        for (int i = 0; i <= k; i++) {
+            // Create a copy of minCostFromSourceToCity array.
+            int[] current = Arrays.copyOf(minCostFromSourceToCity, n);
+            for (int[] flight : flights) { // relaxation process on each edge
+                int fromCity = flight[0];
+                int toCity = flight[1];
+                int cost = flight[2];
+                // When minCostFromSourceToCity[fromCity] == Integer.MAX_VALUE, it means we haven't visited any edges
+                // that go thru this node yet. So we can't determine the cost. Therefore, skip it for this iteration
+                if (minCostFromSourceToCity[fromCity] != Integer.MAX_VALUE) {
+                    // There is a visited edge thru fromCity node, so we can compute the min cost of this path to
+                    // the city by taking the min of current min cost to it and previous min cost to from city + this
+                    // flight cost
+                    current[toCity] = Math.min(current[toCity], minCostFromSourceToCity[fromCity] + cost);
+                }
+            }
+            // Update the minCostFromSourceToCity to current array
+            minCostFromSourceToCity = current;
+        }
+        return minCostFromSourceToCity[dst] == Integer.MAX_VALUE ? -1 : minCostFromSourceToCity[dst];
+    }
+
+    /**
+     * Number of Connected Components in an Undirected
+     * You have a graph of n nodes. You are given an integer n and an array edges where
+     * edges[i] = [ai, bi] indicates that there is an edge between ai and bi in the graph.
+     * <p>
+     * Return the number of connected components in the graph.
+     * <p>
+     * Input: n = 5, edges = [[0,1],[1,2],[3,4]]
+     * Output: 2
+     * <p>
+     * Input: n = 5, edges = [[0,1],[1,2],[2,3],[3,4]]
+     * Output: 1
+     * <p>
+     * https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/description/
+     */
+    @Test
+    void testCountComponents() {
+        int[][] edges = {
+                {0, 1},
+                {1, 2},
+                {3, 4}
+        };
+        Assertions.assertThat(countComponents(5, edges)).isEqualTo(2);
+        edges = new int[][]{
+                {3, 1},
+                {1, 2},
+                {3, 2}
+        };
+        Assertions.assertThat(countComponents(4, edges)).isEqualTo(2);
+        edges = new int[][]{
+                {0, 1},
+                {1, 2},
+                {3, 4},
+                {3, 2}
+        };
+        Assertions.assertThat(countComponents(5, edges)).isEqualTo(1);
+    }
+
+    /**
+     * Create the adjacent list map for n nodes and given edges. Maintain a visited set then
+     * iterate the node from 0...n-1. For each node, if not visited, put it into the queue
+     * and start BFS to mark traversed node visited. After each BFS traversal is done,
+     * increment the component count.
+     * <p>
+     * * Can also be implemented in DFS
+     * <p>
+     * Time complexity: O(E+V)
+     * <p>
+     * Space complexity: O(E+V)
+     */
+    int countComponents(int n, int[][] edges) {
+        Map<Integer, List<Integer>> graph = new HashMap<>();
+        // Not every node is connected with edge, so we need to create all nodes in the graph
+        for (int i = 0; i < n; i++) {
+            graph.put(i, new ArrayList<>());
+        }
+        for (int[] edge : edges) {
+            graph.get(edge[0]).add(edge[1]);
+            graph.get(edge[1]).add(edge[0]);
+        }
+        Set<Integer> visited = new HashSet<>();
+        int count = 0;
+        Queue<Integer> queue = new ArrayDeque<>();
+        for (int i = 0; i < n; i++) {
+            // iterate every unvisited node and start BFS to mark nodes visited
+            if (!visited.contains(i)) {
+                queue.offer(i);
+                visited.add(i);
+                while (!queue.isEmpty()) {
+                    Integer currentNode = queue.poll();
+                    for (Integer neighbor : graph.get(currentNode)) {
+                        if (!visited.contains(neighbor)) {
+                            queue.offer(neighbor);
+                            visited.add(neighbor);
+                        }
+                    }
+                }
+                // Increment the count after finish one BFS traversal from one node
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Pacific Atlantic Water Flow
+     * There is an m x n rectangular island that borders both the Pacific Ocean and Atlantic Ocean.
+     * The Pacific Ocean touches the island's left and top edges, and the Atlantic Ocean touches
+     * the island's right and bottom edges.
+     * <p>
+     * The island is partitioned into a grid of square cells. You are given an m x n integer matrix
+     * heights where heights[r][c] represents the height above sea level of the cell at coordinate
+     * (r, c).
+     * <p>
+     * The island receives a lot of rain, and the rain water can flow to neighboring cells directly
+     * north, south, east, and west if the neighboring cell's height is less than or equal to the
+     * current cell's height. Water can flow from any cell adjacent to an ocean into the ocean.
+     * <p>
+     * Return a 2D list of grid coordinates result where result[i] = [ri, ci] denotes that rain
+     * water can flow from cell (ri, ci) to both the Pacific and Atlantic oceans.
+     * <p>
+     * https://leetcode.com/problems/pacific-atlantic-water-flow/description/
+     */
+    @Test
+    void testPacificAtlantic() {
+        int[][] grid = {
+                {1, 2, 2, 3, 5},
+                {3, 2, 3, 4, 4},
+                {2, 4, 5, 3, 1},
+                {6, 7, 1, 4, 5},
+                {5, 1, 1, 2, 4}
+        };
+        Assertions.assertThat(pacificAtlanticBFS(grid))
+                .containsExactlyInAnyOrder(List.of(0, 4), List.of(1, 3), List.of(1, 4), List.of(2, 2), List.of(3, 0), List.of(3, 1), List.of(4, 0));
+        Assertions.assertThat(pacificAtlanticDFS(grid))
+                .containsExactlyInAnyOrder(List.of(0, 4), List.of(1, 3), List.of(1, 4), List.of(2, 2), List.of(3, 0), List.of(3, 1), List.of(4, 0));
+    }
+
+    /**
+     * Use multi-source BFS traversal to start from all cells next to Pacific Ocean
+     * (grid[0..m-1][0], grid[0][0..n-1]) and Atlantic Ocean (grid[0..m-1][n-1],
+     * grid[m-1][0..n-1]). We need separate queues and visited boolean grids.
+     * We put the aforementioned cells in the corresponding queues and mark them
+     * visited. Then start two separate BFS using two queues separately to mark
+     * the cells, however, only the neighbor cells greater or equal to the current
+     * node should be added to the queue. Finally, iterate all cells in the grid
+     * and if it is marked true on both visited grid, add to the result list.
+     * <p>
+     * * Can also be implemented in DFS
+     */
+    List<List<Integer>> pacificAtlanticBFS(int[][] heights) {
+        List<List<Integer>> result = new ArrayList<>();
+        int rowNum = heights.length;
+        int colNum = heights[0].length;
+        Queue<Pair<Integer, Integer>> pacificQ = new ArrayDeque<>();
+        Queue<Pair<Integer, Integer>> atlanticQ = new ArrayDeque<>();
+        boolean[][] pacificVisited = new boolean[rowNum][colNum];
+        boolean[][] atlanticVisited = new boolean[rowNum][colNum];
+        // Put all cells next to the pacific ocean in the queue and mark visited
+        for (int i = 0; i < rowNum; i++) {
+            pacificQ.offer(new Pair<>(i, 0));
+            pacificVisited[i][0] = true;
+            atlanticQ.offer(new Pair<>(i, colNum - 1));
+            atlanticVisited[i][colNum - 1] = true;
+        }
+        // Put all cells next to the atlantic ocean in the queue and mark visited
+        for (int i = 0; i < colNum; i++) {
+            pacificQ.offer(new Pair<>(0, i));
+            pacificVisited[0][i] = true;
+            atlanticQ.offer(new Pair<>(rowNum - 1, i));
+            atlanticVisited[rowNum - 1][i] = true;
+        }
+        // Start multi-source BFS to mark cells on both queues
+        markCellsBFS(pacificQ, pacificVisited, rowNum, colNum, heights);
+        markCellsBFS(atlanticQ, atlanticVisited, rowNum, colNum, heights);
+        // Find the cells marked by both BFS
+        for (int i = 0; i < rowNum; i++) {
+            for (int j = 0; j < colNum; j++) {
+                if (pacificVisited[i][j] && atlanticVisited[i][j])
+                    result.add(List.of(i, j));
+            }
+        }
+        return result;
+    }
+
+    private void markCellsBFS(Queue<Pair<Integer, Integer>> queue, boolean[][] visited, int rowNum, int colNum, int[][] heights) {
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        while (!queue.isEmpty()) {
+            Pair<Integer, Integer> cell = queue.poll();
+            for (int[] dir : dirs) {
+                int r = cell.getKey() + dir[0];
+                int c = cell.getValue() + dir[1];
+                if (r >= 0 && r < rowNum && c >= 0 && c < colNum && !visited[r][c]
+                        && heights[r][c] >= heights[cell.getKey()][cell.getValue()]) {
+                    queue.offer(new Pair<>(r, c));
+                    visited[r][c] = true;
+                }
+            }
+        }
+    }
+
+    List<List<Integer>> pacificAtlanticDFS(int[][] heights) {
+        List<List<Integer>> result = new ArrayList<>();
+        int rowNum = heights.length;
+        int colNum = heights[0].length;
+        boolean[][] pacificVisited = new boolean[rowNum][colNum];
+        boolean[][] atlanticVisited = new boolean[rowNum][colNum];
+        for (int i = 0; i < rowNum; i++) {
+            markCellsDFS(i, 0, pacificVisited, rowNum, colNum, heights);
+            markCellsDFS(i, colNum - 1, atlanticVisited, rowNum, colNum, heights);
+        }
+        // Put all cells next to the atlantic ocean in the queue and mark visited
+        for (int i = 0; i < colNum; i++) {
+            markCellsDFS(0, i, pacificVisited, rowNum, colNum, heights);
+            markCellsDFS(rowNum - 1, i, atlanticVisited, rowNum, colNum, heights);
+        }
+        for (int i = 0; i < rowNum; i++) {
+            for (int j = 0; j < colNum; j++) {
+                if (pacificVisited[i][j] && atlanticVisited[i][j])
+                    result.add(List.of(i, j));
+            }
+        }
+        return result;
+    }
+
+    private void markCellsDFS(int row, int col, boolean[][] visited, int rowNum, int colNum, int[][] heights) {
+        visited[row][col] = true;
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] dir : dirs) {
+            int r = row + dir[0];
+            int c = col + dir[1];
+            if (r >= 0 && r < rowNum && c >= 0 && c < colNum && !visited[r][c]
+                    && heights[r][c] >= heights[row][col]) {
+                markCellsDFS(r, c, visited, rowNum, colNum, heights);
+            }
+        }
+    }
 }

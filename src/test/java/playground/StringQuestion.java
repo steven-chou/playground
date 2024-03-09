@@ -2087,9 +2087,6 @@ public class StringQuestion {
      * <p>
      * Space complexity: O(k)
      * Map and max heap size are both O(k)
-     *
-     * @param s
-     * @return
      */
     String reorganizeString(String s) {
         StringBuilder stb = new StringBuilder();
