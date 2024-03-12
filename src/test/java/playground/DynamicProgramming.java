@@ -301,7 +301,7 @@ public class DynamicProgramming {
 
     /**
      * Unique Paths
-     * There is a robot on an m x n grid. The robot is initially located at the top-left
+     * There is a robot on an m x n grid. The robot is initially located in the top-left
      * corner (i.e., grid[0][0]). The robot tries to move to the bottom-right corner
      * (i.e., grid[m - 1][n - 1]). The robot can only move either down or right at any point
      * in time.
@@ -326,10 +326,13 @@ public class DynamicProgramming {
     @Test
     void testUniquePaths() {
         Assertions.assertThat(uniquePaths(3, 7)).isEqualTo(28);
+        Assertions.assertThat(uniquePathsBFS(3, 7)).isEqualTo(28);
     }
+
 
     /**
      * Dynamic Programming
+     * opt[i][j] = number of unique paths to reach grid[i][j]
      * Base case is opt[0][0] = 1
      * <p>
      * The cells in the first row and column are 1
@@ -342,21 +345,49 @@ public class DynamicProgramming {
      * Time Complexity: O(mn). Space Complexity: O(mn)
      */
     int uniquePaths(int m, int n) {
-        int[][] grid = new int[m][n];
+        int[][] path = new int[m][n];
         for (int row = 0; row < m; row++) {
             for (int col = 0; col < n; col++) {
                 if (col == 0 || row == 0)
-                    grid[row][col] = 1;
+                    path[row][col] = 1;
                 else
-                    grid[row][col] = grid[row - 1][col] + grid[row][col - 1];
+                    path[row][col] = path[row - 1][col] + path[row][col - 1];
             }
         }
-        return grid[m - 1][n - 1];
+        return path[m - 1][n - 1];
+    }
+
+    public int uniquePathsBFS(int m, int n) {
+        int[][] path = new int[m][n];
+        Queue<int[]> q = new ArrayDeque<>();
+        q.add(new int[]{0, 0});
+        path[0][0] = 1;
+        int[][] directions = new int[][]{{1, 0}, {0, 1}};
+        while (!q.isEmpty()) {
+            int[] currentCell = q.poll();
+            for (int[] dir : directions) {
+                int newRow = currentCell[0] + dir[0];
+                int newCol = currentCell[1] + dir[1];
+                if (newRow < m && newCol < n) {
+                    // When we do BFS, since we need to explore all paths, we should visit the cells more than once
+                    if (path[newRow][newCol] == 0) {
+                        // First time visit of the cell, set its value to the current cell value and put it into
+                        // the queue
+                        q.offer(new int[]{newRow, newCol});
+                        path[newRow][newCol] = path[currentCell[0]][currentCell[1]];
+                    } else {
+                        // Not first time visit the cell, so just add the current cell value to it.
+                        path[newRow][newCol] += path[currentCell[0]][currentCell[1]];
+                    }
+                }
+            }
+        }
+        return path[m - 1][n - 1];
     }
 
     /**
      * Unique Paths II
-     * You are given an m x n integer array grid. There is a robot initially located at
+     * You are given an m x n integer array grid. There is a robot initially located in
      * the top-left corner (i.e., grid[0][0]). The robot tries to move to the bottom-right
      * corner (i.e., grid[m - 1][n - 1]). The robot can only move either down or right
      * at any point in time.
@@ -386,68 +417,72 @@ public class DynamicProgramming {
     }
 
     /**
-     * The recurrence relation is the same as the Unique Path I. But we need to first process the
-     * first row and the column and take the obstacle into account. Then we process the cells from
-     * [1][1]. If the cell is obstacle, set to 0, otherwise set to the sum of [r-1][c] and [c][r-1]
-     * * We use the input, obstacleGrid array to store the final result so we don't need extra space
+     * The recurrence relation is the same as the Unique Path I. But we need to first determine the
+     * path count at the first row and the column in the final path grid by taking the obstacle into
+     * account (if there is obstacle above or left, all subsequent cells should have path = 0).
+     * Then we process the cells from [1][1]. If there is an obstacle, set path to 0, otherwise set
+     * to the sum of [r-1][c] and [c][r-1]
      * <p>
      * 1. If the first cell i.e. obstacleGrid[0,0] contains 1, this means there is an obstacle in
      * the first cell. Hence the robot won't be able to make any move and we would return the number
      * of ways as 0.
      * <p>
-     * 2. Otherwise, if obstacleGrid[0,0] has a 0 originally we set it to 1 and move ahead.
+     * 2. Cuz first row and column are out part of base case. We need to compute their path value
+     * first. We iterate the first row at path grid, If the cell in the obstacleGrid is obstacle,
+     * set it and all subsequent cell at the first row at path grid to 0, otherwise, set to 1.
+     * Do the same thing for the first column as well.
      * <p>
-     * 3. Iterate the first row. If a cell originally contains a 1, this means the current cell has
-     * an obstacle and shouldn't contribute to any path. Hence, set the value of that cell to 0.
-     * Otherwise, set it to the value of previous cell, i.e. obstacleGrid[i,j] = obstacleGrid[i,j-1]
+     * 3. Now, iterate through the array starting from cell [1,1]. If the cell at obstacleGrid is
+     * obstacle, set path[i][j] to 0, otherwise, set it to the sum of number of ways of reaching
+     * the cell above it and number of ways of reaching the cell to the left of it.
      * <p>
-     * 4. Iterate the first column. If a cell originally contains a 1, this means the current cell
-     * has an obstacle and shouldn't contribute to any path. Hence, set the value of that cell to 0.
-     * Otherwise, set it to the value of previous cell i.e. obstacleGrid[i,j] = obstacleGrid[i-1,j]
+     * path[i,j] = path[i-1,j] + path[i,j-1]
      * <p>
-     * 5. Now, iterate through the array starting from cell obstacleGrid[1,1]. If a cell originally
-     * doesn't contain any obstacle then the number of ways of reaching that cell would be the sum
-     * of number of ways of reaching the cell above it and number of ways of reaching the cell to
-     * the left of it.
+     * Note: this can also be implemented w/ 1D dp array
+     * https://leetcode.com/problems/unique-paths-ii/solutions/23250/short-java-solution/
      * <p>
-     * obstacleGrid[i,j] = obstacleGrid[i-1,j] + obstacleGrid[i,j-1]
-     * <p>
-     * 6. If a cell contains an obstacle set it to 0 and continue. This is done to make sure it
-     * doesn't contribute to any other path.
-     * Time Complexity: O(mn). Space Complexity: O(1)
+     * Time Complexity: O(mn)
+     * Space Complexity: O(mn)
      */
     int uniquePathsWithObstacles(int[][] obstacleGrid) {
         int rowLen = obstacleGrid.length;
         int colLen = obstacleGrid[0].length;
         if (obstacleGrid[0][0] == 1)
             return 0;
+        int[][] path = new int[rowLen][colLen];
         // base case
-        obstacleGrid[0][0] = 1;
+        path[0][0] = 1;
         // Fill the first column
-        for (int row = 1; row < rowLen; row++) {
-            if (obstacleGrid[row][0] == 0 && obstacleGrid[row - 1][0] == 1)
-                // When the original value is 0(not obstacle) and the above cell is 1
-                obstacleGrid[row][0] = 1;
-            else
-                obstacleGrid[row][0] = 0;
+        for (int row = 0; row < rowLen; row++) {
+            if (obstacleGrid[row][0] == 1) {
+                // current cell is obstacle, set the path of all subsequent cells at the first column to 0
+                while (row < rowLen) {
+                    path[row][0] = 0;
+                    row++;
+                }
+            } else // obstacle
+                path[row][0] = 1;
         }
         // Fill the first row
-        for (int col = 1; col < colLen; col++) {
-            if (obstacleGrid[0][col] == 0 && obstacleGrid[0][col - 1] == 1)
-                // When the original value is 0(not obstacle) and the left cell is 1
-                obstacleGrid[0][col] = 1;
-            else
-                obstacleGrid[0][col] = 0;
+        for (int col = 0; col < colLen; col++) {
+            if (obstacleGrid[0][col] == 1) {
+                // current cell is obstacle, set the path of all subsequent cells at the first row to 0
+                while (col < colLen) {
+                    path[0][col] = 0;
+                    col++;
+                }
+            } else // obstacle
+                path[0][col] = 1;
         }
         for (int row = 1; row < rowLen; row++) {
             for (int col = 1; col < colLen; col++) {
-                if (obstacleGrid[row][col] == 1)
-                    obstacleGrid[row][col] = 0;
-                else
-                    obstacleGrid[row][col] = obstacleGrid[row - 1][col] + obstacleGrid[row][col - 1];
+                if (obstacleGrid[row][col] == 0) {
+                    path[row][col] = path[row - 1][col] + path[row][col - 1];
+                } else // obstacle
+                    path[row][col] = 0;
             }
         }
-        return obstacleGrid[rowLen - 1][colLen - 1];
+        return path[rowLen - 1][colLen - 1];
     }
 
     /**
@@ -637,49 +672,6 @@ public class DynamicProgramming {
             }
         }
         return dp.size();
-    }
-
-    /**
-     * Jump Game
-     * You are given an integer array nums. You are initially positioned at the array's first index, and each element
-     * in the array represents your maximum jump length at that position.
-     * Return true if you can reach the last index, or false otherwise.
-     * <p>
-     * Input: nums = [2,3,1,1,4]
-     * Output: true
-     * Explanation: Jump 1 step from index 0 to 1, then 3 steps to the last index.
-     * Example 2:
-     * <p>
-     * Input: nums = [3,2,1,0,4]
-     * Output: false
-     * Explanation: You will always arrive at index 3 no matter what. Its maximum jump length is 0, which makes it
-     * impossible to reach the last index.
-     * https://leetcode.com/problems/jump-game/description/
-     */
-    @Test
-    void testCanJump() {
-        int[] input = {12, 3, 1, 1, 4};
-        Assertions.assertThat(canJump(input)).isTrue();
-        input = new int[]{3, 2, 1, 0, 4};
-        Assertions.assertThat(canJump(input)).isFalse();
-    }
-
-    /**
-     * Greedy
-     * Define a var, goal, initialized to the last index
-     * Iterating from the end of input array, if there is a potential jump that reaches the goal from the current index to the goal,
-     * i.e. currentIndex i + nums[i] >= goal index, we make the current index as new goal.
-     * Therefore, if we can continue to move the goal to the first index, we returns true, otherwise, false.
-     * It doesn't matter if we can make a BIG jump from any position. All we need is just one way.
-     * Time Complexity: O(n). Space Complexity: O(1)
-     */
-    boolean canJump(int[] nums) {
-        int goalIndx = nums.length - 1;
-        for (int i = nums.length - 1; i >= 0; i--) {
-            if (i + nums[i] >= goalIndx)
-                goalIndx = i;
-        }
-        return goalIndx == 0;
     }
 
     /**
@@ -881,24 +873,6 @@ public class DynamicProgramming {
         }
     }
 
-    int findLastNonConflictingJob(List<Job> jobs, int idx) {
-        // Perform binary search on the given job index. All jobs are sorted by the end time. We want to find the last
-        // compatible job index, which  doesn't conflict with the given job, i.e., whose finish time is less than or
-        // equal to the given job's start time.
-        int left = 0, right = jobs.size() - 1;
-        int targetStartTime = jobs.get(idx).startTime;
-        int ans = -1;
-        while (left <= right) {
-            int mid = left + (right - left) / 2;
-            if (jobs.get(mid).endTime <= targetStartTime) {
-                left = mid + 1;
-                ans = mid; // The search process stops ONLY after left and right cross each other!
-            } else
-                right = mid - 1;
-        }
-        return ans;
-    }
-
     int jobScheduling(int[] startTime, int[] endTime, int[] profit) {
         List<Job> jobs = new ArrayList<>(startTime.length);
         for (int i = 0; i < startTime.length; i++) {
@@ -925,6 +899,24 @@ public class DynamicProgramming {
             dp[i] = Math.max(profitWithCurrentJob, dp[i - 1]);
         }
         return dp[jobs.size() - 1]; // The last item in the dp array is the result
+    }
+
+    int findLastNonConflictingJob(List<Job> jobs, int idx) {
+        // Use Find-Last-True binary search on the given job index. All jobs are sorted by the end time.
+        // We want to find the last compatible job index, which doesn't conflict with the given job, i.e., whose
+        // finish time is less than or equal to the given job's start time.
+        // left (valid) -> [-1...jobs.size()-1], include -1 to use it for not-found result
+        // right -> invalid [job.size()]
+        int left = -1, right = jobs.size();
+        int targetStartTime = jobs.get(idx).startTime;
+        while (left + 1 < right) {
+            int mid = left + (right - left) / 2;
+            if (jobs.get(mid).endTime <= targetStartTime) {
+                left = mid;
+            } else
+                right = mid;
+        }
+        return left;
     }
 
     /**

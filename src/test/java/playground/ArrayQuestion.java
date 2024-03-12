@@ -3452,4 +3452,210 @@ public class ArrayQuestion {
         return result;
     }
 
+    /**
+     * Jump Game
+     * You are given an integer array nums. You are initially positioned at the array's first index, and each element
+     * in the array represents your maximum jump length at that position.
+     * Return true if you can reach the last index, or false otherwise.
+     * <p>
+     * Input: nums = [2,3,1,1,4]
+     * Output: true
+     * Explanation: Jump 1 step from index 0 to 1, then 3 steps to the last index.
+     * Example 2:
+     * <p>
+     * Input: nums = [3,2,1,0,4]
+     * Output: false
+     * Explanation: You will always arrive at index 3 no matter what. Its maximum jump length is 0, which makes it
+     * impossible to reach the last index.
+     * https://leetcode.com/problems/jump-game/description/
+     */
+    @Test
+    void testCanJump() {
+        int[] input = {12, 3, 1, 1, 4};
+        org.assertj.core.api.Assertions.assertThat(canJump(input)).isTrue();
+        input = new int[]{3, 2, 1, 0, 4};
+        org.assertj.core.api.Assertions.assertThat(canJump(input)).isFalse();
+    }
+
+    /**
+     * First we define a canJumpToGoalIdx var, initialized to the last index.
+     * Then iterating from the end of input array, for each position, i, if we can make a jump to
+     * the canJumpToGoalIdx position, i.e. i + nums[i] >= canJumpToGoalIdx, we update canJumpToGoalIdx to
+     * the current position, i. After the loop ends, if canJumpToGoalIdx is equal to 0, return true,
+     * otherwise, false.
+     * <p>
+     * Observation:
+     * Instead of exploring every possible jumps from the index 0 to reach the last position. We look
+     * from the goal and search backward to find the good index that can jump to the goal. Once we find a
+     * good one, we make it as new goal and continue the search until reaching the index 0.
+     * <p>
+     * Other solution includes backtracking, Dynamic Programming
+     * Time Complexity: O(n). Space Complexity: O(1)
+     */
+    boolean canJump(int[] nums) {
+        int canJumpToGoalIdx = nums.length - 1;
+        for (int i = nums.length - 1; i >= 0; i--) {
+            if (i + nums[i] >= canJumpToGoalIdx)
+                canJumpToGoalIdx = i;
+        }
+        return canJumpToGoalIdx == 0;
+    }
+
+    /**
+     * Jump Game II
+     * You are given a 0-indexed array of integers nums of length n. You are initially positioned
+     * at nums[0].
+     * <p>
+     * Each element nums[i] represents the maximum length of a forward jump from index i. In other
+     * words, if you are at nums[i], you can jump to any nums[i + j] where:
+     * <p>
+     * 0 <= j <= nums[i] and
+     * i + j < n
+     * Return the minimum number of jumps to reach nums[n - 1]. The test cases are generated such
+     * that you can reach nums[n - 1].
+     * <p>
+     * Input: nums = [2,3,1,1,4]
+     * Output: 2
+     * Explanation: The minimum number of jumps to reach the last index is 2. Jump 1 step from
+     * index 0 to 1, then 3 steps to the last index.
+     * <p>
+     * Input: nums = [2,3,0,1,4]
+     * Output: 2
+     * <p>
+     * https://leetcode.com/problems/jump-game-ii/description/
+     */
+    @Test
+    void testJump() {
+        assertThat(jump(new int[]{2, 3, 1, 1, 4})).isEqualTo(2);
+        assertThat(jump(new int[]{2, 3, 0, 1, 4})).isEqualTo(2);
+
+    }
+
+    /**
+     * Iterate array and maintain the furthest reachable position from current index, maxReachableIdx,
+     * and currently furthest reached position we made, lastJumpMaxIdx. We keep updating the
+     * maxReachableIdx for each index. When we reach the lastJumpedIdx position, we make a new jump to
+     * the maxReachableIdx and increment the jump count and update the lastJumpMaxIdx to it. The loop
+     * should continue until lastJumpMaxIdx hasn't reach or over the last index (nums.length - 1)
+     * <p>
+     * Observation:
+     * 1. The problem assumes there is always a way to to reach the last index. We can use the Greedy
+     * thinking here, i.e. make the furthest jump each time as we can.
+     * <p>
+     * 2. First we know for each index, i, the furthest position we can reach from there is i + nums[i].
+     * When we iterate the array, first we want to use a var, maxReachableIdx, to keep track of this
+     * info.
+     * <p>
+     * 3. Next we need to decide when and where we make the jump. We use lastJumpedIdx to track currently
+     * furthest reached position we made. Keep in mind this is the max position we can jump to, in fact
+     * we can jump to anywhere between current position to it. We init lastJumpMaxIdx to index 0, when we
+     * iterate to the lastJumpMaxIdx position, we make a jump (increment jump count) by setting
+     * lastJumpMaxIdx to the current maxReachableIdx. Once the lastJumpMaxIdx reaches the last index or
+     * exceed it, we stop the loop and return the jump count.
+     * <p>
+     * 4. The idea is lastJumpMaxIdx is always ahead of the pointer iterating the array and updating the
+     * maxReachableIdx. lastJumpMaxIdx is like the upper bound that we can reach from the current position.
+     * Then we try to find out the maxReachableIdx at this range [currentIdx - lastJumpMaxIdx], so we
+     * will know how far we can reach at the next jump, and it will also become the next lastJumpMaxIdx.
+     * We don't care where we will make the jump, but where we will be able to jump to.
+     * <p>
+     * <p>
+     * Note: This implementation is also similar to the BFS
+     * <p>
+     * https://leetcode.com/problems/jump-game-ii/solutions/1192404/jump-game-ii-easy-solutions-w-explanation-optimization-from-brute-force-to-dp-to-greedy-bfs/
+     * <p>
+     * Time Complexity : O(N)
+     * Space Complexity : O(1)
+     */
+    int jump(int[] nums) {
+        // The starting range of the first jump is [0, 0]
+        int jumps = 0, i = 0;
+        int lastJumpMaxIdx = 0, maxReachableIdx = 0;
+        while (lastJumpMaxIdx < nums.length - 1) {  // loop till last jump hasn't taken us till the end (or exceed)
+            // Keep updating the farthest reachable index for every position
+            maxReachableIdx = Math.max(maxReachableIdx, i + nums[i]);
+
+            // If we finish the starting range of this jump,
+            // Move on to the starting range of the next jump.
+            if (i == lastJumpMaxIdx) {
+                // Make next jump to the max reachable position we just found
+                // The first jump is always the nums[0], i.e. maxReachableIdx
+                lastJumpMaxIdx = maxReachableIdx;
+                jumps++;
+            }
+            i++;
+        }
+        return jumps;
+    }
+
+
+    /**
+     * Jump Game III
+     * Given an array of non-negative integers arr, you are initially positioned at start index of
+     * the array. When you are at index i, you can jump to i + arr[i] or i - arr[i], check if you
+     * can reach any index with value 0.
+     * <p>
+     * Notice that you can not jump outside of the array at any time.
+     * <p>
+     * Input: arr = [4,2,3,0,3,1,2], start = 5
+     * Output: true
+     * Explanation:
+     * All possible ways to reach at index 3 with value 0 are:
+     * index 5 -> index 4 -> index 1 -> index 3
+     * index 5 -> index 6 -> index 4 -> index 1 -> index 3
+     * <p>
+     * Input: arr = [4,2,3,0,3,1,2], start = 0
+     * Output: true
+     * Explanation:
+     * One possible way to reach at index 3 with value 0 is:
+     * index 0 -> index 4 -> index 1 -> index 3
+     * <p>
+     * Input: arr = [3,0,2,1,2], start = 2
+     * Output: false
+     * Explanation: There is no way to reach at index 1 with value 0.
+     * <p>
+     * https://leetcode.com/problems/jump-game-iii/description/
+     */
+    @Test
+    void testCanReach() {
+        assertThat(canReach(new int[]{4, 2, 3, 0, 3, 1, 2}, 5)).isTrue();
+        assertThat(canReach(new int[]{4, 2, 3, 0, 3, 1, 2}, 0)).isTrue();
+        assertThat(canReach(new int[]{3, 0, 2, 1, 2}, 2)).isFalse();
+    }
+
+    /**
+     * Treat a jump from one index to another is a path from one node to the other in the graph.
+     * So we can use BFS and put the index in the queue. For each node removed from the queue,
+     * if the next right and left jump node are not out of bound. Add them to the queue. We also
+     * need to keep track of the visited index using the set, cuz no need to visit the same index
+     * twice.
+     * <p>
+     * Time complexity: O(n)
+     * Space complexity: O(n)
+     */
+    boolean canReach(int[] arr, int start) {
+        Deque<Integer> queue = new ArrayDeque<>();
+        Set<Integer> visited = new HashSet<>();
+        queue.offer(start);
+        // Maintain a visited set, cuz no need to visit the same index twice
+        visited.add(start);
+
+        while (!queue.isEmpty()) {
+            int idx = queue.poll();
+            if (arr[idx] == 0) {
+                return true;
+            }
+            int rJumpIdx = idx + arr[idx];
+            if (rJumpIdx < arr.length && !visited.contains(rJumpIdx)) {
+                queue.offer(rJumpIdx);
+                visited.add(rJumpIdx);
+            }
+            int lJumpIdx = idx - arr[idx];
+            if (lJumpIdx >= 0 && !visited.contains(lJumpIdx)) {
+                queue.offer(lJumpIdx);
+                visited.add(lJumpIdx);
+            }
+        }
+        return false;
+    }
 }

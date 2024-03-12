@@ -713,7 +713,7 @@ public class Matrix {
         for (int r1 = 0; r1 < m; r1++) { // iterate rows of m1
             for (int c2 = 0; c2 < n; c2++) { // iterate cols of m2
                 int val = 0;
-                for (int c1 = 0; c1 < k; c1++) { // iterate cols of m1, i.e. rows of m2
+                for (int c1 = 0; c1 < k; c1++) { // iterate cols of m1
                     // loop each number on the col c1 at matrix 1, and times the corresponding row at col c2 at matrix 2
                     val += mat1[r1][c1] * mat2[c1][c2];
                 }
@@ -728,18 +728,18 @@ public class Matrix {
      * for a given row, and times the corresponding row at the col at matrix 2, for this new version,
      * the idea is for a given cell [r][c] at matrix 1, we first iterate the cell [c][0...n-1] at
      * matrix 2, and compute the product and store at the product matrix. However, we only have partial
-     * at this moment. We still need to iterate the rest of cell at the same row in matrix 1, so the
-     * their computed will be added to the existing product to be complete. The advantage of doing this
+     * product at this moment. We still need to iterate the rest of cell at the same row in matrix 1, so
+     * their product will be added to the existing product to be complete. The advantage of doing this
      * is if the cell at matrix 1 is 0, there is no need to continue to iterate the matrix 2, cuz the
      * computed partial product will be 0 and won't change the final product value even if added.
      * <p>
      * For example:
      * Matrix A: [a b c]
-     * [d e f]
+     * -         [d e f]
      * <p>
      * Matrix B: [1 2]
-     * [3 4]
-     * [5 6]
+     * -         [3 4]
+     * -         [5 6]
      * <p>
      * The first row of the product matrix will be updated as the following sequence (a, b, c > 0)
      * [a⋅1  a⋅2]
@@ -762,7 +762,7 @@ public class Matrix {
         int[][] prod = new int[m][n];
 
         for (int r1 = 0; r1 < m; r1++) { // iterate rows of m1
-            for (int c1 = 0; c1 < k; c1++) { // iterate cols of m1
+            for (int c1 = 0; c1 < k; c1++) { // iterate cols of m1, i.e. rows of m2
                 if (mat1[r1][c1] != 0) {
                     for (int c2 = 0; c2 < n; c2++) { // iterate cols of m2
                         if (mat2[c1][c2] != 0)

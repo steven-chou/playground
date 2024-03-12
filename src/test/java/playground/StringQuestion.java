@@ -1165,8 +1165,8 @@ public class StringQuestion {
     /**
      * Build the map of char to index of its last occurrence in the str. Use a set to track the char in the
      * stack. Iterate the str if the current char is not in the set, first pop out char(s) in the stack if it is
-     * larger than the current char and will occur later. Push the current char to the stack and update
-     * the set. Finally build the answer from char on the stack in reverse order.
+     * larger than the current char (monotonic increasing stack) and will occur later. Push the current char to
+     * the stack and update the set. Finally, build the answer from char on the stack in reverse order.
      * <p>
      * Observation:
      * 1. Which string is greater depends on the comparison between the first unequal corresponding character
@@ -1216,6 +1216,7 @@ public class StringQuestion {
             if (charOnStack.contains(currentChar))
                 // current char is on the stack, we can't have duplicate so skip it
                 continue;
+            // Keep the stack monotonic increasing if possible, i.e. smallest char at the bottom.
             // Before we push the current char to the stack, we need to remove the top char on the stack if both condition meet
             // 1. Current char is smaller than top char. Cuz we want to put the smaller char in the front if possible.
             //    Ex: "ab" is better than "ba"
@@ -2007,7 +2008,7 @@ public class StringQuestion {
      * n4Str = exp.substring(expression.length) // ''
      * <p>
      * Time complexity: O(n^3)
-     * O(8*n/2) in inner loop which O(n) and result is O(n/2 * n/2 * 8n/2)= O(n^3)
+     * O(8*n/2) in inner loop (for all substring and parseInt) and result is O(n/2 * n/2 * 8n/2)= O(n^3)
      * Space complexity: O(1)
      */
     String minimizeResult(String expression) {
@@ -2188,75 +2189,6 @@ public class StringQuestion {
         return String.valueOf(ans);
     }
 
-    /**
-     * Jump Game III
-     * Given an array of non-negative integers arr, you are initially positioned at start index of
-     * the array. When you are at index i, you can jump to i + arr[i] or i - arr[i], check if you
-     * can reach any index with value 0.
-     * <p>
-     * Notice that you can not jump outside of the array at any time.
-     * <p>
-     * Input: arr = [4,2,3,0,3,1,2], start = 5
-     * Output: true
-     * Explanation:
-     * All possible ways to reach at index 3 with value 0 are:
-     * index 5 -> index 4 -> index 1 -> index 3
-     * index 5 -> index 6 -> index 4 -> index 1 -> index 3
-     * <p>
-     * Input: arr = [4,2,3,0,3,1,2], start = 0
-     * Output: true
-     * Explanation:
-     * One possible way to reach at index 3 with value 0 is:
-     * index 0 -> index 4 -> index 1 -> index 3
-     * <p>
-     * Input: arr = [3,0,2,1,2], start = 2
-     * Output: false
-     * Explanation: There is no way to reach at index 1 with value 0.
-     * <p>
-     * https://leetcode.com/problems/jump-game-iii/description/
-     */
-    @Test
-    void testCanReach() {
-        assertThat(canReach(new int[]{4, 2, 3, 0, 3, 1, 2}, 5)).isTrue();
-        assertThat(canReach(new int[]{4, 2, 3, 0, 3, 1, 2}, 0)).isTrue();
-        assertThat(canReach(new int[]{3, 0, 2, 1, 2}, 2)).isFalse();
-    }
-
-    /**
-     * Treat a jump from one index to another is a path from one node to the other in the graph.
-     * So we can use BFS and put the index in the queue. For each node removed from the queue,
-     * if the next right and left jump node are not out of bound. Add them to the queue. We also
-     * need to keep track of the visited index using the set, cuz no need to visit the same index
-     * twice.
-     * <p>
-     * Time complexity: O(n)
-     * Space complexity: O(n)
-     */
-    boolean canReach(int[] arr, int start) {
-        Deque<Integer> queue = new ArrayDeque<>();
-        Set<Integer> visited = new HashSet<>();
-        queue.offer(start);
-        // Maintain a visited set, cuz no need to visit the same index twice
-        visited.add(start);
-
-        while (!queue.isEmpty()) {
-            int idx = queue.poll();
-            if (arr[idx] == 0) {
-                return true;
-            }
-            int rJumpIdx = idx + arr[idx];
-            if (rJumpIdx < arr.length && !visited.contains(rJumpIdx)) {
-                queue.offer(rJumpIdx);
-                visited.add(rJumpIdx);
-            }
-            int lJumpIdx = idx - arr[idx];
-            if (lJumpIdx >= 0 && !visited.contains(lJumpIdx)) {
-                queue.offer(lJumpIdx);
-                visited.add(lJumpIdx);
-            }
-        }
-        return false;
-    }
 
     /**
      * Is Subsequence

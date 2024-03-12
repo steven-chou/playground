@@ -398,10 +398,10 @@ public class IntervalQuestion {
      * Sort the array by the start time first. Use a MinHeap to track the end time of the rooms currently in use. Iterate the
      * array and if the start time >= top of the heap(latest end time of rooms), remove it from the heap.
      * We add the current meeting end time to the heap regardless. (Reuse this room w/ updated end time if the previous condition
-     * is true, otherwise, it means we get a new room). Finally the size of the heap is the total rooms we need.
+     * is true, otherwise, it means we get a new room). Finally, the size of the heap is the total rooms we need.
      * <p>
      * Observation:
-     * At any point in time we have multiple rooms that can be occupied and we don't really care which room
+     * At any point in time we have multiple rooms that can be occupied, and we don't really care which room
      * is free as long as we find one when required for a new meeting.
      * <p>
      * Instead of manually iterating on every room that's been allocated and checking if the room is

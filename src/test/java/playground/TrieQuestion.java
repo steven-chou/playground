@@ -375,7 +375,9 @@ public class TrieQuestion {
             for (int i = 0; i < word.length(); i++) {
                 char c = word.charAt(i);
                 if (c == '.') {
-                    // When encountering '.', recursively check every child node w/ remaining substring
+                    // When encountering '.', we need to explore all possible/non-null children for the reaming
+                    // substring, so make recursive call with child node (cuz we still need to consume the current node
+                    // for '.') and the remaining substring
                     for (int j = 0; j < node.children.length; j++) {
                         if (node.children[j] != null && searchFromNode(node.children[j], word.substring(i + 1)))
                             return true;
