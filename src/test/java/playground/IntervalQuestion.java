@@ -77,6 +77,80 @@ public class IntervalQuestion {
     }
 
     /**
+     * Interval List Intersections
+     * You are given two lists of closed intervals, firstList and secondList, where firstList[i]
+     * = [starti, endi] and secondList[j] = [startj, endj]. Each list of intervals is pairwise disjoint
+     * and in sorted order.
+     * <p>
+     * Return the intersection of these two interval lists.
+     * <p>
+     * A closed interval [a, b] (with a <= b) denotes the set of real numbers x with a <= x <= b.
+     * <p>
+     * The intersection of two closed intervals is a set of real numbers that are either empty or represented
+     * as a closed interval. For example, the intersection of [1, 3] and [2, 4] is [2, 3].
+     * <p>
+     * Input: firstList = [[0,2],[5,10],[13,23],[24,25]], secondList = [[1,5],[8,12],[15,24],[25,26]]
+     * Output: [[1,2],[5,5],[8,10],[15,23],[24,24],[25,25]]
+     * <p>
+     * Input: firstList = [[1,3],[5,9]], secondList = []
+     * Output: []
+     * <p>
+     * https://leetcode.com/problems/interval-list-intersections/description/
+     */
+    @Test
+    void testIntervalIntersection() {
+        int[][] firstList = new int[][]{{0, 2}, {5, 10}, {13, 23}, {24, 25}};
+        int[][] secondList = new int[][]{{1, 5}, {8, 12}, {15, 24}, {25, 26}};
+        int[][] answer = new int[][]{{1, 2}, {5, 5}, {8, 10}, {15, 23}, {24, 24}, {25, 25}};
+        Assertions.assertThat(intervalIntersection(firstList, secondList)).isDeepEqualTo(answer);
+    }
+
+    /**
+     * Iterate two list with two pointers until we exhaust one of lists, for each interval on both
+     * lists, get the startTimeMax and endTimeMin from these two. If endTimeMin >= startTimeMax,
+     * it means there is overlap, so add it to the result. Then if endTimeMin == firstPtr interval
+     * endTime, advance firstPtr, if endTimeMin == secondPtr interval endTime, advance secondPtr.
+     * <p>
+     * Observation:
+     * 1. To detect two overlapped intervals, we check a.endTime > b.startTime if a.startTime <=
+     * b.startTime. However, if we don't want to check the startTime of both a and b, this can also
+     * be simplified as first take the max startTime and the min endTime of these two intervals.
+     * If startTimeMax <= endTimeMin, this will be exactly the overlapped interval section. So
+     * we will add it to the answer.
+     * <p>
+     * 2. The next important thing is we need to decide when to move the two pointers. The interval
+     * which has the ennTime equal to endMin means it can't be intersected with the next interval
+     * on the other list, cuz the other interval we are comparing with now must have endTime equal
+     * or greater than the endMin, so we advance the pointer on this interval list.
+     * <p>
+     * Time Complexity: O(M+N), where M, N are the lengths of two lists respectively
+     * Space Complexity: O(M+N), the maximum size of the answer.
+     */
+    public int[][] intervalIntersection(int[][] firstList, int[][] secondList) {
+        int firstPtr = 0, secondPtr = 0;
+        List<int[]> result = new ArrayList<>();
+        while (firstPtr < firstList.length && secondPtr < secondList.length) {
+            // Determine the startMax and endMin between two intervals
+            int startMax = Math.max(firstList[firstPtr][0], secondList[secondPtr][0]);
+            int endMin = Math.min(firstList[firstPtr][1], secondList[secondPtr][1]);
+
+            // When two intervals are NOT overlapped, startMax must be greater than endMin
+            if (endMin >= startMax) {
+                result.add(new int[]{startMax, endMin});
+            }
+            // Now we need to decide to move the two pointers. The interval which has the ennTime equal to endMin means
+            // it can't be intersected with the next interval on the other list, cuz the other interval we are comparing
+            // with now must have endTime equal or greater than the endMin, so we advance the pointer on this interval
+            // list
+            if (endMin == firstList[firstPtr][1])
+                firstPtr++;
+            if (endMin == secondList[secondPtr][1])
+                secondPtr++;
+        }
+        return result.toArray(new int[0][0]);
+    }
+
+    /**
      * Insert Interval
      * You are given an array of non-overlapping intervals intervals where intervals[i] = [starti, endi]
      * represent the start and the end of the ith interval and intervals is sorted in ascending order by starti.
@@ -120,8 +194,14 @@ public class IntervalQuestion {
     }
 
     /**
-     * Iterate the intervals array, compare each interval w/ the new one to determine if they are overlapped(3 cases)
-     * then update the result or merge two intervals and continue.
+     * We keep track of newStart and newEnd init to the start and end of the inserted interval.
+     * Iterate the array and for each interval, Checking current interval with those two states.
+     * If newEnd < start (no overlapped), add the new interval to the result list and copy and
+     * add all intervals to the result.
+     * If end < newStart (no overlapped), add the current interval to the result.
+     * Else (overlapped), update newStart to Math.min(start, newStart), newEnd to
+     * Math.max(end, newEnd)
+     * After loops ends, add the interval[newStart, newEnd] to the result.
      * <p>
      * Observation:
      * There are ONLY three cases when comparing an existing interval(i1) and the new one(i2)
@@ -177,10 +257,12 @@ public class IntervalQuestion {
             } else if (end < newStart) {
                 // |---current---|
                 //                 |---new---|
-                // new interval starts after the current one, so no overlapping
+                // new interval starts after the current one, so no overlapping.
+                // add the current interval to the list
                 result.add(intervals[i]);
             } else {
-                // current and new interval are overlapped, need to perform merge
+                // current and new interval are overlapped, need to perform merge, update the newStart and newEnd, so
+                // we can continue to check the remaining intervals
                 newStart = Math.min(start, newStart);
                 newEnd = Math.max(end, newEnd);
             }
@@ -194,7 +276,7 @@ public class IntervalQuestion {
     /**
      * Non-overlapping Intervals
      * <p>
-     * Given an array of intervals intervals where intervals[i] = [starti, endi], return the minimum
+     * Given an array of intervals where intervals[i] = [starti, endi], return the minimum
      * number of intervals you need to remove to make the rest of the intervals non-overlapping.
      * <p>
      * Input: intervals = [[1,2],[2,3],[3,4],[1,3]]
@@ -229,9 +311,12 @@ public class IntervalQuestion {
     }
 
     /**
-     * Sort the intervals by start time first. Then iterate the intervals and check the previous and the current interval.
-     * If overlapped, keep the one w/ earlier end time and increment the count. Otherwise, update the previous to the current and
-     * continue.
+     * Sorting the intervals by start time first. We use prevEnd, init to the first interval endTime,
+     * as the baseline to compare the next interval to detect overlapping.
+     * Start iterating from the second interval, if current interval startTime < prevEnd, we have
+     * overlap. We want to keep the interval w/ the earlier endTime, so we update prevEnd to the
+     * min of these two endTimes, and increment the removed count. Otherwise, update the prevEnd
+     * to the current interval endTime.
      * <p>
      * Observation:
      * When there is an overlap between two intervals, it makes sense to remove the interval with a later end-time,
@@ -239,7 +324,7 @@ public class IntervalQuestion {
      * <p>
      * Algo:
      * Similar to other interval problem, we first sort the interval by start time and then check for conflict.
-     * We maintian prevEnd as the end time of the previous interval and check if there is overlap against the
+     * We maintain prevEnd as the end time of the previous interval and check if there is overlap against the
      * current interval. Whenever there is an overlap we need to remove the one w/ the later end time, which means
      * the prevEnd will be updated to the smaller end time. Then increment the removed count.
      * If no overlap, we just update the prevEnd to the current interval end time.
@@ -260,11 +345,11 @@ public class IntervalQuestion {
         for (int i = 1; i < intervals.length; i++) {
             if (intervals[i][0] < prevEnd) {
                 // overlapped due to current interval start time < previous interval end time
-                if (intervals[i][1] < prevEnd)
-                    // We want to keep the interval w/ earlier end time, so we can maximize the number of non-overlapping
-                    // intervals afterward. Here the current interval has earlier end time, so we update the prevEnd to it.
-                    // In other words, we discard the previous interval and use the current one as the "previous" for the next iteration
-                    prevEnd = intervals[i][1];
+                // Greedy algo:
+                // We want to keep the interval w/ earlier end time, so we can maximize the number of non-overlapping
+                // intervals afterward. Hence, we update the prevEnd to the smaller end time between these two overlapped
+                // interval
+                prevEnd = Math.min(prevEnd, intervals[i][1]);
                 // Increment removed cuz we discard one of these two intervals
                 ++removed;
             } else {
@@ -446,4 +531,106 @@ public class IntervalQuestion {
         }
         return roomEndTimeMinHeap.size();
     }
+
+    /**
+     * Maximum Number of Events That Can Be Attended
+     * You are given an array of events where events[i] = [startDay_i, endDay_i]. Every event i
+     * starts at startDay_i and ends at endDay_i inclusive.
+     * <p>
+     * You can attend an event i at any day d where startDay_i <= d <= endDay_i. You can only attend
+     * one event at any time d. For example, if events[i] = [1, 3], you could attend this event on
+     * either day 1, day 2, or day 3.
+     * <p>
+     * Return the maximum number of events you can attend.
+     * <p>
+     * Input: events = [[1,2],[2,3],[3,4]]
+     * Output: 3
+     * Explanation: You can attend all the three events.
+     * One way to attend them all is as shown.
+     * Attend the first event on day 1.
+     * Attend the second event on day 2.
+     * Attend the third event on day 3.
+     * <p>
+     * <p>
+     * Input: events= [[1,2],[2,3],[3,4],[1,2]]
+     * Output: 4
+     * Explanation:
+     * [1,2] on Day 1,
+     * [1,2] on Day 2, since the event has not ended and would only end on completion of Day 2
+     * [2,3] on Day 3
+     * [3,4] on Day 4
+     * Hence Output = 4
+     * <p>
+     * https://leetcode.com/problems/maximum-number-of-events-that-can-be-attended/description/
+     */
+    @Test
+    void testMaxEvents() {
+        int[][] events = new int[][]{{1, 2}, {1, 2}, {3, 3}, {1, 5}, {1, 5}};
+        Assertions.assertThat(maxEvents(events)).isEqualTo(5);
+        events = new int[][]{{1, 2}, {2, 3}, {3, 4}, {1, 2}};
+        Assertions.assertThat(maxEvents(events)).isEqualTo(4);
+    }
+
+    /**
+     * First sort the events by start day. We use a heap, endDayMinHeap, to store end days of events
+     * that have the start day equal to the current join day. We start the loop until we have checked
+     * every event (ptr, i, to track) and nothing left in the endDayMinHeap.
+     * For each iteration, if nothing left in the heap, use the events[i] start day as current join
+     * day. Then add all events having the start day the same as joinDay to the heap.
+     * We join an event by removing one item from the heap and increment eventCount and joinDay.
+     * Finally, we need to check the heap and remove items that is less than updated joinDay.
+     * <p>
+     * Observation:
+     * 1. First we always join the event started earlier, so the intuition is to sort the events by
+     * the start day. Then when we have more than one event starting at the same day, we want to join
+     * the one that has earlier end day, so we will have more chance to join others. This is the greedy
+     * part.
+     * <p>
+     * 2. Given the thought process above, after we pick a day to join from the sorted start day, we
+     * put all the events with the same start day into a endDayMinHeap. Then take the top one from
+     * the heap as we join that event and increment the event count and joinDay.
+     * <p>
+     * 3. After we join a event and update the joinDay, it is possible that the events previous added
+     * to the heap can't be joined anymore, i.e. their endDay is less than the new joinDay
+     * <p>
+     * Time complexity: O(NlogN)
+     * Space complexity: O(N)
+     */
+    int maxEvents(int[][] events) {
+        if (events.length == 1) {
+            return 1;
+        }
+        // Sort events by staring time
+        Arrays.sort(events, Comparator.comparingInt(e -> e[0]));
+        // heap holds all events having the start day <= joinDay
+        Queue<Integer> endDayMinHeap = new PriorityQueue<>();
+        int eventCount = 0;
+        int joinDay = 0;
+        int i = 0; // ptr for checking every event
+        // Loop until we have checked every event and nothing left in the heap
+        while (i < events.length || !endDayMinHeap.isEmpty()) {
+            // If the heap is empty, we use start day of the current event i as the join day.
+            // This condition is needed even after the first iteration, cuz even tho there are multiple events added
+            // to the heap earlier, they may be removed after we join one of them. For example, multiple one-day events
+            // on the same day
+            if (endDayMinHeap.isEmpty()) {
+                joinDay = events[i][0];
+            }
+            // Now add all events having the start day the same as joinDay to the heap
+            while (i < events.length && events[i][0] == joinDay) {
+                endDayMinHeap.offer(events[i][1]);
+                i++;
+            }
+            // Join the earliest ending event. We want to join the event ended earlier. GREEDY
+            endDayMinHeap.poll();
+            eventCount++;
+            joinDay++;
+            // After we update the joinDay, we need to check the heap to remove already ended events.
+            while (!endDayMinHeap.isEmpty() && endDayMinHeap.peek() < joinDay) {
+                endDayMinHeap.poll();
+            }
+        }
+        return eventCount;
+    }
+
 }
