@@ -1444,6 +1444,107 @@ public class GraphQuestion {
     }
 
     /**
+     * Redundant Connection
+     * In this problem, a tree is an undirected graph that is connected and has no cycles.
+     * <p>
+     * You are given a graph that started as a tree with n nodes labeled from 1 to n, with
+     * one additional edge added. The added edge has two different vertices chosen from 1
+     * to n, and was not an edge that already existed. The graph is represented as an array
+     * edges of length n where edges[i] = [ai, bi] indicates that there is an edge between
+     * nodes ai and bi in the graph.
+     * <p>
+     * Return an edge that can be removed so that the resulting graph is a tree of n nodes.
+     * If there are multiple answers, return the answer that occurs last in the input.
+     * <p>
+     * Input: edges = [[1,2],[1,3],[2,3]]
+     * Output: [2,3]
+     * <p>
+     * Input: edges = [[1,2],[2,3],[3,4],[1,4],[1,5]]
+     * Output: [1,4]
+     * <p>
+     * https://leetcode.com/problems/redundant-connection/description/
+     */
+    @Test
+    void testFindRedundantConnection() {
+        int[][] edges = {
+                {1, 2},
+                {1, 3},
+                {2, 3}
+        };
+        Assertions.assertThat(findRedundantConnection(edges)).containsExactly(2, 3);
+
+    }
+
+    private class RedundantConnectionDSU {
+        private final int[] root;
+        private final int[] rank;
+
+        public RedundantConnectionDSU(int size) {
+            root = new int[size];
+            rank = new int[size];
+            for (int i = 0; i < size; i++) {
+                root[i] = i;
+                rank[i] = 1;
+            }
+        }
+
+        public int find(int x) {
+            int rootNode = x;
+            while (rootNode != root[rootNode]) {
+                rootNode = root[rootNode];
+            }
+            while (x != rootNode) {
+                int next = root[x];
+                root[x] = rootNode;
+                x = next;
+            }
+            return rootNode;
+        }
+
+        public void union(int x, int y) {
+            int rootX = find(x);
+            int rootY = find(y);
+            if (rootX != rootY) {
+                if (rank[rootX] > rank[rootY]) {
+                    root[rootY] = rootX;
+                } else if (rank[rootX] < rank[rootY]) {
+                    root[rootX] = rootY;
+                } else {
+                    root[rootY] = rootX;
+                    rank[rootX] += 1;
+                }
+            }
+        }
+
+        public boolean connected(int x, int y) {
+            return find(x) == find(y);
+        }
+    }
+
+    /**
+     * First create the DSU class implementing the find (w/ path compression), union (by rank),
+     * and connected methods. Then iterate the edges array, if the two vertices at the edge is
+     * not connected, union them using dsu. Otherwise, they are already connected, return this
+     * edge.
+     * <p>
+     * Time Complexity: O(Nα(N))≈O(N), where N is the number of vertices
+     * We make up to N queries of dsu.union, which takes (amortized) O(α(N)) time
+     * Space Complexity: O(N).
+     */
+    public int[] findRedundantConnection(int[][] edges) {
+        // use the max node number from constraint
+        RedundantConnectionDSU dsu = new RedundantConnectionDSU(1001);
+        for (int[] edge : edges) {
+            if (!dsu.connected(edge[0], edge[1])) {
+                dsu.union(edge[0], edge[1]);
+            } else {
+                return edge;
+            }
+        }
+        return new int[0];
+    }
+
+    /**
      * Evaluate Division
      * You are given an array of variable pairs equations and an array of real numbers values, where
      * equations[i] = [Ai, Bi] and values[i] represent the equation Ai / Bi = values[i]. Each Ai or Bi
