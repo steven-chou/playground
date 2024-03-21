@@ -927,8 +927,9 @@ public class GraphQuestion {
             adjacencyList.add(new ArrayList<>());
         }
         // Build the adjacency list and inDegree array
-        // List[n]: neighbors of node n, i.e. nodes that has an incoming edge from node n. Ex, n --> a, n --> b, a and b are n's neighbors
-        // Ex: prerequisites: [[1, 0], [2, 0], [2, 1]], we will have List {[1, 2], [1], []}
+        // List[n]: neighbors of node n, i.e. nodes that has an incoming edge from node n.
+        // Ex, n --> a, n --> b, a and b are n's neighbors
+        // Ex: prerequisites: [[1, 0], [2, 0], [2, 1]], we will have List {[1, 2], [2], []}
         for (int[] prerequisite : prerequisites) {
             // [1, 0] => 1 depends on 0, i.e. 0 --> 1 in the graph(directed edge from 0 to 1)
             adjacencyList.get(prerequisite[1]).add(prerequisite[0]);
@@ -1052,6 +1053,96 @@ public class GraphQuestion {
         if (idx != numCourses)
             return new int[0];
         return order;
+    }
+
+    /**
+     * Parallel Courses
+     * You are given an integer n, which indicates that there are n courses labeled from 1 to n.
+     * You are also given an array relations where relations[i] = [prevCoursei, nextCoursei],
+     * representing a prerequisite relationship between course prevCoursei and course nextCoursei:
+     * course prevCoursei has to be taken before course nextCoursei.
+     * <p>
+     * In one semester, you can take any number of courses as long as you have taken all the
+     * prerequisites in the previous semester for the courses you are taking.
+     * <p>
+     * Return the minimum number of semesters needed to take all courses. If there is no way
+     * to take all the courses, return -1.
+     * <p>
+     * Input: n = 3, relations = [[1,3],[2,3]]
+     * Output: 2
+     * Explanation: The figure above represents the given graph.
+     * In the first semester, you can take courses 1 and 2.
+     * In the second semester, you can take course 3.
+     * <p>
+     * Input: n = 3, relations = [[1,2],[2,3],[3,1]]
+     * Output: -1
+     * Explanation: No course can be studied because they are prerequisites of each other.
+     * <p>
+     * https://leetcode.com/problems/parallel-courses/description/
+     */
+    @Test
+    void testMinimumSemesters() {
+        int[][] input = {
+                {1, 3},
+                {2, 3}
+        };
+        Assertions.assertThat(minimumSemesters(3, input)).isEqualTo(2);
+        input = new int[][]{
+                {1, 2}, {2, 3}, {3, 1}
+        };
+        Assertions.assertThat(minimumSemesters(3, input)).isEqualTo(-1);
+    }
+
+    /**
+     * Implement Kahn's Topological sorting algo to detect the cycle in the graph. However, we need
+     * to perform BFS by level and keep track of the level count, the nodes visited at the same
+     * level polled from the queue are the courses taken at the same semester. If no cycle, return
+     * the level count.
+     * <p>
+     * Let E be the length of relations. N is the number of courses,
+     * Time Complexity: O(N+E).
+     * For building the graph, we spend O(N) to initialize the graph, and spend O(E)
+     * to add egdes since we iterate relations once. For BFS, we spend O(N+E) since
+     * we need to visit every node and edge once in BFS in the worst case.
+     * <p>
+     * Space Complexity: O(N+E)
+     * For the graph, we spend O(N+E) since we have O(N) keys and O(E) values.
+     * For BFS, we spend O(N) since in the worst case, we need to add all
+     * nodes to the queue in the same time.
+     */
+    public int minimumSemesters(int n, int[][] relations) {
+        // Node value starts from 1, so let inDegree array and graph have size n+1
+        int[] inDegree = new int[n + 1];
+        List<List<Integer>> graph = new ArrayList<>();
+        for (int i = 0; i <= n; i++) {
+            graph.add(new ArrayList<>());
+        }
+        for (int[] relation : relations) {
+            graph.get(relation[0]).add(relation[1]);
+            ++inDegree[relation[1]];
+        }
+        Queue<Integer> queue = new ArrayDeque<>();
+        for (int i = 1; i < inDegree.length; i++) {
+            if (inDegree[i] == 0)
+                queue.offer(i);
+        }
+        int level = 0; // one BFS level is one semester
+        int visitedCount = 0; // keep track of visited node count so we can detect cycle in the end
+        while (!queue.isEmpty()) {
+            int qSize = queue.size();
+            for (int i = 0; i < qSize; i++) {
+                Integer node = queue.poll();
+                visitedCount++;
+                for (Integer toNode : graph.get(node)) {
+                    --inDegree[toNode];
+                    if (inDegree[toNode] == 0)
+                        queue.offer(toNode);
+                }
+            }
+            level++;
+        }
+        // Cycle exists if we didn't visit all nodes.
+        return visitedCount != n ? -1 : level;
     }
 
     /**

@@ -3069,12 +3069,12 @@ public class ArrayQuestion {
      * <p>
      * To generalize this. If we can find a sum[j] such that sum[i] − k = sum[j], then we find a eligible sub-array.
      * However, since the number can be negative, it is possible multiple sum[j] exists cuz multiple negative
-     * and positive numbers cancel each other then has the same prefix sum.
+     * and positive numbers cancel each other, then has the same prefix sum.
      * For the first case, we can always assume a sum[j] equal to 0 always exists.
      * <p>
      * Algo:
      * 1. We use a HashMap to store the prefixSum to its count/number of occurrences. We first insert the
-     * (prefixSum: 0, count: 1) into the map to cover the first case. As we said earlier, it is possilbe different
+     * (prefixSum: 0, count: 1) into the map to cover the first case. As we said earlier, it is possible different
      * sub-arrays has the same prefix sum cuz the number can be negative, e.g. [1, 5, 3, -3, 2, 4] (k=6)
      * Therefore, we need to keep the count.
      * <p>
@@ -3198,6 +3198,76 @@ public class ArrayQuestion {
             prefixRemainderToFirstIdx.putIfAbsent(remainder, i);
         }
         return false;
+    }
+
+    /**
+     * Contiguous Array
+     * Given a binary array nums, return the maximum length of a contiguous subarray with an
+     * equal number of 0 and 1.
+     * <p>
+     * Input: nums = [0,1]
+     * Output: 2
+     * Explanation: [0, 1] is the longest contiguous subarray with an equal number of 0 and 1.
+     * <p>
+     * Input: nums = [0,1,0]
+     * Output: 2
+     * Explanation: [0, 1] (or [1, 0]) is a longest contiguous subarray with equal number of 0
+     * and 1.
+     * <p>
+     * https://leetcode.com/problems/contiguous-array/description/
+     */
+    @Test
+    void testFindMaxLength() {
+        assertThat(findMaxLength(new int[]{0, 0, 1, 0, 0, 0, 1, 1})).isEqualTo(6);
+    }
+
+    /**
+     * Use a prefixSumToFirstIdx to track the "prefix sum" and the first index. We iterate the
+     * array and keep updating the sum (decrement by 1 for 0, increment by 1 for 1).
+     * When the sum becomes 0 at any index, update the maxLen to the current index plus one.
+     * (sub-array is from beginning to current index) If we the current sum is found in the map,
+     * which means there is a subarray with equal 0s and 1s between the previous occurrence and
+     * the current index), update the maximum length if the current subarray length is greater
+     * than the previously stored maximum length.
+     * Otherwise, we put the current sum and index in the map.
+     * <p>
+     * Observation:
+     * The thought process is similar to the problem "Subarray Sum Equals K".
+     * The key here is we treat 0 as -1 and keep accumulating the sum. The valid sub-array
+     * will happen when
+     * 1. Sum is zero, this means we must have equal number of 0 and 1 from the beginning to the
+     * current idx.
+     * 2. We encounter the same sum again at the iteration, which means from the last sum position
+     * to the current position, there must be equal number of 0 and 1.
+     * <p>
+     * Time complexity: O(n)
+     * pace complexity: O(n)
+     */
+    int findMaxLength(int[] nums) {
+        Map<Integer, Integer> prefixSumToFirstIdx = new HashMap<>();
+        // Keeps track of the cumulative prefix sum of 0s and 1s (-1 for 0, +1 for 1).
+        int sum = 0;
+        int maxLen = 0;
+        for (int i = 0; i < nums.length; i++) {
+            // update the sum according to the element (decrement by 1 for 0, increment by 1 for 1).
+            sum += nums[i] == 0 ? -1 : 1;
+            if (sum == 0) {
+                // When the sum becomes zero, the current subarray range must be from the beginning to the current idx,
+                // so it must be the maxLen we have so far.
+                maxLen = i + 1;
+            } else if (prefixSumToFirstIdx.containsKey(sum)) {
+                // We encounter the same prefix sum, which means there is a subarray with equal 0s and 1s between
+                // the previous occurrence and the current index. Compute the length between current index and previous
+                // index, and update maxLen if it is greater. We do NOT update the map cuz we look for the maxLen, we
+                // want the index of prefix sum as the first index we saw.
+                // Ex: [0, 0, 1, 0]
+                // This condition is triggered when i = 2 and i = 3
+                maxLen = Math.max(maxLen, i - prefixSumToFirstIdx.get(sum));
+            } else {
+                prefixSumToFirstIdx.put(sum, i);
+            }
+        }
+        return maxLen;
     }
 
     /**
