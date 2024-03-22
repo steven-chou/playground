@@ -1107,131 +1107,6 @@ public class MathQuestion {
         return stack.pop(); // RPN assures there is only one number left on the stack.
     }
 
-    /**
-     * Basic Calculator II
-     * Given a string s which represents an expression, evaluate this expression and return its value.
-     * The integer division should truncate toward zero.
-     * You may assume that the given expression is always valid. All intermediate results will be in the
-     * range of [-231, 231 - 1].
-     * <p>
-     * Note: You are not allowed to use any built-in function which evaluates strings as mathematical expressions, such as eval().
-     * <p>
-     * Input: s = "3+2*2"
-     * Output: 7
-     * <p>
-     * Input: s = " 3/2 "
-     * Output: 1
-     * <p>
-     * Input: s = " 3+5 / 2 "
-     * Output: 5
-     * <p>
-     * <p>
-     * Constraints:
-     * <p>
-     * 1 <= s.length <= 3 * 105
-     * s consists of integers and operators ('+', '-', '*', '/') separated by some number of spaces.
-     * s represents a valid expression.
-     * All the integers in the expression are non-negative integers in the range [0, 231 - 1].
-     * The answer is guaranteed to fit in a 32-bit integer.
-     * <p>
-     * https://leetcode.com/problems/basic-calculator-ii/description/
-     */
-    @Test
-    void testCalculatorII() {
-        assertThat(calculateII("3+5 / 2*2-1")).isEqualTo(6);
-    }
-
-    /**
-     * Use the Basic Calculator III solution as the basis but remove the usage of Queue and parentheses condition cuz we
-     * don't need to support parentheses
-     */
-    int calculateII(String s) {
-        int num = 0;
-        char prevOperator = '+';
-        Deque<Integer> stack = new ArrayDeque<>();
-        for (int i = 0; i < s.length(); i++) {
-            char currentChar = s.charAt(i);
-            if (Character.isDigit(currentChar)) {
-                num = 10 * num + (currentChar - '0');
-            } else if ("+-*/".indexOf(currentChar) != -1) {
-                eval(stack, num, prevOperator);
-                num = 0;
-                prevOperator = currentChar;
-            }
-        }
-        eval(stack, num, prevOperator);
-        return stack.stream().mapToInt(i -> i).sum();
-    }
-
-    /**
-     * Iterate the string and once the next char is [+ - * /], we evaluate the current operand and the last
-     * "evaluated" operand and keep adding the evaluated result to final result.
-     * <p>
-     * For example:
-     * 2               [+ - * /]     3
-     * lastEvalOperand            currentNum
-     * <p>
-     * The key is we need to keep track of the lastEvalOperand and update it accordingly.
-     * <p>
-     * lastEvalOperand is updated at two type of scenarios
-     * 1. If the operation is Addition (+) or Subtraction (-), lastEvalOperand is just updated to the
-     * currentNum or negative currentNum, and is subsequently added to the final result.
-     * <p>
-     * 2. If the operation is Multiplication (*) or Division (/), it is updated to the result of
-     * lastEvalOperand [multiply/divide] currentNum, then it is added to the final result.
-     * This is the KEY difference cuz these two operations take higher precedence so must be evaluated first.
-     * Besides, cuz our logic is processing from left to right w/o respecting any operator precedence,
-     * for operations(* and /), we need to first subtract the lastEvalOperand from the final result, then update
-     * lastEvalOperand to the evaluation result of lastEvalOperand and current num w/ the operation(* or /).
-     * When we have continuous * or / in a row, e.g. 2 * 3 / 4 * 5, this subtraction logic still holds true, cuz the
-     * lastEvalOperand will have accumulated result in the end and added to the final result. The above sample is
-     * literally processed like (((2 * 3) / 4) * 5). The parentheses kinda depicts how the lastEvalOperand
-     * evaluation is expanded
-     * <p>
-     * Time Complexity: O(n), where n is the length of the string s.
-     * Space Complexity: O(1)
-     * <p>
-     * Note: Another solution uses the stack, but it has worse space complexity, O(n)
-     */
-    int calculateIIVer2(String s) {
-        int result = 0;
-        int currentNum = 0;
-        int lastEvalOperand = 0;
-        char operation = '+'; // Default to +, so the first number will be added to result first
-        for (int i = 0; i < s.length(); i++) {
-            char currentChar = s.charAt(i);
-            if (currentChar == '+' || currentChar == '-' || currentChar == '*' || currentChar == '/') {
-                // Set the operation first, so we can do the evaluation once we get the second operand
-                operation = currentChar;
-            } else if (Character.isDigit(currentChar)) {
-                // Build up the number from every single digit char
-                currentNum = currentNum * 10 + (currentChar - '0');
-
-                if (i == s.length() - 1 || !Character.isDigit(s.charAt(i + 1))) {
-                    // Next char is NOT digit OR we are at the last char, so we can evaluate the two operands and operation
-                    switch (operation) {
-                        case '+':
-                            lastEvalOperand = currentNum;
-                            break;
-                        case '-':
-                            lastEvalOperand = -currentNum;
-                            break;
-                        case '*':
-                            result -= lastEvalOperand;
-                            lastEvalOperand *= currentNum;
-                            break;
-                        case '/':
-                            result -= lastEvalOperand;
-                            lastEvalOperand /= currentNum;
-                            break;
-                    }
-                    result += lastEvalOperand;
-                    currentNum = 0; // Need to reset it once we finish an evaluation
-                }
-            }
-        }
-        return result;
-    }
 
     /**
      * Basic Calculator
@@ -1372,6 +1247,132 @@ public class MathQuestion {
     }
 
     /**
+     * Basic Calculator II
+     * Given a string s which represents an expression, evaluate this expression and return its value.
+     * The integer division should truncate toward zero.
+     * You may assume that the given expression is always valid. All intermediate results will be in the
+     * range of [-231, 231 - 1].
+     * <p>
+     * Note: You are not allowed to use any built-in function which evaluates strings as mathematical expressions, such as eval().
+     * <p>
+     * Input: s = "3+2*2"
+     * Output: 7
+     * <p>
+     * Input: s = " 3/2 "
+     * Output: 1
+     * <p>
+     * Input: s = " 3+5 / 2 "
+     * Output: 5
+     * <p>
+     * <p>
+     * Constraints:
+     * <p>
+     * 1 <= s.length <= 3 * 105
+     * s consists of integers and operators ('+', '-', '*', '/') separated by some number of spaces.
+     * s represents a valid expression.
+     * All the integers in the expression are non-negative integers in the range [0, 231 - 1].
+     * The answer is guaranteed to fit in a 32-bit integer.
+     * <p>
+     * https://leetcode.com/problems/basic-calculator-ii/description/
+     */
+    @Test
+    void testCalculatorII() {
+        assertThat(calculateII("3+5 / 2*2-1")).isEqualTo(6);
+    }
+
+    /**
+     * Use the Basic Calculator III solution as the basis but remove the usage of Queue and parentheses condition cuz we
+     * don't need to support parentheses
+     */
+    int calculateII(String s) {
+        int num = 0;
+        char prevOperator = '+';
+        Deque<Integer> stack = new ArrayDeque<>();
+        for (int i = 0; i < s.length(); i++) {
+            char currentChar = s.charAt(i);
+            if (Character.isDigit(currentChar)) {
+                num = 10 * num + (currentChar - '0');
+            } else if ("+-*/".indexOf(currentChar) != -1) {
+                eval(stack, num, prevOperator);
+                num = 0;
+                prevOperator = currentChar;
+            }
+        }
+        eval(stack, num, prevOperator);
+        return stack.stream().mapToInt(i -> i).sum();
+    }
+
+    /**
+     * Iterate the string and once the next char is [+ - * /], we evaluate the current operand and the last
+     * "evaluated" operand and keep adding the evaluated result to final result.
+     * <p>
+     * For example:
+     * 2               [+ - * /]     3
+     * lastEvalOperand            currentNum
+     * <p>
+     * The key is we need to keep track of the lastEvalOperand and update it accordingly.
+     * <p>
+     * lastEvalOperand is updated at two type of scenarios
+     * 1. If the operation is Addition (+) or Subtraction (-), lastEvalOperand is just updated to the
+     * currentNum or negative currentNum, and is subsequently added to the final result.
+     * <p>
+     * 2. If the operation is Multiplication (*) or Division (/), it is updated to the result of
+     * lastEvalOperand [multiply/divide] currentNum, then it is added to the final result.
+     * This is the KEY difference cuz these two operations take higher precedence so must be evaluated first.
+     * Besides, cuz our logic is processing from left to right w/o respecting any operator precedence,
+     * for operations(* and /), we need to first subtract the lastEvalOperand from the final result, then update
+     * lastEvalOperand to the evaluation result of lastEvalOperand and current num w/ the operation(* or /).
+     * When we have continuous * or / in a row, e.g. 2 * 3 / 4 * 5, this subtraction logic still holds true, cuz the
+     * lastEvalOperand will have accumulated result in the end and added to the final result. The above sample is
+     * literally processed like (((2 * 3) / 4) * 5). The parentheses kinda depicts how the lastEvalOperand
+     * evaluation is expanded
+     * <p>
+     * Time Complexity: O(n), where n is the length of the string s.
+     * Space Complexity: O(1)
+     * <p>
+     * Note: Another solution uses the stack, but it has worse space complexity, O(n)
+     */
+    int calculateIIVer2(String s) {
+        int result = 0;
+        int currentNum = 0;
+        int lastEvalOperand = 0;
+        char operation = '+'; // Default to +, so the first number will be added to result first
+        for (int i = 0; i < s.length(); i++) {
+            char currentChar = s.charAt(i);
+            if (currentChar == '+' || currentChar == '-' || currentChar == '*' || currentChar == '/') {
+                // Set the operation first, so we can do the evaluation once we get the second operand
+                operation = currentChar;
+            } else if (Character.isDigit(currentChar)) {
+                // Build up the number from every single digit char
+                currentNum = currentNum * 10 + (currentChar - '0');
+
+                if (i == s.length() - 1 || !Character.isDigit(s.charAt(i + 1))) {
+                    // Next char is NOT digit OR we are at the last char, so we can evaluate the two operands and operation
+                    switch (operation) {
+                        case '+':
+                            lastEvalOperand = currentNum;
+                            break;
+                        case '-':
+                            lastEvalOperand = -currentNum;
+                            break;
+                        case '*':
+                            result -= lastEvalOperand;
+                            lastEvalOperand *= currentNum;
+                            break;
+                        case '/':
+                            result -= lastEvalOperand;
+                            lastEvalOperand /= currentNum;
+                            break;
+                    }
+                    result += lastEvalOperand;
+                    currentNum = 0; // Need to reset it once we finish an evaluation
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * Basic Calculator III
      * Implement a basic calculator to evaluate a simple expression string.
      * <p>
@@ -1480,7 +1481,7 @@ public class MathQuestion {
                 // Evaluate the num and the top element on the stack(* or /) w/ PREVIOUS operator and push the result to
                 // stack
                 eval(stack, num, prevOp);
-                // Rest the num and update the previous operator to current char
+                // Reset the num and update the previous operator to current char
                 num = 0;
                 prevOp = currentChar;
             } else if (currentChar == ')') {

@@ -2506,4 +2506,110 @@ public class GraphQuestion {
             }
         }
     }
+
+    /**
+     * Reconstruct Itinerary
+     * You are given a list of airline tickets where tickets[i] = [fromi, toi] represent the
+     * departure and the arrival airports of one flight. Reconstruct the itinerary in order
+     * and return it.
+     * <p>
+     * All of the tickets belong to a man who departs from "JFK", thus, the itinerary must
+     * begin with "JFK". If there are multiple valid itineraries, you should return the
+     * itinerary that has the smallest lexical order when read as a single string.
+     * <p>
+     * For example, the itinerary ["JFK", "LGA"] has a smaller lexical order than
+     * ["JFK", "LGB"].
+     * You may assume all tickets form at least one valid itinerary. You must use all the
+     * tickets once and only once.
+     * <p>
+     * Input: tickets = [["MUC","LHR"],["JFK","MUC"],["SFO","SJC"],["LHR","SFO"]]
+     * Output: ["JFK","MUC","LHR","SFO","SJC"]
+     * <p>
+     * Input: tickets = [["JFK","SFO"],["JFK","ATL"],["SFO","ATL"],["ATL","JFK"],["ATL","SFO"]]
+     * Output: ["JFK","ATL","JFK","SFO","ATL","SFO"]
+     * Explanation: Another possible reconstruction is ["JFK","SFO","ATL","JFK","ATL","SFO"]
+     * but it is larger in lexical order.
+     * <p>
+     * https://leetcode.com/problems/reconstruct-itinerary/description/
+     */
+    @Test
+    void testFindItinerary() {
+        List<List<String>> tickets = List.of(List.of("MUC", "LHR"), List.of("JFK", "MUC"), List.of("SFO", "SJC"), List.of("LHR", "SFO"));
+        Assertions.assertThat(findItinerary(tickets)).containsExactly("JFK", "MUC", "LHR", "SFO", "SJC");
+        tickets = List.of(List.of("JFK", "KUL"), List.of("JFK", "NRT"), List.of("NRT", "JFK"));
+        Assertions.assertThat(findItinerary(tickets)).containsExactly("JFK", "NRT", "JFK", "KUL");
+    }
+
+    /**
+     * First construct the adjList for the graph Map<String, PriorityQueue<String>>. We use minHeap
+     * cuz we need to keep the city in order, and after we visit the city, we need to remove the edge
+     * from the graph.
+     * We start dfs from "JFK". At each call, while there are still next cities for the current city
+     * (check the map graph), removing it from the heap and use it to make recursive call.
+     * After the while loop, we add current city to the head of itinerary list.
+     * <p>
+     * Observation:
+     * <p>
+     * The problem guarantee there is Eulerian path in the graph. Eulerian path is a trail in a finite
+     * graph that visits every edge exactly once (allowing for revisiting vertices).
+     * <p>
+     * To find the Eulerian path, inspired from the original Hierzolher's algorithm, we simply change
+     * one condition of loop, rather than stopping at the starting point, we stop at the vertex where
+     * we do not have any unvisited edges.
+     * <p>
+     * To summarize, the main idea to find the Eulerian path consists of two steps:
+     * <p>
+     * Step 1: Starting from any vertex, we keep following the unused edges until we get stuck at
+     * certain vertex where we have no more unvisited outgoing edges.
+     * <p>
+     * Step 2: We then backtrack to the nearest neighbor vertex in the current path that has unused
+     * edges and we repeat the process until all the edges have been used.
+     * <p>
+     * The first vertex that we got stuck at would be the end point of our Eulerian path. So if we
+     * follow all the stuck points backwards, we could reconstruct the Eulerian path at the end.
+     * <p>
+     * Algo:
+     * The essential step is that starting from the fixed starting vertex (airport 'JFK'), we keep
+     * following the ordered and unused edges (flights) until we get stuck at certain vertex where
+     * we have no more unvisited outgoing edges.
+     * <p>
+     * We could also consider the algorithm as the postorder DFS (Depth-First Search) in a directed
+     * graph, from a fixed starting point.
+     * <p>
+     * In the resulting path, before we visit the last airport (denoted as V), we can say that we
+     * have already used all the rest flights, i.e. if there is any flight starting from V, then
+     * we must have already taken that before.
+     * https://www.youtube.com/watch?v=4udFSOWQpdg
+     * https://www.youtube.com/watch?v=5yM3H0UgXTo
+     * <p>
+     * Time Complexity: O(E⋅log E\V)
+     * Sorting dominates the TC here
+     * <p>
+     * Space Complexity: O(V+E)
+     */
+    public List<String> findItinerary(List<List<String>> tickets) {
+        Map<String, PriorityQueue<String>> graph = new HashMap<>();
+
+        for (List<String> ticket : tickets) {
+            // Use minHeap as value, so we will always first go to the city w/ smaller lexical order
+            graph.computeIfAbsent(ticket.get(0), k -> new PriorityQueue<>()).offer(ticket.get(1));
+        }
+
+        LinkedList<String> itinerary = new LinkedList<>();
+
+        dfs("JFK", graph, itinerary);
+        return itinerary;
+    }
+
+    private void dfs(String airport, Map<String, PriorityQueue<String>> graph, LinkedList<String> itinerary) {
+        PriorityQueue<String> nextAirports = graph.get(airport);
+        while (nextAirports != null && !nextAirports.isEmpty()) {
+            // Remove the next airport from the heap. Basically the edge is removed from the graph so it won't
+            // be visited again.
+            dfs(nextAirports.poll(), graph, itinerary);
+        }
+        // This airport has no outgoing edge, i.e. no more destinations to visit, add it to the head of the itinerary
+        // list before we start backtracking
+        itinerary.addFirst(airport);
+    }
 }
