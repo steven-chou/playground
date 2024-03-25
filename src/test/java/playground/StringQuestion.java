@@ -1050,8 +1050,13 @@ public class StringQuestion {
     }
 
     /**
-     * Push char to the stack and start decoding one segment of string when encountering ']', every inner-segment
-     * decoded string is push back to the stack so it is included when decoding the outer segment.
+     * Iterate each char and push it to the Stack if it is not ']', otherwise, start decoding one
+     * segment of string by keeping popping the non-digit char from the stack (ignore '[') and
+     * construct the string. Then we keep popping from stack to build the "count" number.
+     * We need to reverse the count number so it is the "k" and we use it to iterate the string we
+     * just built in reverse order and push each char to the stack at total k times.
+     * After we iterate every char at the input string, we pop each char from the stack and add it
+     * to the string builder then return the reversed string
      * <p>
      * Algo:
      * The input can contain an alphabet (a-z), digit (0-9), opening braces [ or closing braces ].
